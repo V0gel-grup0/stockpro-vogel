@@ -1159,58 +1159,15 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       return;
     }
 
-    setMsg("Lendo PDF/DANFE da NF...");
-    setLoadingNf(true);
+    setNfForm((atual) => ({
+      ...atual,
+      pdf_name: arquivo.name,
+      notes: `PDF/DANFE anexado: ${arquivo.name}. Preencha os dados da NF manualmente.`,
+      approved: false,
+    }));
 
-    try {
-      const formData = new FormData();
-      formData.append("file", arquivo);
-
-      const resposta = await fetch("/api/nfe/pdf", { method: "POST", body: formData });
-      const textoResposta = await resposta.text();
-      let dados: any = {};
-
-      try {
-        dados = JSON.parse(textoResposta);
-      } catch {
-        setMsg("A rota /api/nfe/pdf não respondeu JSON. Verifique se a rota foi publicada na Vercel.");
-        return;
-      }
-
-      if (!resposta.ok) {
-        setMsg(dados.error || "Não foi possível ler o PDF/DANFE da NF.");
-        return;
-      }
-
-      const nf = dados.nf || {};
-      const item = nf.item || {};
-      const fornecedor = nf.fornecedor || {};
-
-      setNfForm((atual) => ({
-        ...atual,
-        pdf_name: nf.pdf_name || arquivo.name,
-        nf_key: nf.chave || atual.nf_key,
-        nf_number: nf.numero || atual.nf_number,
-        receita_federal_nf: nf.chave || atual.receita_federal_nf,
-        fornecedor_nome: fornecedor.nome || atual.fornecedor_nome,
-        fornecedor_document: fornecedor.cnpj || atual.fornecedor_document,
-        fornecedor_phone: fornecedor.telefone || atual.fornecedor_phone,
-        fornecedor_email: fornecedor.email || atual.fornecedor_email,
-        produto_nome: item.nome || atual.produto_nome,
-        component_name: item.nome || atual.component_name,
-        quantity: item.quantidade || atual.quantity,
-        unit_cost: item.valor_unitario || atual.unit_cost,
-        notes: `Importado do PDF/DANFE: ${nf.pdf_name || arquivo.name}. Valor total: ${item.valor_total || "0"}`,
-        approved: false,
-      }));
-
-      setMsg("PDF/DANFE lido. Confira item, quantidade e custo antes de aprovar.");
-    } catch (error: any) {
-      setMsg(error.message || "Erro ao importar PDF/DANFE da NF.");
-    } finally {
-      setLoadingNf(false);
-      event.target.value = "";
-    }
+    setMsg("PDF/DANFE anexado. Preencha os dados da NF manualmente antes de aprovar.");
+    event.target.value = "";
   }
 
   return (

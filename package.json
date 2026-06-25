@@ -11,7 +11,6 @@
   "dependencies": {
     "@supabase/supabase-js": "latest",
     "next": "latest",
-    "pdf-parse": "1.1.1",
     "react": "latest",
     "react-dom": "latest"
   },
