@@ -99,3 +99,34 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
 .menu-collapsed .main-content { max-width: 1280px !important; }
 .sidebar-closed .topbar-inner { max-width: none !important; }
 @media (max-width: 760px) { .mini-grid { grid-template-columns: 1fr; } }
+
+/* Pedidos - visual em lista */
+.order-list-card {
+  border-radius: 24px !important;
+  padding: 22px 24px !important;
+  background: linear-gradient(135deg, rgba(17, 28, 46, .98), rgba(15, 23, 42, .98)) !important;
+  border: 1px solid rgba(148, 163, 184, .26) !important;
+}
+.order-list-card strong {
+  font-size: 19px !important;
+  margin-bottom: 4px;
+}
+.order-list-card .input {
+  margin-top: 8px;
+  max-width: 260px;
+}
+.order-list-card .form-actions {
+  margin-top: 16px;
+}
+.order-list-card small b {
+  color: #93c5fd;
+}
+@media (max-width: 760px) {
+  .topbar-inner { padding: 12px 14px; gap: 10px; }
+  .menu-toggle, .icon-button { width: 46px; height: 42px; }
+  .page-title h1 { font-size: 30px; }
+  .card { padding: 22px; border-radius: 22px; }
+  .btn { width: 100%; justify-content: center; }
+  .form-actions { gap: 10px; }
+  .order-list-card .input { max-width: 100%; }
+}
