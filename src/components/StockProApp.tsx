@@ -783,9 +783,9 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     produto_nome: "",
     produto_categoria: "LAMPADAS",
     produto_subcategoria: "Lâmpada LED dimerizável E27",
+    component_id: "",
     component_name: "",
     component_category: "",
-    component_equipment: EQUIPAMENTOS[0],
     quantity: "",
     unit_cost: "",
     notes: "",
@@ -803,6 +803,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
   const [nfForm, setNfForm] = useState(emptyNf);
   const [saidaForm, setSaidaForm] = useState(emptySaida);
   const [products, setProducts] = useState<AnyRow[]>([]);
+  const [components, setComponents] = useState<AnyRow[]>([]);
   const [orders, setOrders] = useState<AnyRow[]>([]);
   const [movements, setMovements] = useState<AnyRow[]>([]);
   const [msg, setMsg] = useState("");
@@ -826,6 +827,24 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     }));
   }
 
+  function selecionarComponenteNf(componentId: string) {
+    const componente = components.find((item) => item.id === componentId);
+    setNfForm((atual) => ({
+      ...atual,
+      component_id: componentId,
+      component_name: componente?.name || "",
+      component_category: componente?.category || "",
+    }));
+  }
+
+  function selecionarItemManual(tipo: string, itemId: string) {
+    setManual((atual) => ({
+      ...atual,
+      item_type: tipo,
+      item_id: itemId,
+    }));
+  }
+
   function setSaidaField(campo: string, valor: any) {
     setSaidaForm((atual) => ({
       ...atual,
@@ -840,6 +859,13 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       .order("name");
 
     setProducts(produtos || []);
+
+    const { data: comps } = await supabase
+      .from("components")
+      .select("*")
+      .order("name");
+
+    setComponents(comps || []);
 
     const { data: pedidos } = await supabase
       .from("orders")
@@ -1020,59 +1046,29 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     quantidade: number,
     custoUnitario: number
   ) {
-    const nomeComponente = nfForm.component_name.trim();
+    const componenteSelecionado = components.find((item) => item.id === nfForm.component_id);
 
-    if (!nomeComponente) {
-      throw new Error("Informe o componente da NF.");
+    if (!componenteSelecionado) {
+      throw new Error("Selecione um componente já cadastrado no estoque geral.");
     }
 
-    const { data: componenteExistente } = await supabase
+    const { error } = await supabase
       .from("components")
-      .select("*")
-      .eq("name", nomeComponente)
-      .eq("equipment", nfForm.component_equipment)
-      .maybeSingle();
-
-    if (componenteExistente) {
-      const { error } = await supabase
-        .from("components")
-        .update({
-          quantity: Number(componenteExistente.quantity || 0) + quantidade,
-          cost_price: custoUnitario,
-          supplier_id: supplierId,
-          category: nfForm.component_category,
-          nf_number: nfForm.nf_number,
-          receita_federal_nf: nfForm.receita_federal_nf,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", componenteExistente.id);
-
-      if (error) throw new Error(error.message);
-
-      return componenteExistente.id as string;
-    }
-
-    const { data: novoComponente, error } = await supabase
-      .from("components")
-      .insert({
-        name: nomeComponente,
-        category: nfForm.component_category,
-        equipment: nfForm.component_equipment,
-        quantity: quantidade,
-        min_stock: 0,
+      .update({
+        quantity: Number(componenteSelecionado.quantity || 0) + quantidade,
         cost_price: custoUnitario,
         supplier_id: supplierId,
+        category: componenteSelecionado.category || nfForm.component_category || "",
+        equipment: "Estoque geral",
         nf_number: nfForm.nf_number,
         receita_federal_nf: nfForm.receita_federal_nf,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .select("id")
-      .single();
+      .eq("id", componenteSelecionado.id);
 
     if (error) throw new Error(error.message);
 
-    return novoComponente.id as string;
+    return componenteSelecionado.id as string;
   }
 
   async function cadastrarEntradaNf() {
@@ -1262,7 +1258,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     const qtd = Number(manual.quantity || 0);
 
     if (!manual.item_id) {
-      setMsg("Selecione o produto.");
+      setMsg(manual.item_type === "componente" ? "Selecione o componente." : "Selecione o produto.");
       return;
     }
 
@@ -1271,12 +1267,30 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       return;
     }
 
+    const tabela = manual.item_type === "componente" ? "components" : "products";
+    const item = manual.item_type === "componente"
+      ? components.find((i) => i.id === manual.item_id)
+      : products.find((i) => i.id === manual.item_id);
+
+    if (!item) {
+      setMsg(manual.item_type === "componente" ? "Componente não encontrado." : "Produto não encontrado.");
+      return;
+    }
+
+    const estoqueAtual = Number(item.quantity || 0);
+    const novaQtd = manual.type === "entrada" ? estoqueAtual + qtd : estoqueAtual - qtd;
+
+    if (manual.type === "saida" && novaQtd < 0) {
+      setMsg(`Estoque insuficiente. Disponível: ${quantidadeFormatada(estoqueAtual)}.`);
+      return;
+    }
+
     const { error } = await supabase.from("movements").insert({
       type: manual.type,
       item_type: manual.item_type,
       item_id: manual.item_id || null,
       quantity: qtd,
-      notes: manual.notes,
+      notes: manual.notes || `Movimentação manual de ${manual.item_type}: ${item.name}`,
       created_by: profile.id,
     });
 
@@ -1285,21 +1299,17 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       return;
     }
 
-    const produto = products.find((i) => i.id === manual.item_id);
+    const { error: erroEstoque } = await supabase
+      .from(tabela)
+      .update({
+        quantity: novaQtd,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", manual.item_id);
 
-    if (produto) {
-      const novaQtd =
-        manual.type === "entrada"
-          ? Number(produto.quantity || 0) + qtd
-          : Number(produto.quantity || 0) - qtd;
-
-      await supabase
-        .from("products")
-        .update({
-          quantity: novaQtd,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", manual.item_id);
+    if (erroEstoque) {
+      setMsg(erroEstoque.message);
+      return;
     }
 
     setMsg("Movimentação manual salva com sucesso.");
@@ -1384,9 +1394,9 @@ function Movimentacoes({ profile }: { profile: Profile }) {
         produto_subcategoria:
           atual.produto_subcategoria || "Lâmpada LED dimerizável E27",
 
-        component_name: nomeProduto || codigoProduto,
-        component_category: atual.component_category || "",
-        component_equipment: atual.component_equipment || EQUIPAMENTOS[0],
+        component_id: components.find((item) => normalizarComponente(item.name) === normalizarComponente(nomeProduto || codigoProduto))?.id || atual.component_id,
+        component_name: components.find((item) => normalizarComponente(item.name) === normalizarComponente(nomeProduto || codigoProduto))?.name || atual.component_name,
+        component_category: components.find((item) => normalizarComponente(item.name) === normalizarComponente(nomeProduto || codigoProduto))?.category || atual.component_category,
 
         quantity: quantidade ? String(Number(quantidade)) : atual.quantity,
         unit_cost: valorUnitario ? String(Number(valorUnitario)) : atual.unit_cost,
@@ -1523,29 +1533,25 @@ function Movimentacoes({ profile }: { profile: Profile }) {
 
           {nfForm.item_kind === "componente" && (
             <>
-              <Field
-                label="Componente"
-                value={nfForm.component_name}
-                onChange={(v) => setNfField("component_name", v)}
-              />
-
-              <Field
-                label="Categoria do componente"
-                value={nfForm.component_category}
-                onChange={(v) => setNfField("component_category", v)}
-              />
-
               <SelectField
-                label="Equipamento relacionado"
-                value={nfForm.component_equipment}
-                onChange={(v) => setNfField("component_equipment", v)}
+                label="Componente"
+                value={nfForm.component_id}
+                onChange={selecionarComponenteNf}
               >
-                {EQUIPAMENTOS.map((equipamento) => (
-                  <option key={equipamento} value={equipamento}>
-                    {equipamento}
+                <option value="">Selecione</option>
+                {components.map((componente) => (
+                  <option key={componente.id} value={componente.id}>
+                    {componente.name}
                   </option>
                 ))}
               </SelectField>
+
+              <div className="field">
+                <label>Categoria do componente</label>
+                <div className="input" style={{ display: "flex", alignItems: "center" }}>
+                  {nfForm.component_category || "Escolha um componente"}
+                </div>
+              </div>
             </>
           )}
 
@@ -1658,12 +1664,21 @@ function Movimentacoes({ profile }: { profile: Profile }) {
           </SelectField>
 
           <SelectField
-            label="Produto"
+            label="Tipo de item"
+            value={manual.item_type}
+            onChange={(v) => selecionarItemManual(v, "")}
+          >
+            <option value="produto">Produto</option>
+            <option value="componente">Componente</option>
+          </SelectField>
+
+          <SelectField
+            label={manual.item_type === "componente" ? "Componente" : "Produto"}
             value={manual.item_id}
             onChange={(v) => setManualField("item_id", v)}
           >
             <option value="">Selecione</option>
-            {products.map((i) => (
+            {(manual.item_type === "componente" ? components : products).map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
               </option>
@@ -1929,7 +1944,126 @@ function Componentes({ search }: SearchProps) {
   );
 }
 
-function Montagens({ profile, search }: { profile: Profile } & SearchProps) { const empty = { equipment: EQUIPAMENTOS[0], quantity: "1", technician_id: "" }; const [form, setForm] = useState(empty); const [technicians, setTechnicians] = useState<Profile[]>([]); const [items, setItems] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); useEffect(() => { carregar(); }, []); async function carregar() { const { data: tech } = await supabase.from("profiles").select("*").eq("role", "tecnico"); setTechnicians((tech || []) as Profile[]); const { data: a } = await supabase.from("assemblies").select("*").order("created_at", { ascending: false }); setItems(a || []); } function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); } function editar(i: AnyRow) { setEditing(i.id); setForm({ equipment: i.equipment || EQUIPAMENTOS[0], quantity: String(i.quantity || 1), technician_id: i.technician_id || "" }); } async function excluir(id: string) { if (!confirm("Excluir esta montagem?")) return; const { error } = await supabase.from("assemblies").delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg("Montagem excluída com sucesso."); } async function salvar() { const payload = { equipment: form.equipment, quantity: Number(form.quantity || 1), technician_id: form.technician_id || null, created_by: profile.id }; const res = editing ? await supabase.from("assemblies").update(payload).eq("id", editing) : await supabase.from("assemblies").insert(payload); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso."); setForm(empty); setEditing(null); carregar(); } const filtered = items.filter((i) => textMatch(i, search)); return <><Title title="Montagens" desc="Registro, edição e exclusão de montagem de equipamentos." /><section className="card"><h2 className="card-title">{editing ? "Editar montagem" : "Registrar montagem"}</h2><div className="form-grid"><SelectField label="Equipamento" value={form.equipment} onChange={(v) => set("equipment", v)}>{EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}</SelectField><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><SelectField label="Técnico" value={form.technician_id} onChange={(v) => set("technician_id", v)}><option value="">Selecione</option>{technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</SelectField></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Registrar montagem"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Montagens lançadas</h2><div className="product-list-grid">{filtered.map((i) => <div key={i.id} className="stat-card user-card"><strong>{i.equipment}</strong><small>Qtd: {i.quantity}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(i)}>Editar</button><button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button></div></div>)}</div></section></>; }
+function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
+  const empty = { equipment: EQUIPAMENTOS[0], quantity: "1", technician_id: "" };
+  const [form, setForm] = useState(empty);
+  const [technicians, setTechnicians] = useState<Profile[]>([]);
+  const [items, setItems] = useState<AnyRow[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => { carregar(); }, []);
+
+  async function carregar() {
+    const { data: tech } = await supabase.from("profiles").select("*").eq("role", "tecnico");
+    setTechnicians((tech || []) as Profile[]);
+
+    const { data: a } = await supabase.from("assemblies").select("*").order("created_at", { ascending: false });
+    setItems(a || []);
+  }
+
+  function set(c: string, v: string) {
+    setForm((a) => ({ ...a, [c]: v }));
+  }
+
+  function editar(i: AnyRow) {
+    setEditing(i.id);
+    setForm({
+      equipment: i.equipment || i.equipment_name || i.product_name || EQUIPAMENTOS[0],
+      quantity: String(i.quantity || 1),
+      technician_id: i.technician_id || "",
+    });
+  }
+
+  async function excluir(id: string) {
+    if (!confirm("Excluir esta montagem?")) return;
+    const { error } = await supabase.from("assemblies").delete().eq("id", id);
+    if (error) return setMsg(error.message);
+    setItems((a) => a.filter((x) => x.id !== id));
+    setMsg("Montagem excluída com sucesso.");
+  }
+
+  async function salvar() {
+    const quantidade = Number(form.quantity || 1);
+    if (!form.equipment) return setMsg("Selecione o equipamento montado.");
+    if (quantidade <= 0) return setMsg("Informe uma quantidade válida.");
+
+    const payloadCompleto: AnyRow = {
+      equipment: form.equipment,
+      equipment_name: form.equipment,
+      product_name: form.equipment,
+      name: form.equipment,
+      quantity: quantidade,
+      technician_id: form.technician_id || null,
+      created_by: profile.id,
+    };
+
+    let res = editing
+      ? await supabase.from("assemblies").update(payloadCompleto).eq("id", editing)
+      : await supabase.from("assemblies").insert(payloadCompleto);
+
+    if (res.error && /equipment_name|product_name|name|schema cache|column/i.test(res.error.message || "")) {
+      const payloadBasico = {
+        equipment: form.equipment,
+        quantity: quantidade,
+        technician_id: form.technician_id || null,
+        created_by: profile.id,
+      };
+      res = editing
+        ? await supabase.from("assemblies").update(payloadBasico).eq("id", editing)
+        : await supabase.from("assemblies").insert(payloadBasico);
+    }
+
+    if (res.error) return setMsg(res.error.message);
+
+    setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso.");
+    setForm(empty);
+    setEditing(null);
+    carregar();
+  }
+
+  const filtered = items.filter((i) => textMatch(i, search));
+
+  return (
+    <>
+      <Title title="Montagens" desc="Registro, edição e exclusão de montagem de equipamentos." />
+      <section className="card">
+        <h2 className="card-title">{editing ? "Editar montagem" : "Registrar montagem"}</h2>
+        <div className="form-grid">
+          <SelectField label="Equipamento montado" value={form.equipment} onChange={(v) => set("equipment", v)}>
+            {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
+          </SelectField>
+          <Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
+          <SelectField label="Técnico/montador" value={form.technician_id} onChange={(v) => set("technician_id", v)}>
+            <option value="">Selecione</option>
+            {technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </SelectField>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Registrar montagem"}</button>
+          <button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button>
+        </div>
+        {msg && <Message text={msg} />}
+      </section>
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Montagens lançadas</h2>
+        <div className="product-list-grid">
+          {filtered.map((i) => (
+            <div key={i.id} className="stat-card user-card">
+              <strong>{i.equipment || i.equipment_name || i.product_name}</strong>
+              <small>Qtd: {i.quantity}</small>
+              <div className="form-actions">
+                <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
+                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
 
 function ContaAzul() { return <><Title title="Conta Azul" desc="Configuração para criação automática de Nota Fiscal." /><section className="card"><h2 className="card-title">Integração Conta Azul</h2><p style={{ color: "#94a3b8" }}>Configure na Vercel as variáveis CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET e CONTA_AZUL_REFRESH_TOKEN. O botão de NF nos pedidos chama a API /api/conta-azul/emitir-nf.</p><div className="reports-grid" style={{ marginTop: 24 }}><StatCard label="Status" value="Preparado" /><StatCard label="NF automática" value="Botão nos pedidos" /><StatCard label="Ambiente" value="Produção/Vercel" /></div></section></>; }
 function Relatorios({ profile }: { profile: Profile }) {

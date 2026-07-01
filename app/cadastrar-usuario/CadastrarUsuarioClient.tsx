@@ -97,12 +97,12 @@ useEffect(() => {
     <main style={{ minHeight: "100vh", background: "#020617", color: "white", padding: "40px" }}>
       <section className="card">
         <h1 style={{ fontSize: 34, margin: "0 0 8px", fontWeight: 900 }}>Cadastrar usuário</h1>
-        <p style={{ color: "#94a3b8", marginBottom: 30 }}>Solicite acesso como representante. Cadastros internos devem ser criados pelo administrador dentro do sistema.</p>
+        <p style={{ color: "#94a3b8", marginBottom: 30 }}>Solicite ou crie acesso como representante, vendedor, gerente, técnico/montador ou funcionário.</p>
         <div className="form-grid">
           <Campo label="Nome" value={form.nome} onChange={(v) => set("nome", v)} />
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
           <Campo label="Senha" type="password" value={form.senha} onChange={(v) => set("senha", v)} />
-          <div className="field"><label>Tipo de acesso</label><select className="input" value={form.tipo} onChange={(e) => set("tipo", e.target.value)}><option value="representante">Representante</option><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option></select></div>
+          <div className="field"><label>Tipo de acesso</label><select className="input" value={form.tipo} onChange={(e) => set("tipo", e.target.value)}><option value="representante">Representante</option><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option><option value="tecnico">Técnico/Montador</option><option value="funcionario">Funcionário</option></select></div>
           {form.tipo === "representante" && <Campo label="Código do vendedor responsável" value={form.seller_code} onChange={(v) => set("seller_code", v.toUpperCase().trim())} />}
           <Campo label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} />
           <Campo label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />

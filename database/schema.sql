@@ -251,3 +251,14 @@ alter table public.components add column if not exists updated_at timestamp with
 
 notify pgrst, 'reload schema';
 select pg_notify('pgrst', 'reload schema');
+
+-- Ajustes 2026-07 - montagem, componentes selecionáveis e usuário técnico
+alter table public.assemblies add column if not exists equipment_name text not null default '';
+alter table public.assemblies add column if not exists product_name text not null default '';
+alter table public.assemblies add column if not exists name text not null default '';
+alter table public.components add column if not exists cost_price numeric not null default 0;
+alter table public.components add column if not exists nf_number text not null default '';
+alter table public.components add column if not exists receita_federal_nf text not null default '';
+alter table public.components add column if not exists updated_at timestamp with time zone default now();
+notify pgrst, 'reload schema';
+select pg_notify('pgrst', 'reload schema');
