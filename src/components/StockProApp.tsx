@@ -100,6 +100,190 @@ const EQUIPAMENTOS = [
   "CeltPlus - 380V",
 ];
 
+type ComposicaoItem = { name: string; category: string; quantity: number };
+
+function itemComposicao(name: string, quantity = 1, category = "Componente") {
+  return { name, quantity, category };
+}
+
+function baseCelt5000(voltagem: "220V" | "380V", turbinas: 1 | 2 | 3, plus = false): ComposicaoItem[] {
+  const sufixoInversor = voltagem === "380V" ? " - 380V" : "";
+  const qtdInversor = voltagem === "220V" ? turbinas : 1;
+  const rele = turbinas === 1 ? "Relê simples" : "Relê duplo";
+  const quadro = turbinas === 3 ? "Quadro 60 X 60 X 20" : "Quadro 50 X 40 X 20";
+
+  return [
+    itemComposicao(`Inversor 5CV${sufixoInversor}`, qtdInversor, "Inversor"),
+    itemComposicao(quadro, 1, "Quadro"),
+    itemComposicao("Contator 32a", 1, "Elétrica"),
+    itemComposicao("Chave seletora liga/desliga", 1, "Elétrica"),
+    itemComposicao("Veneziana com filtro 106 X 106 X 13,5 mm", 1, "Ventilação"),
+    itemComposicao("Veneziana com filtro 150 X 150 X 13,5 mm", 1, "Ventilação"),
+    itemComposicao("Ventilador 120 X 120 X 38", 1, "Ventilação"),
+    itemComposicao(rele, turbinas, "Elétrica"),
+    itemComposicao("Prensa cabo", 1, "Acabamento"),
+    itemComposicao("Borne 4mm", turbinas * 3, "Elétrica"),
+    itemComposicao("Tampa borne", turbinas, "Elétrica"),
+    itemComposicao("Poste borne", 2, "Elétrica"),
+    itemComposicao("Trilho Din 0,2 m", 1, "Elétrica"),
+    itemComposicao("Suporte trilho Din", 2, "Elétrica"),
+    itemComposicao("Canaleta 30cm", 1, "Acabamento"),
+    itemComposicao("Adesivo painel", 1, "Acabamento"),
+    itemComposicao(`Adesivo tensão ${voltagem}`, 1, "Acabamento"),
+    itemComposicao("Manual", 1, "Documentação"),
+    itemComposicao("Fio 2,5", Number((2.15 * turbinas).toFixed(2)), "Fiação"),
+    itemComposicao("Fio 0,50", Number((2.8 * turbinas).toFixed(2)), "Fiação"),
+    itemComposicao("Caixa de papelão", 1, "Embalagem"),
+  ];
+}
+
+const COMPOSICOES_EQUIPAMENTOS: Record<string, ComposicaoItem[]> = {
+  "Celt5000 - 220V 1 turbina": baseCelt5000("220V", 1),
+  "Celt5000 - 220V 2 turbinas": baseCelt5000("220V", 2),
+  "Celt5000 - 220V 3 turbinas": baseCelt5000("220V", 3),
+  "Celt5000 - 380V 1 turbina": baseCelt5000("380V", 1),
+  "Celt5000 - 380V 2 turbinas": baseCelt5000("380V", 2),
+  "Celt5000 - 380V 3 turbinas": baseCelt5000("380V", 3),
+  "Celt5000 Plus - 220V 1 turbina + Mínima": baseCelt5000("220V", 1, true),
+  "Celt5000 Plus - 220V 2 turbinas + Mínima": baseCelt5000("220V", 2, true),
+  "Celt5000 Plus - 220V 3 turbinas + Mínima": baseCelt5000("220V", 3, true),
+  "Celt5000 Plus - 380V 1 turbina + Mínima": baseCelt5000("380V", 1, true),
+  "Celt5000 Plus - 380V 2 turbinas + Mínima": baseCelt5000("380V", 2, true),
+  "Celt5000 Plus - 380V 3 turbinas + Mínima": baseCelt5000("380V", 3, true),
+  "CeltPlus - 220V": [
+    itemComposicao("Inversor 2CV 220V", 1, "Inversor"),
+    itemComposicao("Botão liga/desliga", 1, "Elétrica"),
+  ],
+  "CeltPlus - 380V": [
+    itemComposicao("Inversor 2CV 380V", 1, "Inversor"),
+    itemComposicao("Botão liga/desliga", 1, "Elétrica"),
+  ],
+};
+
+function composicaoDoEquipamento(equipment: string) {
+  return COMPOSICOES_EQUIPAMENTOS[equipment] || [];
+}
+
+function normalizarComponente(nome: string) {
+  return String(nome || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function quantidadeFormatada(valor: number) {
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+}
+
+async function cadastrarComponentesPadrao(equipamentoSelecionado?: string) {
+  const equipamentos = equipamentoSelecionado ? [equipamentoSelecionado] : EQUIPAMENTOS;
+  let criados = 0;
+  let atualizados = 0;
+
+  for (const equipamento of equipamentos) {
+    for (const item of composicaoDoEquipamento(equipamento)) {
+      const { data: existente } = await supabase
+        .from("components")
+        .select("*")
+        .eq("name", item.name)
+        .eq("equipment", equipamento)
+        .maybeSingle();
+
+      if (existente) {
+        const { error } = await supabase
+          .from("components")
+          .update({ category: item.category, updated_at: new Date().toISOString() })
+          .eq("id", existente.id);
+        if (error) throw new Error(error.message);
+        atualizados += 1;
+      } else {
+        const { error } = await supabase.from("components").insert({
+          name: item.name,
+          category: item.category,
+          equipment: equipamento,
+          quantity: 0,
+          min_stock: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (error) throw new Error(error.message);
+        criados += 1;
+      }
+    }
+  }
+
+  return { criados, atualizados };
+}
+
+async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty: number, profileId: string, origem: string) {
+  const composicao = composicaoDoEquipamento(equipmentName);
+  const qtdEquipamento = Number(equipmentQty || 0);
+
+  if (!composicao.length || qtdEquipamento <= 0) return;
+
+  const { data: componentes, error } = await supabase
+    .from("components")
+    .select("*")
+    .eq("equipment", equipmentName);
+
+  if (error) throw new Error(error.message);
+
+  const porNome = new Map<string, AnyRow>();
+  (componentes || []).forEach((item) => porNome.set(normalizarComponente(item.name), item));
+
+  const faltando = composicao.filter((item) => !porNome.get(normalizarComponente(item.name)));
+  if (faltando.length) {
+    throw new Error(
+      `Cadastre primeiro a lista padrão de componentes para ${equipmentName}. Faltando: ${faltando
+        .map((item) => item.name)
+        .join(", ")}.`
+    );
+  }
+
+  const insuficientes = composicao
+    .map((item) => {
+      const componente = porNome.get(normalizarComponente(item.name));
+      const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
+      const disponivel = Number(componente?.quantity || 0);
+      return { item, componente, necessario, disponivel };
+    })
+    .filter((item) => item.disponivel < item.necessario);
+
+  if (insuficientes.length) {
+    throw new Error(
+      `Estoque insuficiente para montar/baixar ${equipmentName}: ${insuficientes
+        .map((i) => `${i.item.name} precisa ${quantidadeFormatada(i.necessario)} e tem ${quantidadeFormatada(i.disponivel)}`)
+        .join("; ")}.`
+    );
+  }
+
+  for (const item of composicao) {
+    const componente = porNome.get(normalizarComponente(item.name));
+    if (!componente) continue;
+
+    const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
+    const novaQuantidade = Number((Number(componente.quantity || 0) - necessario).toFixed(4));
+
+    const { error: erroAtualizacao } = await supabase
+      .from("components")
+      .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
+      .eq("id", componente.id);
+
+    if (erroAtualizacao) throw new Error(erroAtualizacao.message);
+
+    await supabase.from("movements").insert({
+      type: "saida",
+      item_type: "componente",
+      item_id: componente.id,
+      quantity: necessario,
+      notes: `Baixa automática de componente: ${origem} - ${equipmentName}`,
+      created_by: profileId,
+    });
+  }
+}
+
 const CATEGORIAS_REVENDA = [
   {
     category: "Lâmpadas dimerizáveis",
@@ -373,13 +557,6 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     });
   }
 
-  async function baixarCeltPlus(equipmentName: string, qtd: number) {
-    if (!equipmentName.includes("Celt5000 Plus")) return;
-    const voltagem = equipmentName.includes("380V") ? "380V" : "220V";
-    const { data } = await supabase.from("components").select("*").ilike("equipment", `%CeltPlus - ${voltagem}%`).limit(1).maybeSingle();
-    if (data) await supabase.from("components").update({ quantity: Math.max(0, Number(data.quantity || 0) - qtd) }).eq("id", data.id);
-  }
-
   async function salvar() {
     setMsg("");
     const qtd = Number(form.quantity || 1);
@@ -416,9 +593,6 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
 
       const res = await supabase.from("orders").insert(pedidosParaCriar);
       if (res.error) return setMsg(res.error.message);
-      if (form.item_type === "equipamento") {
-        for (const equipamento of selectedEquipments) await baixarCeltPlus(equipamento, qtd);
-      }
       setMsg(pedidosParaCriar.length > 1 ? `${pedidosParaCriar.length} pedidos criados com sucesso.` : "Pedido criado com sucesso.");
     }
 
@@ -960,6 +1134,15 @@ function Movimentacoes({ profile }: { profile: Profile }) {
         if (erroProduto) throw new Error(erroProduto.message);
       }
 
+      if (tipoItem === "equipamento") {
+        await baixarComponentesDaComposicao(
+          pedido.equipment_name,
+          quantidade,
+          profile.id,
+          `pedido #${pedido.order_number || String(pedido.id || "").slice(0, 6)}`
+        );
+      }
+
       const numeroPedido = pedido.order_number || String(pedido.id || "").slice(0, 6);
       const descricaoItem = tipoItem === "produto" ? produto?.name || "Produto" : pedido.equipment_name || "Equipamento";
 
@@ -1461,7 +1644,168 @@ function Movimentacoes({ profile }: { profile: Profile }) {
   );
 }
 
-function Componentes({ search }: SearchProps) { const empty = { name: "", category: "", equipment: EQUIPAMENTOS[0], supplier_id: "", quantity: "", min_stock: "" }; const [form, setForm] = useState(empty); const [items, setItems] = useState<AnyRow[]>([]); const [suppliers, setSuppliers] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); useEffect(() => { carregar(); }, []); async function carregar() { const { data } = await supabase.from("components").select("*").order("created_at", { ascending: false }); setItems(data || []); const { data: sup } = await supabase.from("suppliers").select("*").order("name"); setSuppliers(sup || []); } function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); } function editar(i: AnyRow) { setEditing(i.id); setForm({ name: i.name || "", category: i.category || "", equipment: i.equipment || EQUIPAMENTOS[0], supplier_id: i.supplier_id || "", quantity: String(i.quantity || ""), min_stock: String(i.min_stock || "") }); } async function excluir(id: string) { if (!confirm("Excluir este componente?")) return; const { error } = await supabase.from("components").delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg("Componente excluído com sucesso."); } async function salvar() { const payload = { name: form.name, category: form.category, equipment: form.equipment, supplier_id: form.supplier_id || null, quantity: Number(form.quantity || 0), min_stock: Number(form.min_stock || 0) }; const res = editing ? await supabase.from("components").update(payload).eq("id", editing) : await supabase.from("components").insert(payload); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Componente atualizado com sucesso." : "Componente salvo com sucesso."); setForm(empty); setEditing(null); carregar(); } const filtered = items.filter((i) => textMatch(i, search)); return <><Title title="Componentes" desc="Controle de componentes por equipamento e fornecedor." /><section className="card"><h2 className="card-title">{editing ? "Editar componente" : "Novo componente"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="Categoria" value={form.category} onChange={(v) => set("category", v)} /><SelectField label="Equipamento" value={form.equipment} onChange={(v) => set("equipment", v)}>{EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}</SelectField><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar componente"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Componentes cadastrados</h2><div className="product-list-grid">{filtered.map((i) => <div key={i.id} className="stat-card user-card"><strong>{i.name}</strong><small>{i.equipment}</small><small>Fornecedor: {suppliers.find((s) => s.id === i.supplier_id)?.name || "-"}</small><small>Qtd: {i.quantity}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(i)}>Editar</button><button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button></div></div>)}</div></section></>; }
+function Componentes({ search }: SearchProps) {
+  const empty = { name: "", category: "", equipment: EQUIPAMENTOS[0], supplier_id: "", quantity: "", min_stock: "" };
+  const [form, setForm] = useState(empty);
+  const [items, setItems] = useState<AnyRow[]>([]);
+  const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
+  const [equipmentView, setEquipmentView] = useState(EQUIPAMENTOS[0]);
+  const [loadingPadrao, setLoadingPadrao] = useState(false);
+
+  useEffect(() => { carregar(); }, []);
+
+  async function carregar() {
+    const { data } = await supabase.from("components").select("*").order("equipment").order("name");
+    setItems(data || []);
+    const { data: sup } = await supabase.from("suppliers").select("*").order("name");
+    setSuppliers(sup || []);
+  }
+
+  function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); }
+
+  function editar(i: AnyRow) {
+    setEditing(i.id);
+    setForm({
+      name: i.name || "",
+      category: i.category || "",
+      equipment: i.equipment || EQUIPAMENTOS[0],
+      supplier_id: i.supplier_id || "",
+      quantity: String(i.quantity || ""),
+      min_stock: String(i.min_stock || ""),
+    });
+  }
+
+  async function excluir(id: string) {
+    if (!confirm("Excluir este componente?")) return;
+    const { error } = await supabase.from("components").delete().eq("id", id);
+    if (error) return setMsg(error.message);
+    setItems((a) => a.filter((x) => x.id !== id));
+    setMsg("Componente excluído com sucesso.");
+  }
+
+  async function salvar() {
+    const payload = {
+      name: form.name,
+      category: form.category,
+      equipment: form.equipment,
+      supplier_id: form.supplier_id || null,
+      quantity: Number(form.quantity || 0),
+      min_stock: Number(form.min_stock || 0),
+      updated_at: new Date().toISOString(),
+    };
+
+    const res = editing
+      ? await supabase.from("components").update(payload).eq("id", editing)
+      : await supabase.from("components").insert({ ...payload, created_at: new Date().toISOString() });
+
+    if (res.error) return setMsg(res.error.message);
+
+    setMsg(editing ? "Componente atualizado com sucesso." : "Componente salvo com sucesso.");
+    setForm(empty);
+    setEditing(null);
+    carregar();
+  }
+
+  async function cadastrarPadrao(equipamento?: string) {
+    setMsg("");
+    setLoadingPadrao(true);
+    try {
+      const resultado = await cadastrarComponentesPadrao(equipamento);
+      setMsg(`Lista padrão atualizada. Criados: ${resultado.criados}. Atualizados: ${resultado.atualizados}.`);
+      carregar();
+    } catch (error: any) {
+      setMsg(error.message || "Erro ao cadastrar componentes padrão.");
+    } finally {
+      setLoadingPadrao(false);
+    }
+  }
+
+  const composicaoSelecionada = composicaoDoEquipamento(equipmentView);
+  const filtered = items.filter((i) => textMatch(i, search));
+  const filteredByEquipment = filtered.filter((i) => String(i.equipment || "") === equipmentView);
+
+  return (
+    <>
+      <Title title="Componentes" desc="Controle de componentes por equipamento e baixa automática na saída do pedido." />
+
+      <section className="card">
+        <h2 className="card-title">Lista padrão por equipamento</h2>
+        <div className="form-grid">
+          <SelectField label="Equipamento" value={equipmentView} onChange={setEquipmentView}>
+            {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
+          </SelectField>
+        </div>
+
+        <div className="form-actions">
+          <button className="btn btn-blue" onClick={() => cadastrarPadrao(equipmentView)} disabled={loadingPadrao}>
+            {loadingPadrao ? "Cadastrando..." : "Cadastrar lista deste equipamento"}
+          </button>
+          <button className="btn btn-gray" onClick={() => cadastrarPadrao()} disabled={loadingPadrao}>
+            Cadastrar listas de todos
+          </button>
+        </div>
+
+        <div className="product-list-grid" style={{ marginTop: 18 }}>
+          {composicaoSelecionada.map((item) => {
+            const cadastrado = items.find((i) => normalizarComponente(i.name) === normalizarComponente(item.name) && i.equipment === equipmentView);
+            return (
+              <div key={`${equipmentView}-${item.name}`} className="stat-card user-card">
+                <strong>{item.name}</strong>
+                <small>Categoria: {item.category}</small>
+                <small>Consumo por equipamento: {quantidadeFormatada(item.quantity)}</small>
+                <small>Estoque atual: {quantidadeFormatada(Number(cadastrado?.quantity || 0))}</small>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">{editing ? "Editar componente" : "Novo componente"}</h2>
+        <div className="form-grid">
+          <Field label="Nome" value={form.name} onChange={(v) => set("name", v)} />
+          <Field label="Categoria" value={form.category} onChange={(v) => set("category", v)} />
+          <SelectField label="Equipamento" value={form.equipment} onChange={(v) => set("equipment", v)}>
+            {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
+          </SelectField>
+          <SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}>
+            <option value="">Selecione</option>
+            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </SelectField>
+          <Field label="Quantidade em estoque" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
+          <Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} />
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar componente"}</button>
+          <button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button>
+        </div>
+        {msg && <Message text={msg} />}
+      </section>
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Componentes cadastrados de {equipmentView}</h2>
+        <div className="product-list-grid">
+          {filteredByEquipment.map((i) => (
+            <div key={i.id} className="stat-card user-card">
+              <strong>{i.name}</strong>
+              <small>{i.equipment}</small>
+              <small>Categoria: {i.category || "-"}</small>
+              <small>Fornecedor: {suppliers.find((s) => s.id === i.supplier_id)?.name || "-"}</small>
+              <small>Qtd: {quantidadeFormatada(Number(i.quantity || 0))}</small>
+              <small>Mínimo: {quantidadeFormatada(Number(i.min_stock || 0))}</small>
+              <div className="form-actions">
+                <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
+                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
 
 function Montagens({ profile, search }: { profile: Profile } & SearchProps) { const empty = { equipment: EQUIPAMENTOS[0], quantity: "1", technician_id: "" }; const [form, setForm] = useState(empty); const [technicians, setTechnicians] = useState<Profile[]>([]); const [items, setItems] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); useEffect(() => { carregar(); }, []); async function carregar() { const { data: tech } = await supabase.from("profiles").select("*").eq("role", "tecnico"); setTechnicians((tech || []) as Profile[]); const { data: a } = await supabase.from("assemblies").select("*").order("created_at", { ascending: false }); setItems(a || []); } function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); } function editar(i: AnyRow) { setEditing(i.id); setForm({ equipment: i.equipment || EQUIPAMENTOS[0], quantity: String(i.quantity || 1), technician_id: i.technician_id || "" }); } async function excluir(id: string) { if (!confirm("Excluir esta montagem?")) return; const { error } = await supabase.from("assemblies").delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg("Montagem excluída com sucesso."); } async function salvar() { const payload = { equipment: form.equipment, quantity: Number(form.quantity || 1), technician_id: form.technician_id || null, created_by: profile.id }; const res = editing ? await supabase.from("assemblies").update(payload).eq("id", editing) : await supabase.from("assemblies").insert(payload); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso."); setForm(empty); setEditing(null); carregar(); } const filtered = items.filter((i) => textMatch(i, search)); return <><Title title="Montagens" desc="Registro, edição e exclusão de montagem de equipamentos." /><section className="card"><h2 className="card-title">{editing ? "Editar montagem" : "Registrar montagem"}</h2><div className="form-grid"><SelectField label="Equipamento" value={form.equipment} onChange={(v) => set("equipment", v)}>{EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}</SelectField><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><SelectField label="Técnico" value={form.technician_id} onChange={(v) => set("technician_id", v)}><option value="">Selecione</option>{technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</SelectField></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Registrar montagem"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Montagens lançadas</h2><div className="product-list-grid">{filtered.map((i) => <div key={i.id} className="stat-card user-card"><strong>{i.equipment}</strong><small>Qtd: {i.quantity}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(i)}>Editar</button><button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button></div></div>)}</div></section></>; }
 

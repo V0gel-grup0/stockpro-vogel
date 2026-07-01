@@ -239,3 +239,15 @@ create table if not exists public.fiscal_entries (
 
 alter table public.fiscal_entries disable row level security;
 notify pgrst, 'reload schema';
+
+-- Ajustes para baixa automática de componentes por equipamento
+alter table public.components alter column quantity type numeric using quantity::numeric;
+alter table public.components alter column min_stock type numeric using min_stock::numeric;
+alter table public.movements alter column quantity type numeric using quantity::numeric;
+alter table public.components add column if not exists cost_price numeric not null default 0;
+alter table public.components add column if not exists nf_number text not null default '';
+alter table public.components add column if not exists receita_federal_nf text not null default '';
+alter table public.components add column if not exists updated_at timestamp with time zone default now();
+
+notify pgrst, 'reload schema';
+select pg_notify('pgrst', 'reload schema');
