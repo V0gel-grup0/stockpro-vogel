@@ -164,6 +164,20 @@ function composicaoDoEquipamento(equipment: string) {
   return COMPOSICOES_EQUIPAMENTOS[equipment] || [];
 }
 
+function equipamentosQueUsamComponente(nomeComponente: string) {
+  const chaveComponente = normalizarComponente(nomeComponente);
+
+  return EQUIPAMENTOS
+    .map((equipamento) => {
+      const total = composicaoDoEquipamento(equipamento)
+        .filter((item) => normalizarComponente(item.name) === chaveComponente)
+        .reduce((soma, item) => soma + Number(item.quantity || 0), 0);
+
+      return { equipamento, quantity: Number(total.toFixed(4)) };
+    })
+    .filter((item) => item.quantity > 0);
+}
+
 function normalizarComponente(nome: string) {
   return String(nome || "")
     .trim()
@@ -1813,7 +1827,7 @@ function Componentes({ search }: SearchProps) {
       <section className="card">
         <h2 className="card-title">Composição por equipamento</h2>
         <p className="muted" style={{ marginTop: -6 }}>
-          Esta lista mostra a receita de montagem. O componente fica cadastrado uma única vez no estoque geral; aqui muda apenas a quantidade usada por equipamento.
+          Esta lista mostra a receita de montagem por equipamento. O componente NÃO é cadastrado várias vezes: ele fica uma única vez no estoque geral, e aqui aparece somente quanto cada equipamento usa.
         </p>
         <div className="form-grid">
           <SelectField label="Equipamento" value={equipmentView} onChange={setEquipmentView}>
@@ -1823,14 +1837,18 @@ function Componentes({ search }: SearchProps) {
 
         <div className="form-actions">
           <button className="btn btn-blue" onClick={() => cadastrarPadrao(equipmentView)} disabled={loadingPadrao}>
-            {loadingPadrao ? "Cadastrando..." : "Cadastrar componentes desta composição"}
+            {loadingPadrao ? "Cadastrando..." : "Cadastrar no estoque geral os componentes desta receita"}
           </button>
           <button className="btn btn-gray" onClick={() => cadastrarPadrao()} disabled={loadingPadrao}>
-            Cadastrar componentes de todas as composições
+            Cadastrar todos os componentes únicos no estoque geral
           </button>
           <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
             {loadingUnificar ? "Unificando..." : "Unificar duplicados"}
           </button>
+        </div>
+
+        <div className="notice" style={{ marginTop: 16 }}>
+          Exemplo: se o Borne 4mm aparece em vários equipamentos, ele continua sendo um único item no estoque. A quantidade abaixo é apenas a quantidade usada na receita do equipamento selecionado.
         </div>
 
         <div className="product-list-grid" style={{ marginTop: 18 }}>
@@ -1868,6 +1886,18 @@ function Componentes({ search }: SearchProps) {
       </section>
 
       <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Como fica organizado</h2>
+        <div className="reports-grid">
+          <StatCard label="Cadastro" value="1 por componente" />
+          <StatCard label="Receita" value="Por equipamento" />
+          <StatCard label="Baixa" value="Automática" />
+        </div>
+        <p className="muted" style={{ marginTop: 14 }}>
+          O estoque não é separado por equipamento. A separação acontece na composição: o mesmo componente pode aparecer no Celt5000, Celt5000 Plus e CeltPlus com quantidades diferentes.
+        </p>
+      </section>
+
+      <section className="card" style={{ marginTop: 24 }}>
         <h2 className="card-title">Estoque geral de componentes</h2>
         <p className="muted" style={{ marginTop: -6 }}>
           Aqui aparece o estoque real. A baixa automática procura estes componentes pelo nome e desconta conforme a composição do equipamento vendido.
@@ -1881,6 +1911,12 @@ function Componentes({ search }: SearchProps) {
               <small>Qtd: {quantidadeFormatada(Number(i.quantity || 0))}</small>
               <small>Mínimo: {quantidadeFormatada(Number(i.min_stock || 0))}</small>
               {i.equipment && i.equipment !== "Estoque geral" && <small>Origem antiga: {i.equipment}</small>}
+              <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+                <small><b>Divisão por equipamento:</b></small>
+                {equipamentosQueUsamComponente(i.name).length ? equipamentosQueUsamComponente(i.name).map((uso) => (
+                  <small key={`${i.id}-${uso.equipamento}`}>• {uso.equipamento}: usa {quantidadeFormatada(uso.quantity)}</small>
+                )) : <small>Este componente ainda não está em nenhuma composição padrão.</small>}
+              </div>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
                 <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
