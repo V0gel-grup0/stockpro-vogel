@@ -179,42 +179,97 @@ function quantidadeFormatada(valor: number) {
 
 async function cadastrarComponentesPadrao(equipamentoSelecionado?: string) {
   const equipamentos = equipamentoSelecionado ? [equipamentoSelecionado] : EQUIPAMENTOS;
+  const componentesUnicos = new Map<string, ComposicaoItem>();
   let criados = 0;
   let atualizados = 0;
 
   for (const equipamento of equipamentos) {
     for (const item of composicaoDoEquipamento(equipamento)) {
-      const { data: existente } = await supabase
-        .from("components")
-        .select("*")
-        .eq("name", item.name)
-        .eq("equipment", equipamento)
-        .maybeSingle();
+      const chave = normalizarComponente(item.name);
+      if (!componentesUnicos.has(chave)) componentesUnicos.set(chave, item);
+    }
+  }
 
-      if (existente) {
-        const { error } = await supabase
-          .from("components")
-          .update({ category: item.category, updated_at: new Date().toISOString() })
-          .eq("id", existente.id);
-        if (error) throw new Error(error.message);
-        atualizados += 1;
-      } else {
-        const { error } = await supabase.from("components").insert({
-          name: item.name,
-          category: item.category,
-          equipment: equipamento,
-          quantity: 0,
-          min_stock: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (error) throw new Error(error.message);
-        criados += 1;
-      }
+  for (const item of componentesUnicos.values()) {
+    const { data: existentes, error: erroBusca } = await supabase
+      .from("components")
+      .select("*")
+      .eq("name", item.name)
+      .order("created_at", { ascending: true });
+
+    if (erroBusca) throw new Error(erroBusca.message);
+
+    if (existentes && existentes.length) {
+      const principal = existentes[0];
+      const { error } = await supabase
+        .from("components")
+        .update({ category: item.category, equipment: "Estoque geral", updated_at: new Date().toISOString() })
+        .eq("id", principal.id);
+      if (error) throw new Error(error.message);
+      atualizados += 1;
+    } else {
+      const { error } = await supabase.from("components").insert({
+        name: item.name,
+        category: item.category,
+        equipment: "Estoque geral",
+        quantity: 0,
+        min_stock: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw new Error(error.message);
+      criados += 1;
     }
   }
 
   return { criados, atualizados };
+}
+
+async function unificarComponentesDuplicados() {
+  const { data, error } = await supabase.from("components").select("*").order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+
+  const grupos = new Map<string, AnyRow[]>();
+  (data || []).forEach((item) => {
+    const chave = normalizarComponente(item.name);
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave)!.push(item);
+  });
+
+  let unificados = 0;
+
+  for (const grupo of grupos.values()) {
+    if (grupo.length <= 1) continue;
+
+    const principal = grupo[0];
+    const restantes = grupo.slice(1);
+    const quantidadeTotal = grupo.reduce((total, item) => total + Number(item.quantity || 0), 0);
+    const estoqueMinimo = Math.max(...grupo.map((item) => Number(item.min_stock || 0)));
+    const categoria = principal.category || grupo.find((item) => item.category)?.category || "Componente";
+
+    const { error: erroUpdate } = await supabase
+      .from("components")
+      .update({
+        quantity: Number(quantidadeTotal.toFixed(4)),
+        min_stock: estoqueMinimo,
+        category: categoria,
+        equipment: "Estoque geral",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", principal.id);
+
+    if (erroUpdate) throw new Error(erroUpdate.message);
+
+    const idsExcluir = restantes.map((item) => item.id);
+    if (idsExcluir.length) {
+      const { error: erroDelete } = await supabase.from("components").delete().in("id", idsExcluir);
+      if (erroDelete) throw new Error(erroDelete.message);
+    }
+
+    unificados += restantes.length;
+  }
+
+  return unificados;
 }
 
 async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty: number, profileId: string, origem: string) {
@@ -223,31 +278,30 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
 
   if (!composicao.length || qtdEquipamento <= 0) return;
 
-  const { data: componentes, error } = await supabase
-    .from("components")
-    .select("*")
-    .eq("equipment", equipmentName);
+  const { data: componentes, error } = await supabase.from("components").select("*").order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
 
-  const porNome = new Map<string, AnyRow>();
-  (componentes || []).forEach((item) => porNome.set(normalizarComponente(item.name), item));
+  const porNome = new Map<string, AnyRow[]>();
+  (componentes || []).forEach((item) => {
+    const chave = normalizarComponente(item.name);
+    if (!porNome.has(chave)) porNome.set(chave, []);
+    porNome.get(chave)!.push(item);
+  });
 
-  const faltando = composicao.filter((item) => !porNome.get(normalizarComponente(item.name)));
+  const faltando = composicao.filter((item) => !(porNome.get(normalizarComponente(item.name)) || []).length);
   if (faltando.length) {
     throw new Error(
-      `Cadastre primeiro a lista padrão de componentes para ${equipmentName}. Faltando: ${faltando
-        .map((item) => item.name)
-        .join(", ")}.`
+      `Cadastre primeiro os componentes padrão do estoque geral. Faltando: ${faltando.map((item) => item.name).join(", ")}.`
     );
   }
 
   const insuficientes = composicao
     .map((item) => {
-      const componente = porNome.get(normalizarComponente(item.name));
+      const linhas = porNome.get(normalizarComponente(item.name)) || [];
       const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
-      const disponivel = Number(componente?.quantity || 0);
-      return { item, componente, necessario, disponivel };
+      const disponivel = linhas.reduce((total, linha) => total + Number(linha.quantity || 0), 0);
+      return { item, linhas, necessario, disponivel };
     })
     .filter((item) => item.disponivel < item.necessario);
 
@@ -260,27 +314,34 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
   }
 
   for (const item of composicao) {
-    const componente = porNome.get(normalizarComponente(item.name));
-    if (!componente) continue;
+    const linhas = porNome.get(normalizarComponente(item.name)) || [];
+    let restante = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
 
-    const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
-    const novaQuantidade = Number((Number(componente.quantity || 0) - necessario).toFixed(4));
+    for (const componente of linhas) {
+      if (restante <= 0) break;
+      const disponivel = Number(componente.quantity || 0);
+      if (disponivel <= 0) continue;
 
-    const { error: erroAtualizacao } = await supabase
-      .from("components")
-      .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
-      .eq("id", componente.id);
+      const baixa = Math.min(disponivel, restante);
+      const novaQuantidade = Number((disponivel - baixa).toFixed(4));
+      restante = Number((restante - baixa).toFixed(4));
 
-    if (erroAtualizacao) throw new Error(erroAtualizacao.message);
+      const { error: erroAtualizacao } = await supabase
+        .from("components")
+        .update({ quantity: novaQuantidade, equipment: "Estoque geral", updated_at: new Date().toISOString() })
+        .eq("id", componente.id);
 
-    await supabase.from("movements").insert({
-      type: "saida",
-      item_type: "componente",
-      item_id: componente.id,
-      quantity: necessario,
-      notes: `Baixa automática de componente: ${origem} - ${equipmentName}`,
-      created_by: profileId,
-    });
+      if (erroAtualizacao) throw new Error(erroAtualizacao.message);
+
+      await supabase.from("movements").insert({
+        type: "saida",
+        item_type: "componente",
+        item_id: componente.id,
+        quantity: baixa,
+        notes: `Baixa automática de componente: ${origem} - ${equipmentName}`,
+        created_by: profileId,
+      });
+    }
   }
 }
 
@@ -1645,7 +1706,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
 }
 
 function Componentes({ search }: SearchProps) {
-  const empty = { name: "", category: "", equipment: EQUIPAMENTOS[0], supplier_id: "", quantity: "", min_stock: "" };
+  const empty = { name: "", category: "", supplier_id: "", quantity: "", min_stock: "" };
   const [form, setForm] = useState(empty);
   const [items, setItems] = useState<AnyRow[]>([]);
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
@@ -1653,11 +1714,12 @@ function Componentes({ search }: SearchProps) {
   const [msg, setMsg] = useState("");
   const [equipmentView, setEquipmentView] = useState(EQUIPAMENTOS[0]);
   const [loadingPadrao, setLoadingPadrao] = useState(false);
+  const [loadingUnificar, setLoadingUnificar] = useState(false);
 
   useEffect(() => { carregar(); }, []);
 
   async function carregar() {
-    const { data } = await supabase.from("components").select("*").order("equipment").order("name");
+    const { data } = await supabase.from("components").select("*").order("name");
     setItems(data || []);
     const { data: sup } = await supabase.from("suppliers").select("*").order("name");
     setSuppliers(sup || []);
@@ -1670,7 +1732,6 @@ function Componentes({ search }: SearchProps) {
     setForm({
       name: i.name || "",
       category: i.category || "",
-      equipment: i.equipment || EQUIPAMENTOS[0],
       supplier_id: i.supplier_id || "",
       quantity: String(i.quantity || ""),
       min_stock: String(i.min_stock || ""),
@@ -1678,7 +1739,7 @@ function Componentes({ search }: SearchProps) {
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir este componente?")) return;
+    if (!confirm("Excluir este componente do estoque geral?")) return;
     const { error } = await supabase.from("components").delete().eq("id", id);
     if (error) return setMsg(error.message);
     setItems((a) => a.filter((x) => x.id !== id));
@@ -1689,7 +1750,7 @@ function Componentes({ search }: SearchProps) {
     const payload = {
       name: form.name,
       category: form.category,
-      equipment: form.equipment,
+      equipment: "Estoque geral",
       supplier_id: form.supplier_id || null,
       quantity: Number(form.quantity || 0),
       min_stock: Number(form.min_stock || 0),
@@ -1702,7 +1763,7 @@ function Componentes({ search }: SearchProps) {
 
     if (res.error) return setMsg(res.error.message);
 
-    setMsg(editing ? "Componente atualizado com sucesso." : "Componente salvo com sucesso.");
+    setMsg(editing ? "Componente atualizado com sucesso." : "Componente salvo no estoque geral.");
     setForm(empty);
     setEditing(null);
     carregar();
@@ -1713,7 +1774,7 @@ function Componentes({ search }: SearchProps) {
     setLoadingPadrao(true);
     try {
       const resultado = await cadastrarComponentesPadrao(equipamento);
-      setMsg(`Lista padrão atualizada. Criados: ${resultado.criados}. Atualizados: ${resultado.atualizados}.`);
+      setMsg(`Estoque geral atualizado. Criados: ${resultado.criados}. Atualizados: ${resultado.atualizados}.`);
       carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao cadastrar componentes padrão.");
@@ -1722,16 +1783,38 @@ function Componentes({ search }: SearchProps) {
     }
   }
 
+  async function unificarDuplicados() {
+    if (!confirm("Unificar componentes duplicados? O sistema vai manter uma linha por componente e somar as quantidades.")) return;
+    setMsg("");
+    setLoadingUnificar(true);
+    try {
+      const total = await unificarComponentesDuplicados();
+      setMsg(total ? `Componentes duplicados unificados: ${total}.` : "Não encontrei componentes duplicados para unificar.");
+      carregar();
+    } catch (error: any) {
+      setMsg(error.message || "Erro ao unificar componentes duplicados.");
+    } finally {
+      setLoadingUnificar(false);
+    }
+  }
+
   const composicaoSelecionada = composicaoDoEquipamento(equipmentView);
   const filtered = items.filter((i) => textMatch(i, search));
-  const filteredByEquipment = filtered.filter((i) => String(i.equipment || "") === equipmentView);
+  const estoquePorNome = new Map<string, number>();
+  items.forEach((item) => {
+    const chave = normalizarComponente(item.name);
+    estoquePorNome.set(chave, Number((estoquePorNome.get(chave) || 0) + Number(item.quantity || 0)));
+  });
 
   return (
     <>
-      <Title title="Componentes" desc="Controle de componentes por equipamento e baixa automática na saída do pedido." />
+      <Title title="Componentes" desc="Estoque geral de componentes e receita de montagem por equipamento." />
 
       <section className="card">
-        <h2 className="card-title">Lista padrão por equipamento</h2>
+        <h2 className="card-title">Composição por equipamento</h2>
+        <p className="muted" style={{ marginTop: -6 }}>
+          Esta lista mostra a receita de montagem. O componente fica cadastrado uma única vez no estoque geral; aqui muda apenas a quantidade usada por equipamento.
+        </p>
         <div className="form-grid">
           <SelectField label="Equipamento" value={equipmentView} onChange={setEquipmentView}>
             {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -1740,22 +1823,25 @@ function Componentes({ search }: SearchProps) {
 
         <div className="form-actions">
           <button className="btn btn-blue" onClick={() => cadastrarPadrao(equipmentView)} disabled={loadingPadrao}>
-            {loadingPadrao ? "Cadastrando..." : "Cadastrar lista deste equipamento"}
+            {loadingPadrao ? "Cadastrando..." : "Cadastrar componentes desta composição"}
           </button>
           <button className="btn btn-gray" onClick={() => cadastrarPadrao()} disabled={loadingPadrao}>
-            Cadastrar listas de todos
+            Cadastrar componentes de todas as composições
+          </button>
+          <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
+            {loadingUnificar ? "Unificando..." : "Unificar duplicados"}
           </button>
         </div>
 
         <div className="product-list-grid" style={{ marginTop: 18 }}>
           {composicaoSelecionada.map((item) => {
-            const cadastrado = items.find((i) => normalizarComponente(i.name) === normalizarComponente(item.name) && i.equipment === equipmentView);
+            const estoqueAtual = estoquePorNome.get(normalizarComponente(item.name)) || 0;
             return (
               <div key={`${equipmentView}-${item.name}`} className="stat-card user-card">
                 <strong>{item.name}</strong>
                 <small>Categoria: {item.category}</small>
-                <small>Consumo por equipamento: {quantidadeFormatada(item.quantity)}</small>
-                <small>Estoque atual: {quantidadeFormatada(Number(cadastrado?.quantity || 0))}</small>
+                <small>Quantidade usada neste equipamento: {quantidadeFormatada(item.quantity)}</small>
+                <small>Estoque geral disponível: {quantidadeFormatada(estoqueAtual)}</small>
               </div>
             );
           })}
@@ -1763,13 +1849,10 @@ function Componentes({ search }: SearchProps) {
       </section>
 
       <section className="card" style={{ marginTop: 24 }}>
-        <h2 className="card-title">{editing ? "Editar componente" : "Novo componente"}</h2>
+        <h2 className="card-title">{editing ? "Editar componente do estoque geral" : "Novo componente no estoque geral"}</h2>
         <div className="form-grid">
           <Field label="Nome" value={form.name} onChange={(v) => set("name", v)} />
           <Field label="Categoria" value={form.category} onChange={(v) => set("category", v)} />
-          <SelectField label="Equipamento" value={form.equipment} onChange={(v) => set("equipment", v)}>
-            {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
-          </SelectField>
           <SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}>
             <option value="">Selecione</option>
             {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -1785,16 +1868,19 @@ function Componentes({ search }: SearchProps) {
       </section>
 
       <section className="card" style={{ marginTop: 24 }}>
-        <h2 className="card-title">Componentes cadastrados de {equipmentView}</h2>
+        <h2 className="card-title">Estoque geral de componentes</h2>
+        <p className="muted" style={{ marginTop: -6 }}>
+          Aqui aparece o estoque real. A baixa automática procura estes componentes pelo nome e desconta conforme a composição do equipamento vendido.
+        </p>
         <div className="product-list-grid">
-          {filteredByEquipment.map((i) => (
+          {filtered.map((i) => (
             <div key={i.id} className="stat-card user-card">
               <strong>{i.name}</strong>
-              <small>{i.equipment}</small>
               <small>Categoria: {i.category || "-"}</small>
               <small>Fornecedor: {suppliers.find((s) => s.id === i.supplier_id)?.name || "-"}</small>
               <small>Qtd: {quantidadeFormatada(Number(i.quantity || 0))}</small>
               <small>Mínimo: {quantidadeFormatada(Number(i.min_stock || 0))}</small>
+              {i.equipment && i.equipment !== "Estoque geral" && <small>Origem antiga: {i.equipment}</small>}
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
                 <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
