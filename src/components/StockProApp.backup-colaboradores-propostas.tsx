@@ -1,10 +1,5 @@
 "use client";
 
-function getSaleCode(order: any) {
-  return order?.sale_code || order?.codigo_venda || "Gerando código...";
-}
-
-
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-browser";
@@ -40,9 +35,6 @@ function onlyNumbers(value: string) {
 function money(value: number | string | null | undefined) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
-const PROPOSTA_STATUS = ["Lead Frio", "Lead Morno", "Venda", "Pós-Venda"];
-const COLABORADOR_ROLES: Role[] = ["gerente", "vendedor", "tecnico", "funcionario"];
-
 function maskCpfCnpj(value: string) {
   const n = onlyNumbers(value).slice(0, 14);
   if (n.length <= 11) {
@@ -397,8 +389,8 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Funcionários", "Gerentes", "Vendedores", "Técnicos", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Funcionários", "Vendedores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
   vendedor: ["Dashboard", "Produtos", "Clientes", "Representantes", "Pedidos", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "Montagens", "Componentes", "Meu Perfil"],
@@ -482,7 +474,7 @@ export default function StockProApp() {
         {menuOpen && <aside className="sidebar">
           <div className="brand"><img src="/logo-vogel.png" alt="Grupo Vogel" className="brand-logo" /><div className="brand-text"><strong>StockPro</strong><small>Grupo Vogel Brasil</small></div></div>
           <nav className="menu-list">{menus.map((item) => <button key={item} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => setPage(item)}>{item}</button>)}</nav>
-          <div className="sidebar-footer"><strong>{profile.name || "Colaborador"}</strong><small>{formatRole(profile.role)}</small>{profile.access_code && <small>Código: {profile.access_code}</small>}<button className="btn btn-gray" onClick={logout}>Sair</button></div>
+          <div className="sidebar-footer"><strong>{profile.name || "Usuário"}</strong><small>{formatRole(profile.role)}</small>{profile.access_code && <small>Código: {profile.access_code}</small>}<button className="btn btn-gray" onClick={logout}>Sair</button></div>
         </aside>}
         <main className="main-content">
           {page === "Dashboard" && <Dashboard profile={profile} />}
@@ -491,8 +483,11 @@ export default function StockProApp() {
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
-          {page === "Colaboradores" && <Colaboradors roles={COLABORADOR_ROLES} title="Colaboradores" currentUser={profile} search={search} />}
-          {page === "Representantes" && <Colaboradors role="representante" title="Representantes" currentUser={profile} search={search} />}
+          {page === "Funcionários" && <Usuarios role="funcionario" title="Funcionários" currentUser={profile} search={search} />}
+          {page === "Gerentes" && <Usuarios role="gerente" title="Gerentes" currentUser={profile} search={search} />}
+          {page === "Vendedores" && <Usuarios role="vendedor" title="Vendedores" currentUser={profile} search={search} />}
+          {page === "Técnicos" && <Usuarios role="tecnico" title="Técnicos" currentUser={profile} search={search} />}
+          {page === "Representantes" && <Usuarios role="representante" title="Representantes" currentUser={profile} search={search} />}
           {page === "Análise de Cadastros" && <AnaliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
           {page === "Componentes" && <Componentes search={search} />}
@@ -554,93 +549,29 @@ function Produtos({ search }: SearchProps) {
 }
 
 function Pessoas({ title, table, kind, search, profile }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile } & SearchProps) {
-  const empty = { name: "", document: "", phone: "", email: "", cep: "", city: "", street: "", number: "", no_number: false, neighborhood: "", proposal_status: "Lead Frio", products: [] as string[], invoice_number: "", federal_invoice_number: "" };
+  const empty = { name: "", document: "", phone: "", email: "", cep: "", city: "", street: "", number: "", no_number: false, neighborhood: "", products: [] as string[], invoice_number: "", federal_invoice_number: "" };
   const [form, setForm] = useState(empty); const [items, setItems] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); const [loading, setLoading] = useState(false);
   useEffect(() => { carregar(); }, []);
   function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); }
   async function carregar() { const { data } = await supabase.from(table).select("*").order("created_at", { ascending: false }); setItems(data || []); }
   async function buscarCepPorValor(v: string) { const end = await buscarCep(v); if (!end) return setMsg("CEP não encontrado."); setForm((a) => ({ ...a, ...end })); }
-  function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", document: maskCpfCnpj(item.document || ""), phone: maskPhone(item.phone || ""), email: item.email || "", cep: maskCep(item.cep || ""), city: item.city || "", street: item.street || "", number: item.number || "", no_number: Boolean(item.no_number), neighborhood: item.neighborhood || "", products: item.products || [], invoice_number: item.invoice_number || "", federal_invoice_number: item.federal_invoice_number || "", proposal_status: item.proposal_status || "Lead Frio" }); }
+  function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", document: maskCpfCnpj(item.document || ""), phone: maskPhone(item.phone || ""), email: item.email || "", cep: maskCep(item.cep || ""), city: item.city || "", street: item.street || "", number: item.number || "", no_number: Boolean(item.no_number), neighborhood: item.neighborhood || "", products: item.products || [], invoice_number: item.invoice_number || "", federal_invoice_number: item.federal_invoice_number || "" }); }
   async function excluir(id: string) { if (!confirm(`Excluir este ${kind}?`)) return; const { error } = await supabase.from(table).delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg(`${kind === "cliente" ? "Cliente" : "Fornecedor"} excluído com sucesso.`); }
-  async function salvar() { setLoading(true); setMsg(""); if (!form.name || !form.document || !form.phone || !form.cep || !form.city || !form.street || !form.neighborhood) { setLoading(false); return setMsg("Preencha todos os campos obrigatórios."); } if (!form.no_number && !form.number) { setLoading(false); return setMsg("Informe o número ou marque Sem número."); } const payload: AnyRow = { name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, proposal_status: form.proposal_status || "Lead Frio" }; if (table === "suppliers") { payload.email = form.email; payload.products = form.products; payload.invoice_number = form.invoice_number; payload.federal_invoice_number = form.federal_invoice_number; } const res = editing ? await supabase.from(table).update(payload).eq("id", editing) : await supabase.from(table).insert(payload); setLoading(false); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Cadastro atualizado com sucesso." : "Cadastro salvo com sucesso."); setEditing(null); setForm(empty); carregar(); }
+  async function salvar() { setLoading(true); setMsg(""); if (!form.name || !form.document || !form.phone || !form.cep || !form.city || !form.street || !form.neighborhood) { setLoading(false); return setMsg("Preencha todos os campos obrigatórios."); } if (!form.no_number && !form.number) { setLoading(false); return setMsg("Informe o número ou marque Sem número."); } const payload: AnyRow = { name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood }; if (table === "suppliers") { payload.email = form.email; payload.products = form.products; payload.invoice_number = form.invoice_number; payload.federal_invoice_number = form.federal_invoice_number; } const res = editing ? await supabase.from(table).update(payload).eq("id", editing) : await supabase.from(table).insert(payload); setLoading(false); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Cadastro atualizado com sucesso." : "Cadastro salvo com sucesso."); setEditing(null); setForm(empty); carregar(); }
   function toggleProduct(p: string) { set("products", form.products.includes(p) ? form.products.filter((x) => x !== p) : [...form.products, p]); }
   const filtered = items.filter((i) => textMatch(i, search));
-  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ, produtos padrão fornecidos e número/NF da Receita Federal."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /><Field label="Número/NF fornecedor" value={form.invoice_number} onChange={(v) => set("invoice_number", v)} /><Field label="NF Receita Federal" value={form.federal_invoice_number} onChange={(v) => set("federal_invoice_number", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small><small>Proposta: {item.proposal_status || "Lead Frio"}</small>{item.invoice_number && <small>Número/NF: {item.invoice_number}</small>}{item.federal_invoice_number && <small>NF Receita Federal: {item.federal_invoice_number}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
+  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ, produtos padrão fornecidos e número/NF da Receita Federal."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /><Field label="Número/NF fornecedor" value={form.invoice_number} onChange={(v) => set("invoice_number", v)} /><Field label="NF Receita Federal" value={form.federal_invoice_number} onChange={(v) => set("federal_invoice_number", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} />{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small>{item.invoice_number && <small>Número/NF: {item.invoice_number}</small>}{item.federal_invoice_number && <small>NF Receita Federal: {item.federal_invoice_number}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
 }
 
-function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
-  const [items, setItems] = useState<Profile[]>([]);
-  const [msg, setMsg] = useState("");
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const roleList = roles || (role ? [role] : []);
-  const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
-
-  useEffect(() => { carregar(); }, [role, JSON.stringify(roles)]);
-
-  async function carregar() {
-    let q = supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    if (roleList.length === 1) q = q.eq("role", roleList[0]);
-    if (roleList.length > 1) q = q.in("role", roleList);
-    if (isRepresentante && currentUser?.role === "vendedor") q = q.eq("responsible_seller_id", currentUser.id);
-    const { data, error } = await q;
-    if (error) return setMsg(error.message);
-    setItems((data || []) as Profile[]);
-  }
-
-  async function avaliar(id: string, status: "approved" | "rejected") {
-    if (!confirm(status === "approved" ? "Aprovar cadastro?" : "Reprovar cadastro?")) return;
-    setLoadingId(id);
-    const { error } = await supabase.from("profiles").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-    setLoadingId(null);
-    if (error) return setMsg(error.message);
-    setMsg(status === "approved" ? "Cadastro aprovado com sucesso." : "Cadastro reprovado.");
-    carregar();
-  }
-
-  async function excluir(id: string) {
-    if (!confirm("Excluir este cadastro?")) return;
-    const r = await fetch("/api/admin/excluir-usuario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    const d = await r.json();
-    if (!r.ok) return setMsg(d.error || "Erro ao excluir cadastro.");
-    setItems((a) => a.filter((x) => x.id !== id));
-    setMsg("Cadastro excluído com sucesso.");
-  }
-
-  const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
+function Usuarios({ role, title, currentUser, search }: { role: Role; title: string; currentUser?: Profile } & SearchProps) {
+  const [items, setItems] = useState<Profile[]>([]); const [msg, setMsg] = useState(""); const [loadingId, setLoadingId] = useState<string | null>(null);
+  useEffect(() => { carregar(); }, [role]);
+  async function carregar() { let q = supabase.from("profiles").select("*").eq("role", role).order("created_at", { ascending: false }); if (role === "representante" && currentUser?.role === "vendedor") q = q.eq("responsible_seller_id", currentUser.id); const { data, error } = await q; if (error) return setMsg(error.message); setItems((data || []) as Profile[]); }
+  async function avaliar(id: string, status: "approved" | "rejected") { if (!confirm(status === "approved" ? "Aprovar cadastro?" : "Reprovar cadastro?")) return; setLoadingId(id); const { error } = await supabase.from("profiles").update({ status, updated_at: new Date().toISOString() }).eq("id", id); setLoadingId(null); if (error) return setMsg(error.message); setMsg(status === "approved" ? "Cadastro aprovado com sucesso." : "Cadastro reprovado."); carregar(); }
+  async function excluir(id: string) { if (!confirm("Excluir este usuário?")) return; const r = await fetch("/api/admin/excluir-usuario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }); const d = await r.json(); if (!r.ok) return setMsg(d.error || "Erro ao excluir usuário."); setItems((a) => a.filter((x) => x.id !== id)); setMsg("Usuário excluído com sucesso."); }
+  const podeAvaliar = role === "representante" && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
   const filtered = items.filter((i) => textMatch(i, search));
-  const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
-  const cadastroUrl = isRepresentante ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
-
-  return <>
-    <Title title={title} desc={desc} />
-    <section className="card">
-      <h2 className="card-title">Cadastrar novo acesso</h2>
-      <p style={{ color: "#94a3b8", marginBottom: 20 }}>
-        {isRepresentante ? "Use a página de cadastro para criar representante." : "Use a página de cadastro para criar colaborador: gerente, vendedor, técnico/montador ou funcionário."}
-      </p>
-      <button className="btn btn-blue" onClick={() => (window.location.href = cadastroUrl)}>Abrir cadastro</button>
-      {msg && <Message text={msg} />}
-    </section>
-    <section className="card" style={{ marginTop: 24 }}>
-      <h2 className="card-title">{isRepresentante ? "Representantes cadastrados" : "Colaboradores cadastrados"}</h2>
-      {filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro encontrado.</p> : <div className="product-list-grid">
-        {filtered.map((item) => <div key={item.id} className="stat-card user-card">
-          <strong>{item.name}</strong>
-          <small>{item.email}</small>
-          <small>Tipo: {formatRole(item.role)}</small>
-          <small>Status: <b style={{ color: item.status === "approved" ? "#4ade80" : item.status === "pending" ? "#facc15" : "#f87171" }}>{item.status}</b></small>
-          {item.access_code && <small>Código: {item.access_code}</small>}
-          {item.seller_code && <small>Código vendedor: {item.seller_code}</small>}
-          {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
-          <div className="form-actions">
-            {podeAvaliar && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
-            {podeAvaliar && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
-            {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}
-          </div>
-        </div>)}
-      </div>}
-    </section>
-  </>;
+  return <><Title title={title} desc={`Lista de usuários com perfil ${formatRole(role)}.`} /><section className="card"><h2 className="card-title">Cadastrar novo acesso</h2><p style={{ color: "#94a3b8", marginBottom: 20 }}>Use a página de cadastro para criar funcionário, vendedor, gerente, técnico ou representante.</p><button className="btn btn-blue" onClick={() => (window.location.href = `/cadastrar-usuario?tipo=${role}`)}>Abrir cadastro de usuário</button>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Usuários cadastrados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum usuário cadastrado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.email}</small><small>Status: <b style={{ color: item.status === "approved" ? "#4ade80" : item.status === "pending" ? "#facc15" : "#f87171" }}>{item.status}</b></small>{item.access_code && <small>Código: {item.access_code}</small>}{item.seller_code && <small>Código vendedor: {item.seller_code}</small>}{item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}<div className="form-actions">{podeAvaliar && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}{podeAvaliar && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}{currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
 }
 
 function AnaliseCadastros({ currentUser, search }: { currentUser: Profile } & SearchProps) {
@@ -792,7 +723,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
         <h2 className="card-title" style={{ marginTop: 26 }}>{editing ? "Editar pedido" : "Novo pedido"}</h2>
         <div className="form-grid">
           <SelectField label="Cliente" value={form.client_id} onChange={(v) => set("client_id", v)}><option value="">Selecione</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField>
-          <SelectField label="Tipo de item" value={form.item_type} onChange={(v) => { set("item_type", v); setSelectedEquipments([]); }}><option value="produto">Produto</option><option value="equipamento">Equipamento</option></SelectField>
+          <SelectField label="Tipo" value={form.item_type} onChange={(v) => { set("item_type", v); setSelectedEquipments([]); }}><option value="produto">Produto</option><option value="equipamento">Equipamento</option></SelectField>
           {form.item_type === "produto" ? <SelectField label="Produto" value={form.item_id} onChange={(v) => set("item_id", v)}><option value="">Selecione</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</SelectField> : <div className="field full-field"><label>Equipamentos selecionáveis</label><div className="mini-grid">{EQUIPAMENTOS.map((e) => <label key={e} className="check-row"><input type="checkbox" checked={selectedEquipments.includes(e)} onChange={() => toggleEquipment(e)} />{e}</label>)}</div></div>}
           <Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
           <Field label="Valor total (R$)" type="number" value={form.total_value} onChange={(v) => set("total_value", v)} />
@@ -815,8 +746,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           const cliente = clients.find((c) => c.id === o.client_id);
           const produto = products.find((p) => p.id === o.item_id);
           return <div key={o.id} className="stat-card user-card order-list-card">
-            <strong>{getSaleCode(o)} - Pedido #{o.order_number || o.id.slice(0, 6)}</strong>
-            <small>Código da venda: {getSaleCode(o)}</small>
+            <strong>Pedido #{o.order_number || o.id.slice(0, 6)}</strong>
             <small>Cliente: {cliente?.name || "-"}</small>
             <small>Item: {o.equipment_name || produto?.name || o.item_type}</small>
             <small>Qtd: {o.quantity}</small>
@@ -1725,7 +1655,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
 
         <div className="form-grid">
           <SelectField
-            label="Tipo de colaborador"
+            label="Tipo"
             value={manual.type}
             onChange={(v) => setManualField("type", v)}
           >
@@ -2267,4 +2197,4 @@ function Relatorios({ profile }: { profile: Profile }) {
   </>;
 }
 
-function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => void }) { const [form, setForm] = useState({ name: profile.name || "", document: maskCpfCnpj(profile.document || ""), phone: maskPhone(profile.phone || ""), cep: maskCep(profile.cep || ""), city: profile.city || "", street: profile.street || "", number: profile.number || "", no_number: Boolean(profile.no_number), neighborhood: profile.neighborhood || "", proposal_status: "Lead Frio" }); const [msg, setMsg] = useState(""); function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); } async function buscarCepPerfil(v: string) { const end = await buscarCep(v); if (end) setForm((a) => ({ ...a, ...end })); } async function salvar() { const { error } = await supabase.from("profiles").update({ name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, updated_at: new Date().toISOString() }).eq("id", profile.id); if (error) return setMsg(error.message); setMsg("Perfil atualizado com sucesso."); onUpdated(); } return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>; }
+function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => void }) { const [form, setForm] = useState({ name: profile.name || "", document: maskCpfCnpj(profile.document || ""), phone: maskPhone(profile.phone || ""), cep: maskCep(profile.cep || ""), city: profile.city || "", street: profile.street || "", number: profile.number || "", no_number: Boolean(profile.no_number), neighborhood: profile.neighborhood || "" }); const [msg, setMsg] = useState(""); function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); } async function buscarCepPerfil(v: string) { const end = await buscarCep(v); if (end) setForm((a) => ({ ...a, ...end })); } async function salvar() { const { error } = await supabase.from("profiles").update({ name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, updated_at: new Date().toISOString() }).eq("id", profile.id); if (error) return setMsg(error.message); setMsg("Perfil atualizado com sucesso."); onUpdated(); } return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>; }
