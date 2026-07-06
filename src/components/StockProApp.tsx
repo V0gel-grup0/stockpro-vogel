@@ -1,3 +1,8 @@
+
+function getSaleCode(order: any) {
+  return order?.sale_code || order?.codigo_venda || "Gerando código...";
+}
+
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -36,7 +41,11 @@ function money(value: number | string | null | undefined) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 function maskCpfCnpj(value: string) {
-  const n = onlyNumbers(value).slice(0, 14);
+  const PROPOSTA_STATUS = ["Lead Frio", "Lead Morno", "Venda", "Pós-Venda"];
+
+const COLABORADOR_TIPOS = ["Gerente", "Vendedor", "Técnico/Montador", "Funcionário"];
+
+const n = onlyNumbers(value).slice(0, 14);
   if (n.length <= 11) {
     return n
       .replace(/^(\d{3})(\d)/, "$1.$2")
