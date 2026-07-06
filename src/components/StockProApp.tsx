@@ -1,9 +1,9 @@
+"use client";
 
 function getSaleCode(order: any) {
   return order?.sale_code || order?.codigo_venda || "Gerando código...";
 }
 
-"use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
