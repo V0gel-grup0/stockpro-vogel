@@ -137,6 +137,7 @@ function baseCelt5000(voltagem: "220V" | "380V", turbinas: 1 | 2 | 3, plus = fal
     itemComposicao("Suporte trilho Din", 2, "Elétrica"),
     itemComposicao("Canaleta 30cm", 1, "Acabamento"),
     itemComposicao("Adesivo painel", 1, "Acabamento"),
+    itemComposicao("Adesivo testado", 1, "Acabamento"),
     itemComposicao(`Adesivo tensão ${voltagem}`, 1, "Acabamento"),
     itemComposicao("Manual", 1, "Documentação"),
     itemComposicao("Fio 2,5", Number((2.15 * turbinas).toFixed(2)), "Fiação"),
