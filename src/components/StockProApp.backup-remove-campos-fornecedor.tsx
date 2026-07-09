@@ -368,109 +368,6 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
   }
 }
 
-async function aumentarEquipamentoMontado(equipmentName: string, quantidade: number) {
-  const qtd = Number(quantidade || 0);
-  if (!equipmentName || qtd <= 0) return;
-
-  const { data: existente, error: erroBusca } = await supabase
-    .from("mounted_equipments")
-    .select("*")
-    .eq("equipment_name", equipmentName)
-    .maybeSingle();
-
-  if (erroBusca) throw new Error(erroBusca.message);
-
-  if (existente) {
-    const novaQuantidade = Number((Number(existente.quantity || 0) + qtd).toFixed(4));
-    const { error } = await supabase
-      .from("mounted_equipments")
-      .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
-      .eq("id", existente.id);
-    if (error) throw new Error(error.message);
-    return;
-  }
-
-  const { error } = await supabase.from("mounted_equipments").insert({
-    equipment_name: equipmentName,
-    quantity: qtd,
-    min_stock: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) throw new Error(error.message);
-}
-
-async function baixarEquipamentoMontado(equipmentName: string, quantidade: number, profileId: string, origem: string) {
-  const qtd = Number(quantidade || 0);
-  if (!equipmentName || qtd <= 0) return;
-
-  const { data: existente, error: erroBusca } = await supabase
-    .from("mounted_equipments")
-    .select("*")
-    .eq("equipment_name", equipmentName)
-    .maybeSingle();
-
-  if (erroBusca) throw new Error(erroBusca.message);
-
-  const disponivel = Number(existente?.quantity || 0);
-
-  if (!existente || disponivel < qtd) {
-    throw new Error(`Estoque insuficiente de equipamento montado: ${equipmentName}. Disponível: ${quantidadeFormatada(disponivel)}. Necessário: ${quantidadeFormatada(qtd)}.`);
-  }
-
-  const novaQuantidade = Number((disponivel - qtd).toFixed(4));
-  const { error: erroUpdate } = await supabase
-    .from("mounted_equipments")
-    .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
-    .eq("id", existente.id);
-
-  if (erroUpdate) throw new Error(erroUpdate.message);
-
-  await supabase.from("movements").insert({
-    type: "saida",
-    item_type: "equipamento",
-    item_name: equipmentName,
-    quantity: qtd,
-    notes: `Baixa automática de equipamento montado: ${origem}`,
-    created_by: profileId,
-  });
-}
-
-async function cadastrarEquipamentosMontadosPadrao() {
-  let criados = 0;
-  let atualizados = 0;
-
-  for (const equipamento of EQUIPAMENTOS) {
-    const { data: existente, error: erroBusca } = await supabase
-      .from("mounted_equipments")
-      .select("*")
-      .eq("equipment_name", equipamento)
-      .maybeSingle();
-
-    if (erroBusca) throw new Error(erroBusca.message);
-
-    if (existente) {
-      atualizados += 1;
-      continue;
-    }
-
-    const { error } = await supabase.from("mounted_equipments").insert({
-      equipment_name: equipamento,
-      quantity: 0,
-      min_stock: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-
-    if (error) throw new Error(error.message);
-    criados += 1;
-  }
-
-  return { criados, atualizados };
-}
-
-
 const CATEGORIAS_REVENDA = [
   {
     category: "Lâmpadas dimerizáveis",
@@ -501,11 +398,11 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
   vendedor: ["Dashboard", "Produtos", "Clientes", "Representantes", "Pedidos", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Pedidos", "Meu Perfil"],
-  tecnico: ["Dashboard", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
+  tecnico: ["Dashboard", "Montagens", "Componentes", "Meu Perfil"],
   representante: ["Dashboard", "Clientes", "Pedidos", "Meu Perfil"],
 };
 
@@ -595,7 +492,6 @@ export default function StockProApp() {
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
-          {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
           {page === "Colaboradores" && <Colaboradors roles={COLABORADOR_ROLES} title="Colaboradores" currentUser={profile} search={search} />}
           {page === "Representantes" && <Colaboradors role="representante" title="Representantes" currentUser={profile} search={search} />}
           {page === "Análise de Cadastros" && <AnaliseCadastros currentUser={profile} search={search} />}
@@ -670,7 +566,7 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
   async function salvar() { setLoading(true); setMsg(""); if (!form.name || !form.document || !form.phone || !form.cep || !form.city || !form.street || !form.neighborhood) { setLoading(false); return setMsg("Preencha todos os campos obrigatórios."); } if (!form.no_number && !form.number) { setLoading(false); return setMsg("Informe o número ou marque Sem número."); } const payload: AnyRow = { name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, proposal_status: form.proposal_status || "Lead Frio" }; if (table === "suppliers") { payload.email = form.email; payload.products = form.products; payload.invoice_number = form.invoice_number; payload.federal_invoice_number = form.federal_invoice_number; } const res = editing ? await supabase.from(table).update(payload).eq("id", editing) : await supabase.from(table).insert(payload); setLoading(false); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Cadastro atualizado com sucesso." : "Cadastro salvo com sucesso."); setEditing(null); setForm(empty); carregar(); }
   function toggleProduct(p: string) { set("products", form.products.includes(p) ? form.products.filter((x) => x !== p) : [...form.products, p]); }
   const filtered = items.filter((i) => textMatch(i, search));
-  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small><small>Proposta: {item.proposal_status || "Lead Frio"}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
+  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ, produtos padrão fornecidos e número/NF da Receita Federal."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /><Field label="Número/NF fornecedor" value={form.invoice_number} onChange={(v) => set("invoice_number", v)} /><Field label="NF Receita Federal" value={form.federal_invoice_number} onChange={(v) => set("federal_invoice_number", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small><small>Proposta: {item.proposal_status || "Lead Frio"}</small>{item.invoice_number && <small>Número/NF: {item.invoice_number}</small>}{item.federal_invoice_number && <small>NF Receita Federal: {item.federal_invoice_number}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
 }
 
 function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
@@ -1381,7 +1277,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       }
 
       if (tipoItem === "equipamento") {
-        await baixarEquipamentoMontado(
+        await baixarComponentesDaComposicao(
           pedido.equipment_name,
           quantidade,
           profile.id,
@@ -2191,17 +2087,7 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
 
     if (res.error) return setMsg(res.error.message);
 
-    if (!editing) {
-      await baixarComponentesDaComposicao(
-        form.equipment,
-        quantidade,
-        profile.id,
-        `montagem de ${form.equipment}`
-      );
-      await aumentarEquipamentoMontado(form.equipment, quantidade);
-    }
-
-    setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso. Componentes baixados e equipamento adicionado ao estoque de montados.");
+    setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso.");
     setForm(empty);
     setEditing(null);
     carregar();
@@ -2249,160 +2135,6 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
     </>
   );
 }
-
-
-function EquipamentosMontados({ search }: SearchProps) {
-  const empty = { equipment_name: EQUIPAMENTOS[0], quantity: "0", min_stock: "0", notes: "" };
-  const [form, setForm] = useState(empty);
-  const [items, setItems] = useState<AnyRow[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [msg, setMsg] = useState("");
-  const [loadingPadrao, setLoadingPadrao] = useState(false);
-
-  useEffect(() => { carregar(); }, []);
-
-  async function carregar() {
-    const { data, error } = await supabase
-      .from("mounted_equipments")
-      .select("*")
-      .order("equipment_name");
-
-    if (error) {
-      setMsg(error.message);
-      return;
-    }
-
-    setItems(data || []);
-  }
-
-  function set(campo: string, valor: string) {
-    setForm((atual) => ({ ...atual, [campo]: valor }));
-  }
-
-  function editar(item: AnyRow) {
-    setEditing(item.id);
-    setForm({
-      equipment_name: item.equipment_name || EQUIPAMENTOS[0],
-      quantity: String(item.quantity || 0),
-      min_stock: String(item.min_stock || 0),
-      notes: item.notes || "",
-    });
-  }
-
-  async function salvar() {
-    setMsg("");
-
-    const payload = {
-      equipment_name: form.equipment_name,
-      quantity: Number(form.quantity || 0),
-      min_stock: Number(form.min_stock || 0),
-      notes: form.notes || "",
-      updated_at: new Date().toISOString(),
-    };
-
-    const res = editing
-      ? await supabase.from("mounted_equipments").update(payload).eq("id", editing)
-      : await supabase.from("mounted_equipments").insert({ ...payload, created_at: new Date().toISOString() });
-
-    if (res.error) return setMsg(res.error.message);
-
-    setMsg(editing ? "Equipamento montado atualizado com sucesso." : "Equipamento montado cadastrado com sucesso.");
-    setForm(empty);
-    setEditing(null);
-    carregar();
-  }
-
-  async function excluir(id: string) {
-    if (!confirm("Excluir este controle de equipamento montado?")) return;
-    const { error } = await supabase.from("mounted_equipments").delete().eq("id", id);
-    if (error) return setMsg(error.message);
-    setItems((atuais) => atuais.filter((item) => item.id !== id));
-    setMsg("Equipamento montado excluído com sucesso.");
-  }
-
-  async function cadastrarPadrao() {
-    setMsg("");
-    setLoadingPadrao(true);
-    try {
-      const resultado = await cadastrarEquipamentosMontadosPadrao();
-      setMsg(`Lista padrão criada. Criados: ${resultado.criados}. Já existentes: ${resultado.atualizados}.`);
-      carregar();
-    } catch (error: any) {
-      setMsg(error.message || "Erro ao cadastrar equipamentos montados padrão.");
-    } finally {
-      setLoadingPadrao(false);
-    }
-  }
-
-  const filtered = items.filter((item) => textMatch(item, search));
-  const totalMontados = items.reduce((total, item) => total + Number(item.quantity || 0), 0);
-  const baixoEstoque = items.filter((item) => Number(item.quantity || 0) <= Number(item.min_stock || 0));
-
-  return (
-    <>
-      <Title title="Equipamentos Montados" desc="Controle de equipamentos prontos para venda ou entrega." />
-
-      <section className="card">
-        <h2 className="card-title">Resumo dos equipamentos prontos</h2>
-        <div className="reports-grid">
-          <StatCard label="Modelos controlados" value={String(items.length)} />
-          <StatCard label="Quantidade pronta" value={quantidadeFormatada(totalMontados)} color="#4ade80" />
-          <StatCard label="Abaixo do mínimo" value={String(baixoEstoque.length)} color="#f87171" />
-        </div>
-        <div className="form-actions" style={{ marginTop: 18 }}>
-          <button className="btn btn-blue" onClick={cadastrarPadrao} disabled={loadingPadrao}>
-            {loadingPadrao ? "Cadastrando..." : "Cadastrar modelos padrão"}
-          </button>
-        </div>
-        <p className="muted" style={{ marginTop: 12 }}>
-          Quando uma montagem é registrada, o sistema baixa os componentes e soma o equipamento aqui. Na saída por pedido, o sistema baixa deste estoque de equipamentos montados.
-        </p>
-        {msg && <Message text={msg} />}
-      </section>
-
-      <section className="card" style={{ marginTop: 24 }}>
-        <h2 className="card-title">{editing ? "Editar equipamento montado" : "Ajustar estoque de equipamento montado"}</h2>
-        <div className="form-grid">
-          <SelectField label="Equipamento" value={form.equipment_name} onChange={(v) => set("equipment_name", v)}>
-            {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
-          </SelectField>
-          <Field label="Quantidade pronta" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
-          <Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} />
-          <TextArea label="Observações" value={form.notes} onChange={(v) => set("notes", v)} />
-        </div>
-        <div className="form-actions">
-          <button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar estoque"}</button>
-          <button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button>
-        </div>
-      </section>
-
-      <section className="card" style={{ marginTop: 24 }}>
-        <h2 className="card-title">Estoque de equipamentos montados</h2>
-        {filtered.length === 0 ? <p className="muted">Nenhum equipamento montado cadastrado.</p> : <div className="product-list-grid">
-          {filtered.map((item) => {
-            const qtd = Number(item.quantity || 0);
-            const minimo = Number(item.min_stock || 0);
-            const baixo = qtd <= minimo;
-            return (
-              <div key={item.id} className="stat-card user-card">
-                <strong>{item.equipment_name}</strong>
-                <small>Quantidade pronta: {quantidadeFormatada(qtd)}</small>
-                <small>Estoque mínimo: {quantidadeFormatada(minimo)}</small>
-                {baixo && <small style={{ color: "#f87171", fontWeight: 800 }}>Atenção: estoque baixo</small>}
-                {item.notes && <small>Obs: {item.notes}</small>}
-                <div className="form-actions">
-                  <button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>
-                  <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>}
-      </section>
-    </>
-  );
-}
-
 
 function ContaAzul() { return <><Title title="Conta Azul" desc="Configuração para criação automática de Nota Fiscal." /><section className="card"><h2 className="card-title">Integração Conta Azul</h2><p style={{ color: "#94a3b8" }}>Configure na Vercel as variáveis CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET e CONTA_AZUL_REFRESH_TOKEN. O botão de NF nos pedidos chama a API /api/conta-azul/emitir-nf.</p><div className="reports-grid" style={{ marginTop: 24 }}><StatCard label="Status" value="Preparado" /><StatCard label="NF automática" value="Botão nos pedidos" /><StatCard label="Ambiente" value="Produção/Vercel" /></div></section></>; }
 function Relatorios({ profile }: { profile: Profile }) {
