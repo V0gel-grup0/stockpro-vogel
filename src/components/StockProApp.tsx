@@ -714,7 +714,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
   const filtered = items.filter((i) => textMatch(i, search));
   const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
-  const cadastroUrl = isRepresentante ? "/cadastrar-usuário?tipo=representante" : "/cadastrar-usuário";
+  const cadastroUrl = role === "representante" ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
 
   return <>
     <Title title={title} desc={desc} />
