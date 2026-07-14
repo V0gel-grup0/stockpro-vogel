@@ -108,45 +108,45 @@ const EQUIPAMENTOS = [
   "CeltPlus - 380V",
 ];
 
-type ComposicaoItem = { name: string; category: string; quantity: number };
+type ComposiçãoItem = { name: string; category: string; quantity: number };
 
-function itemComposicao(name: string, quantity = 1, category = "Componente") {
+function itemComposição(name: string, quantity = 1, category = "Componente") {
   return { name, quantity, category };
 }
 
-function baseCelt5000(voltagem: "220V" | "380V", turbinas: 1 | 2 | 3, plus = false): ComposicaoItem[] {
+function baseCelt5000(voltagem: "220V" | "380V", turbinas: 1 | 2 | 3, plus = false): ComposiçãoItem[] {
   const sufixoInversor = voltagem === "380V" ? " - 380V" : "";
   const qtdInversor = voltagem === "220V" ? turbinas : 1;
   const rele = turbinas === 1 ? "Relê simples" : "Relê duplo";
   const quadro = turbinas === 3 ? "Quadro 60 X 60 X 20" : "Quadro 50 X 40 X 20";
 
   return [
-    itemComposicao(`Inversor 5CV${sufixoInversor}`, qtdInversor, "Inversor"),
-    itemComposicao(quadro, 1, "Quadro"),
-    itemComposicao("Contator 32a", 1, "Elétrica"),
-    itemComposicao("Chave seletora liga/desliga", 1, "Elétrica"),
-    itemComposicao("Veneziana com filtro 106 X 106 X 13,5 mm", 1, "Ventilação"),
-    itemComposicao("Veneziana com filtro 150 X 150 X 13,5 mm", 1, "Ventilação"),
-    itemComposicao("Ventilador 120 X 120 X 38", 1, "Ventilação"),
-    itemComposicao(rele, turbinas, "Elétrica"),
-    itemComposicao("Prensa cabo", 1, "Acabamento"),
-    itemComposicao("Borne 4mm", turbinas * 3, "Elétrica"),
-    itemComposicao("Tampa borne", turbinas, "Elétrica"),
-    itemComposicao("Poste borne", 2, "Elétrica"),
-    itemComposicao("Trilho Din 0,2 m", 1, "Elétrica"),
-    itemComposicao("Suporte trilho Din", 2, "Elétrica"),
-    itemComposicao("Canaleta 30cm", 1, "Acabamento"),
-    itemComposicao("Adesivo painel", 1, "Acabamento"),
-    itemComposicao("Adesivo testado", 1, "Acabamento"),
-    itemComposicao(`Adesivo tensão ${voltagem}`, 1, "Acabamento"),
-    itemComposicao("Manual", 1, "Documentação"),
-    itemComposicao("Fio 2,5", Number((2.15 * turbinas).toFixed(2)), "Fiação"),
-    itemComposicao("Fio 0,50", Number((2.8 * turbinas).toFixed(2)), "Fiação"),
-    itemComposicao("Caixa de papelão", 1, "Embalagem"),
+    itemComposição(`Inversor 5CV${sufixoInversor}`, qtdInversor, "Inversor"),
+    itemComposição(quadro, 1, "Quadro"),
+    itemComposição("Contator 32a", 1, "Elétrica"),
+    itemComposição("Chave seletora liga/desliga", 1, "Elétrica"),
+    itemComposição("Veneziana com filtro 106 X 106 X 13,5 mm", 1, "Ventilação"),
+    itemComposição("Veneziana com filtro 150 X 150 X 13,5 mm", 1, "Ventilação"),
+    itemComposição("Ventilador 120 X 120 X 38", 1, "Ventilação"),
+    itemComposição(rele, turbinas, "Elétrica"),
+    itemComposição("Prensa cabo", 1, "Acabamento"),
+    itemComposição("Borne 4mm", turbinas * 3, "Elétrica"),
+    itemComposição("Tampa borne", turbinas, "Elétrica"),
+    itemComposição("Poste borne", 2, "Elétrica"),
+    itemComposição("Trilho Din 0,2 m", 1, "Elétrica"),
+    itemComposição("Suporte trilho Din", 2, "Elétrica"),
+    itemComposição("Canaleta 30cm", 1, "Acabamento"),
+    itemComposição("Adesivo painel", 1, "Acabamento"),
+    itemComposição("Adesivo testado", 1, "Acabamento"),
+    itemComposição(`Adesivo tensão ${voltagem}`, 1, "Acabamento"),
+    itemComposição("Manual", 1, "Documentação"),
+    itemComposição("Fio 2,5", Number((2.15 * turbinas).toFixed(2)), "Fiação"),
+    itemComposição("Fio 0,50", Number((2.8 * turbinas).toFixed(2)), "Fiação"),
+    itemComposição("Caixa de papelão", 1, "Embalagem"),
   ];
 }
 
-const COMPOSICOES_EQUIPAMENTOS: Record<string, ComposicaoItem[]> = {
+const COMPOSICOES_EQUIPAMENTOS: Record<string, ComposiçãoItem[]> = {
   "Celt5000 - 220V 1 turbina": baseCelt5000("220V", 1),
   "Celt5000 - 220V 2 turbinas": baseCelt5000("220V", 2),
   "Celt5000 - 220V 3 turbinas": baseCelt5000("220V", 3),
@@ -160,16 +160,16 @@ const COMPOSICOES_EQUIPAMENTOS: Record<string, ComposicaoItem[]> = {
   "Celt5000 Plus - 380V 2 turbinas + Mínima": baseCelt5000("380V", 2, true),
   "Celt5000 Plus - 380V 3 turbinas + Mínima": baseCelt5000("380V", 3, true),
   "CeltPlus - 220V": [
-    itemComposicao("Inversor 2CV 220V", 1, "Inversor"),
-    itemComposicao("Botão liga/desliga", 1, "Elétrica"),
+    itemComposição("Inversor 2CV 220V", 1, "Inversor"),
+    itemComposição("Botão liga/desliga", 1, "Elétrica"),
   ],
   "CeltPlus - 380V": [
-    itemComposicao("Inversor 2CV 380V", 1, "Inversor"),
-    itemComposicao("Botão liga/desliga", 1, "Elétrica"),
+    itemComposição("Inversor 2CV 380V", 1, "Inversor"),
+    itemComposição("Botão liga/desliga", 1, "Elétrica"),
   ],
 };
 
-function composicaoDoEquipamento(equipment: string) {
+function composiçãoDoEquipamento(equipment: string) {
   return COMPOSICOES_EQUIPAMENTOS[equipment] || [];
 }
 
@@ -178,7 +178,7 @@ function equipamentosQueUsamComponente(nomeComponente: string) {
 
   return EQUIPAMENTOS
     .map((equipamento) => {
-      const total = composicaoDoEquipamento(equipamento)
+      const total = composiçãoDoEquipamento(equipamento)
         .filter((item) => normalizarComponente(item.name) === chaveComponente)
         .reduce((soma, item) => soma + Number(item.quantity || 0), 0);
 
@@ -202,12 +202,12 @@ function quantidadeFormatada(valor: number) {
 
 async function cadastrarComponentesPadrao(equipamentoSelecionado?: string) {
   const equipamentos = equipamentoSelecionado ? [equipamentoSelecionado] : EQUIPAMENTOS;
-  const componentesUnicos = new Map<string, ComposicaoItem>();
+  const componentesUnicos = new Map<string, ComposiçãoItem>();
   let criados = 0;
   let atualizados = 0;
 
   for (const equipamento of equipamentos) {
-    for (const item of composicaoDoEquipamento(equipamento)) {
+    for (const item of composiçãoDoEquipamento(equipamento)) {
       const chave = normalizarComponente(item.name);
       if (!componentesUnicos.has(chave)) componentesUnicos.set(chave, item);
     }
@@ -295,11 +295,11 @@ async function unificarComponentesDuplicados() {
   return unificados;
 }
 
-async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty: number, profileId: string, origem: string) {
-  const composicao = composicaoDoEquipamento(equipmentName);
+async function baixarComponentesDaComposição(equipmentName: string, equipmentQty: number, profileId: string, origem: string) {
+  const composição = composiçãoDoEquipamento(equipmentName);
   const qtdEquipamento = Number(equipmentQty || 0);
 
-  if (!composicao.length || qtdEquipamento <= 0) return;
+  if (!composição.length || qtdEquipamento <= 0) return;
 
   const { data: componentes, error } = await supabase.from("components").select("*").order("created_at", { ascending: true });
 
@@ -312,14 +312,14 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
     porNome.get(chave)!.push(item);
   });
 
-  const faltando = composicao.filter((item) => !(porNome.get(normalizarComponente(item.name)) || []).length);
+  const faltando = composição.filter((item) => !(porNome.get(normalizarComponente(item.name)) || []).length);
   if (faltando.length) {
     throw new Error(
       `Cadastre primeiro os componentes padrão do estoque geral. Faltando: ${faltando.map((item) => item.name).join(", ")}.`
     );
   }
 
-  const insuficientes = composicao
+  const insuficientes = composição
     .map((item) => {
       const linhas = porNome.get(normalizarComponente(item.name)) || [];
       const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
@@ -336,7 +336,7 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
     );
   }
 
-  for (const item of composicao) {
+  for (const item of composição) {
     const linhas = porNome.get(normalizarComponente(item.name)) || [];
     let restante = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
 
@@ -357,7 +357,7 @@ async function baixarComponentesDaComposicao(equipmentName: string, equipmentQty
       if (erroAtualizacao) throw new Error(erroAtualizacao.message);
 
       await supabase.from("movements").insert({
-        type: "saida",
+        type: "saída",
         item_type: "componente",
         item_id: componente.id,
         quantity: baixa,
@@ -428,7 +428,7 @@ async function baixarEquipamentoMontado(equipmentName: string, quantidade: numbe
   if (erroUpdate) throw new Error(erroUpdate.message);
 
   await supabase.from("movements").insert({
-    type: "saida",
+    type: "saída",
     item_type: "equipamento",
     item_name: equipmentName,
     quantity: qtd,
@@ -591,14 +591,14 @@ export default function StockProApp() {
         <main className="main-content">
           {page === "Dashboard" && <Dashboard profile={profile} />}
           {page === "Produtos" && <Produtos search={search} />}
-          {page === "Movimentações" && <Movimentacoes profile={profile} />}
+          {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
           {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
-          {page === "Colaboradores" && <Colaboradors roles={COLABORADOR_ROLES} title="Colaboradores" currentUser={profile} search={search} />}
-          {page === "Representantes" && <Colaboradors role="representante" title="Representantes" currentUser={profile} search={search} />}
-          {page === "Análise de Cadastros" && <AnaliseCadastros currentUser={profile} search={search} />}
+          {page === "Colaboradores" && <Colaboradores roles={COLABORADOR_ROLES} title="Colaboradores" currentUser={profile} search={search} />}
+          {page === "Representantes" && <Colaboradores role="representante" title="Representantes" currentUser={profile} search={search} />}
+          {page === "Análise de Cadastros" && <AnáliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
           {page === "Componentes" && <Componentes search={search} />}
           {page === "Conta Azul" && <ContaAzul />}
@@ -673,7 +673,7 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
   return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small><small>Proposta: {item.proposal_status || "Lead Frio"}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
 }
 
-function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
+function Colaboradores({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
   const [items, setItems] = useState<Profile[]>([]);
   const [msg, setMsg] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -704,7 +704,7 @@ function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role
 
   async function excluir(id: string) {
     if (!confirm("Excluir este cadastro?")) return;
-    const r = await fetch("/api/admin/excluir-usuario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const r = await fetch("/api/admin/excluir-usuário", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     const d = await r.json();
     if (!r.ok) return setMsg(d.error || "Erro ao excluir cadastro.");
     setItems((a) => a.filter((x) => x.id !== id));
@@ -714,7 +714,7 @@ function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role
   const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
   const filtered = items.filter((i) => textMatch(i, search));
   const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
-  const cadastroUrl = isRepresentante ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
+  const cadastroUrl = isRepresentante ? "/cadastrar-usuário?tipo=representante" : "/cadastrar-usuário";
 
   return <>
     <Title title={title} desc={desc} />
@@ -748,7 +748,7 @@ function Colaboradors({ role, roles, title, currentUser, search }: { role?: Role
   </>;
 }
 
-function AnaliseCadastros({ currentUser, search }: { currentUser: Profile } & SearchProps) {
+function AnáliseCadastros({ currentUser, search }: { currentUser: Profile } & SearchProps) {
   const [items, setItems] = useState<Profile[]>([]); const [msg, setMsg] = useState("");
   const permissoes = [{ key: "products", label: "Produtos" }, { key: "orders", label: "Pedidos" }, { key: "clients", label: "Clientes" }, { key: "reports", label: "Relatórios" }, { key: "assemblies", label: "Montagens" }];
   useEffect(() => { carregar(); }, []);
@@ -937,7 +937,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   </>;
 }
 
-function Movimentacoes({ profile }: { profile: Profile }) {
+function Movimentações({ profile }: { profile: Profile }) {
   const emptyManual = {
     type: "entrada",
     item_type: "produto",
@@ -968,7 +968,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     pdf_name: "",
   };
 
-  const emptySaida = {
+  const emptySaída = {
     order_id: "",
     approved: false,
     notes: "",
@@ -976,7 +976,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
 
   const [manual, setManual] = useState(emptyManual);
   const [nfForm, setNfForm] = useState(emptyNf);
-  const [saidaForm, setSaidaForm] = useState(emptySaida);
+  const [saídaForm, setSaídaForm] = useState(emptySaída);
   const [products, setProducts] = useState<AnyRow[]>([]);
   const [components, setComponents] = useState<AnyRow[]>([]);
   const [orders, setOrders] = useState<AnyRow[]>([]);
@@ -1020,8 +1020,8 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     }));
   }
 
-  function setSaidaField(campo: string, valor: any) {
-    setSaidaForm((atual) => ({
+  function setSaídaField(campo: string, valor: any) {
+    setSaídaForm((atual) => ({
       ...atual,
       [campo]: valor,
     }));
@@ -1317,29 +1317,29 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     }
   }
 
-  const pedidosParaSaida = orders.filter((pedido) => {
+  const pedidosParaSaída = orders.filter((pedido) => {
     const status = String(pedido.status || "").toLowerCase();
     return !["cancelado", "recebido", "finalizado"].includes(status);
   });
 
-  const pedidoSelecionado = orders.find((pedido) => pedido.id === saidaForm.order_id);
+  const pedidoSelecionado = orders.find((pedido) => pedido.id === saídaForm.order_id);
   const produtoPedidoSelecionado = pedidoSelecionado?.item_id ? products.find((produto) => produto.id === pedidoSelecionado.item_id) : null;
 
-  async function cadastrarSaidaPedido() {
+  async function cadastrarSaídaPedido() {
     setMsg("");
 
     try {
-      if (!saidaForm.order_id) {
+      if (!saídaForm.order_id) {
         setMsg("Selecione o pedido para gerar a saída.");
         return;
       }
 
-      if (!saidaForm.approved) {
+      if (!saídaForm.approved) {
         setMsg("Aprove a saída antes de cadastrar a movimentação.");
         return;
       }
 
-      const pedido = orders.find((item) => item.id === saidaForm.order_id);
+      const pedido = orders.find((item) => item.id === saídaForm.order_id);
 
       if (!pedido) {
         setMsg("Pedido não encontrado.");
@@ -1393,11 +1393,11 @@ function Movimentacoes({ profile }: { profile: Profile }) {
       const descricaoItem = tipoItem === "produto" ? produto?.name || "Produto" : pedido.equipment_name || "Equipamento";
 
       const movimento: AnyRow = {
-        type: "saida",
+        type: "saída",
         item_type: tipoItem === "produto" ? "produto" : "equipamento",
         item_id: tipoItem === "produto" ? pedido.item_id || null : null,
         quantity: quantidade,
-        notes: saidaForm.notes || `Saída automática pelo pedido #${numeroPedido} - ${descricaoItem}`,
+        notes: saídaForm.notes || `Saída automática pelo pedido #${numeroPedido} - ${descricaoItem}`,
         created_by: profile.id,
         order_id: pedido.id,
       };
@@ -1420,7 +1420,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
         .eq("id", pedido.id);
 
       setMsg("Saída automática cadastrada com sucesso.");
-      setSaidaForm(emptySaida);
+      setSaídaForm(emptySaída);
       carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao cadastrar saída automática.");
@@ -1455,7 +1455,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
     const estoqueAtual = Number(item.quantity || 0);
     const novaQtd = manual.type === "entrada" ? estoqueAtual + qtd : estoqueAtual - qtd;
 
-    if (manual.type === "saida" && novaQtd < 0) {
+    if (manual.type === "saída" && novaQtd < 0) {
       setMsg(`Estoque insuficiente. Disponível: ${quantidadeFormatada(estoqueAtual)}.`);
       return;
     }
@@ -1769,11 +1769,11 @@ function Movimentacoes({ profile }: { profile: Profile }) {
         <div className="form-grid">
           <SelectField
             label="Pedido"
-            value={saidaForm.order_id}
-            onChange={(v) => setSaidaField("order_id", v)}
+            value={saídaForm.order_id}
+            onChange={(v) => setSaídaField("order_id", v)}
           >
             <option value="">Selecione</option>
-            {pedidosParaSaida.map((pedido) => {
+            {pedidosParaSaída.map((pedido) => {
               const produto = pedido.item_id ? products.find((item) => item.id === pedido.item_id) : null;
               const itemNome = pedido.equipment_name || produto?.name || pedido.item_type || "Item";
               return (
@@ -1807,19 +1807,19 @@ function Movimentacoes({ profile }: { profile: Profile }) {
 
           <TextArea
             label="Observações da saída"
-            value={saidaForm.notes}
-            onChange={(v) => setSaidaField("notes", v)}
+            value={saídaForm.notes}
+            onChange={(v) => setSaídaField("notes", v)}
           />
         </div>
 
         <div className="form-actions">
           <button
-            className={saidaForm.approved ? "btn btn-green" : "btn btn-gray"}
-            onClick={() => setSaidaField("approved", !saidaForm.approved)}
+            className={saídaForm.approved ? "btn btn-green" : "btn btn-gray"}
+            onClick={() => setSaídaField("approved", !saídaForm.approved)}
           >
-            {saidaForm.approved ? "Saída aprovada" : "Aprovar saída"}
+            {saídaForm.approved ? "Saída aprovada" : "Aprovar saída"}
           </button>
-          <button className="btn btn-green" onClick={cadastrarSaidaPedido}>
+          <button className="btn btn-green" onClick={cadastrarSaídaPedido}>
             Cadastrar saída do pedido
           </button>
         </div>
@@ -1835,7 +1835,7 @@ function Movimentacoes({ profile }: { profile: Profile }) {
             onChange={(v) => setManualField("type", v)}
           >
             <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
+            <option value="saída">Saída</option>
           </SelectField>
 
           <SelectField
@@ -2002,7 +2002,7 @@ function Componentes({ search }: SearchProps) {
     }
   }
 
-  const composicaoSelecionada = composicaoDoEquipamento(equipmentView);
+  const composiçãoSelecionada = composiçãoDoEquipamento(equipmentView);
   const filtered = items.filter((i) => textMatch(i, search));
   const estoquePorNome = new Map<string, number>();
   items.forEach((item) => {
@@ -2042,7 +2042,7 @@ function Componentes({ search }: SearchProps) {
         </div>
 
         <div className="product-list-grid" style={{ marginTop: 18 }}>
-          {composicaoSelecionada.map((item) => {
+          {composiçãoSelecionada.map((item) => {
             const estoqueAtual = estoquePorNome.get(normalizarComponente(item.name)) || 0;
             return (
               <div key={`${equipmentView}-${item.name}`} className="stat-card user-card">
@@ -2192,7 +2192,7 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
     if (res.error) return setMsg(res.error.message);
 
     if (!editing) {
-      await baixarComponentesDaComposicao(
+      await baixarComponentesDaComposição(
         form.equipment,
         quantidade,
         profile.id,
@@ -2219,7 +2219,7 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
             {EQUIPAMENTOS.map((e) => <option key={e} value={e}>{e}</option>)}
           </SelectField>
           <Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
-          <SelectField label="Técnico/montador" value={form.technician_id} onChange={(v) => set("technician_id", v)}>
+          <SelectField label="Técnico/Montador" value={form.technician_id} onChange={(v) => set("technician_id", v)}>
             <option value="">Selecione</option>
             {technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </SelectField>
@@ -2438,8 +2438,8 @@ function Relatorios({ profile }: { profile: Profile }) {
   const filteredOrders = orders.filter(inDateRange);
 
   const entradas = filteredMovements.filter((m) => m.type === "entrada").reduce((s, m) => s + Number(m.quantity || 0), 0);
-  const saidas = filteredMovements.filter((m) => m.type === "saida").reduce((s, m) => s + Number(m.quantity || 0), 0);
-  const produtosVendidos = filteredOrders.reduce((s, o) => s + Number(o.quantity || 0), 0) + saidas;
+  const saídas = filteredMovements.filter((m) => m.type === "saída").reduce((s, m) => s + Number(m.quantity || 0), 0);
+  const produtosVendidos = filteredOrders.reduce((s, o) => s + Number(o.quantity || 0), 0) + saídas;
   const pedidosNoPeriodo = filteredOrders.length;
 
   const valorVenda = products.reduce((s, p) => s + Number(p.sale_price || 0) * Number(p.quantity || 0), 0);
@@ -2474,7 +2474,7 @@ function Relatorios({ profile }: { profile: Profile }) {
           <p>Período: ${periodo}</p>
           <div class="grid">
             <div class="card"><span>Total de entradas</span><strong>+${entradas}</strong></div>
-            <div class="card"><span>Total de saídas</span><strong>-${saidas}</strong></div>
+            <div class="card"><span>Total de saídas</span><strong>-${saídas}</strong></div>
             <div class="card"><span>Produtos vendidos</span><strong>${produtosVendidos}</strong></div>
             <div class="card"><span>Pedidos no período</span><strong>${pedidosNoPeriodo}</strong></div>
             <div class="card"><span>Valor estoque venda</span><strong>${money(valorVenda)}</strong></div>
@@ -2517,7 +2517,7 @@ function Relatorios({ profile }: { profile: Profile }) {
 
     <div className="reports-grid">
       <StatCard label="Total entradas" value={`+${entradas}`} color="#4ade80" />
-      <StatCard label="Total saídas" value={`-${saidas}`} color="#f87171" />
+      <StatCard label="Total saídas" value={`-${saídas}`} color="#f87171" />
       {profile.role === "administrador" && <StatCard label="Produtos vendidos" value={String(produtosVendidos)} color="#60a5fa" />}
       <StatCard label="Pedidos no período" value={String(pedidosNoPeriodo)} />
       <StatCard label="Valor estoque venda" value={money(valorVenda)} />

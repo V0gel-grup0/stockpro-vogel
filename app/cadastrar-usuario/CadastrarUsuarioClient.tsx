@@ -47,7 +47,7 @@ function maskPhone(value: string) {
 }
 function maskCep(value: string) { return onlyNumbers(value).slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2"); }
 
-export default function CadastrarUsuarioPage() {
+export default function CadastrarUsuárioPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -84,10 +84,10 @@ useEffect(() => {
     setLoading(true); setMsg("");
     const payload = { ...form, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), number: form.no_number ? "" : form.number, seller_code: form.seller_code.trim().toUpperCase() };
     try {
-      const res = await fetch("/api/admin/criar-usuario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch("/api/admin/criar-usuário", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) { setMsg(data.error || "Erro ao criar usuário."); return; }
-      setMsg(`Cadastro enviado/criado com sucesso. Código: ${data.usuario.codigo}. Se ficar pendente, aguarde análise do administrador.`);
+      setMsg(`Cadastro enviado/criado com sucesso. Código: ${data.usuário.codigo}. Se ficar pendente, aguarde análise do administrador.`);
       setForm(empty);
     } catch { setMsg("Erro inesperado ao salvar usuário."); }
     finally { setLoading(false); }
