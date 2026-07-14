@@ -130,3 +130,173 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
   .form-actions { gap: 10px; }
   .order-list-card .input { max-width: 100%; }
 }
+
+/* ===========================
+   AJUSTES MOBILE - STOCKPRO
+   =========================== */
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .app-shell,
+  .dashboard-layout,
+  .main-layout {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .sidebar {
+    position: relative !important;
+    width: 100% !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 14px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .sidebar nav,
+  .sidebar-menu {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .sidebar button,
+  .sidebar a,
+  .menu-item {
+    white-space: nowrap !important;
+    min-width: max-content !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  main,
+  .content,
+  .page-content {
+    width: 100% !important;
+    padding: 14px !important;
+    margin: 0 !important;
+  }
+
+  .page-title,
+  .title-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .reports-grid,
+  .stats-grid,
+  .form-grid,
+  .product-list-grid,
+  .cards-grid,
+  .mini-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card,
+  .stat-card,
+  .user-card {
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+  }
+
+  input,
+  select,
+  textarea,
+  .input {
+    width: 100% !important;
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  .field,
+  .full-field {
+    width: 100% !important;
+  }
+
+  .form-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .form-actions .btn,
+  .btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .topbar,
+  .header,
+  .toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .search-box,
+  .search-input {
+    width: 100% !important;
+  }
+
+  table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  .modal,
+  .modal-content {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px !important;
+    padding: 16px !important;
+  }
+
+  h1 {
+    font-size: 24px !important;
+  }
+
+  h2 {
+    font-size: 19px !important;
+  }
+
+  h3 {
+    font-size: 17px !important;
+  }
+
+  small,
+  p {
+    line-height: 1.45 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card,
+  .stat-card,
+  .user-card {
+    padding: 14px !important;
+  }
+
+  .btn {
+    font-size: 14px !important;
+    padding: 10px 12px !important;
+  }
+
+  .sidebar-footer {
+    margin-top: 12px !important;
+  }
+}
