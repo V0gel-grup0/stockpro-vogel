@@ -300,3 +300,178 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
     margin-top: 12px !important;
   }
 }
+
+/* ===========================
+   AJUSTES DE DESIGN - STOCKPRO
+   =========================== */
+
+:root {
+  --design-bg-card: rgba(15, 23, 42, 0.88);
+  --design-border: rgba(148, 163, 184, 0.18);
+  --design-blue: #2563eb;
+  --design-blue-soft: rgba(37, 99, 235, 0.16);
+  --design-green: #16a34a;
+  --design-red: #dc2626;
+  --design-text-muted: #94a3b8;
+}
+
+/* Cards mais profissionais */
+.card,
+.stat-card,
+.user-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.84)) !important;
+  border: 1px solid var(--design-border) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18) !important;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.card:hover,
+.stat-card:hover,
+.user-card:hover {
+  border-color: rgba(96, 165, 250, 0.35) !important;
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.24) !important;
+}
+
+/* Títulos */
+.card-title,
+.page-title h1,
+.title-row h1 {
+  letter-spacing: -0.02em !important;
+}
+
+.card-title {
+  color: #f8fafc !important;
+  margin-bottom: 14px !important;
+}
+
+/* Textos secundários */
+small,
+.card p,
+.stat-card small,
+.user-card small {
+  color: var(--design-text-muted) !important;
+}
+
+/* Botões mais consistentes */
+.btn {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  transition: transform 0.14s ease, opacity 0.14s ease, box-shadow 0.14s ease !important;
+  border: 1px solid transparent !important;
+}
+
+.btn:hover {
+  transform: translateY(-1px) !important;
+  opacity: 0.95 !important;
+}
+
+.btn-blue {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22) !important;
+}
+
+.btn-green {
+  background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.18) !important;
+}
+
+.btn-red {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.16) !important;
+}
+
+.btn-gray {
+  background: rgba(51, 65, 85, 0.92) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+/* Inputs e selects */
+.input,
+input,
+select,
+textarea {
+  border-radius: 12px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background: rgba(2, 6, 23, 0.42) !important;
+  color: #f8fafc !important;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease !important;
+}
+
+.input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: rgba(96, 165, 250, 0.75) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14) !important;
+  background: rgba(2, 6, 23, 0.62) !important;
+}
+
+/* Labels */
+.field label,
+.field span {
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  margin-bottom: 6px !important;
+}
+
+/* Menu lateral */
+.sidebar {
+  background: linear-gradient(180deg, #020617, #0f172a) !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.16) !important;
+}
+
+.sidebar button,
+.menu-item {
+  border-radius: 12px !important;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease !important;
+}
+
+.sidebar button:hover,
+.menu-item:hover {
+  background: var(--design-blue-soft) !important;
+  color: #bfdbfe !important;
+  transform: translateX(2px) !important;
+}
+
+/* Listas e cards internos */
+.product-list-grid {
+  gap: 16px !important;
+}
+
+.user-card strong,
+.stat-card strong {
+  color: #f8fafc !important;
+  font-size: 16px !important;
+}
+
+/* Destaques numéricos */
+.stat-card b,
+.stat-card .value {
+  color: #ffffff !important;
+}
+
+/* Mensagens */
+.message,
+.alert {
+  border-radius: 14px !important;
+  border: 1px solid rgba(96, 165, 250, 0.24) !important;
+}
+
+/* Ajuste mobile adicional */
+@media (max-width: 768px) {
+  .card,
+  .stat-card,
+  .user-card {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  .sidebar button:hover,
+  .menu-item:hover {
+    transform: none !important;
+  }
+}
+
