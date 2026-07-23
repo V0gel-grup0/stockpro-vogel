@@ -1,0 +1,187 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model assemblies {
+  id                                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  equipment                                   String
+  quantity                                    Int       @default(1)
+  technician_id                               String?   @db.Uuid
+  created_by                                  String?   @db.Uuid
+  created_at                                  DateTime? @default(now()) @db.Timestamptz(6)
+  profiles_assemblies_created_byToprofiles    profiles? @relation("assemblies_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_assemblies_technician_idToprofiles profiles? @relation("assemblies_technician_idToprofiles", fields: [technician_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model clients {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  document     String    @default("")
+  phone        String    @default("")
+  cep          String    @default("")
+  city         String    @default("")
+  street       String    @default("")
+  number       String    @default("")
+  no_number    Boolean   @default(false)
+  neighborhood String    @default("")
+  created_by   String?   @db.Uuid
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  profiles     profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders       orders[]
+}
+
+model components {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  category    String     @default("")
+  equipment   String     @default("")
+  supplier_id String?    @db.Uuid
+  quantity    Int        @default(0)
+  min_stock   Int        @default(0)
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  suppliers   suppliers? @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model conta_azul_logs {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String?   @db.Uuid
+  status     String    @default("")
+  message    String    @default("")
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  orders     orders?   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model movements {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       String
+  item_type  String
+  item_id    String?   @db.Uuid
+  quantity   Int       @default(0)
+  notes      String    @default("")
+  created_by String?   @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  profiles   profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model orders {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number      BigInt            @default(autoincrement())
+  created_by        String?           @db.Uuid
+  client_id         String?           @db.Uuid
+  status            String            @default("pendente")
+  item_type         String            @default("")
+  item_id           String?           @db.Uuid
+  equipment_name    String            @default("")
+  quantity          Int               @default(1)
+  total_value       Decimal           @default(0) @db.Decimal
+  shipping_value    Decimal           @default(0) @db.Decimal
+  tracking_code     String            @default("")
+  tracking_location String            @default("")
+  conta_azul_status String            @default("")
+  notes             String            @default("")
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  conta_azul_logs   conta_azul_logs[]
+  clients           clients?          @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles          profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
+}
+
+model products {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  sku         String     @unique(map: "products_sku_unique", where: raw("(sku <> ''::text)")) @default("")
+  category    String     @default("")
+  subcategory String     @default("")
+  cost_price  Decimal    @default(0) @db.Decimal
+  sale_price  Decimal    @default(0) @db.Decimal
+  quantity    Int        @default(0)
+  min_stock   Int        @default(0)
+  supplier_id String?    @db.Uuid
+  description String     @default("")
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  suppliers   suppliers? @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model profiles {
+  id                                                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                    String         @unique
+  role                                                     app_role       @default(representante)
+  status                                                   account_status @default(pending)
+  name                                                     String         @default("")
+  document                                                 String         @default("")
+  phone                                                    String         @default("")
+  cep                                                      String         @default("")
+  city                                                     String         @default("")
+  street                                                   String         @default("")
+  number                                                   String         @default("")
+  no_number                                                Boolean        @default(false)
+  neighborhood                                             String         @default("")
+  access_code                                              String?
+  seller_code                                              String?
+  manager_code                                             String?
+  responsible_seller_id                                    String?        @db.Uuid
+  responsible_manager_id                                   String?        @db.Uuid
+  created_by                                               String?        @db.Uuid
+  permissions                                              Json           @default("{}")
+  approval_notes                                           String?
+  created_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
+  assemblies_assemblies_created_byToprofiles               assemblies[]   @relation("assemblies_created_byToprofiles")
+  assemblies_assemblies_technician_idToprofiles            assemblies[]   @relation("assemblies_technician_idToprofiles")
+  clients                                                  clients[]
+  movements                                                movements[]
+  orders                                                   orders[]
+  profiles_profiles_created_byToprofiles                   profiles?      @relation("profiles_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_created_byToprofiles             profiles[]     @relation("profiles_created_byToprofiles")
+  profiles_profiles_responsible_manager_idToprofiles       profiles?      @relation("profiles_responsible_manager_idToprofiles", fields: [responsible_manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_responsible_manager_idToprofiles profiles[]     @relation("profiles_responsible_manager_idToprofiles")
+  profiles_profiles_responsible_seller_idToprofiles        profiles?      @relation("profiles_responsible_seller_idToprofiles", fields: [responsible_seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_responsible_seller_idToprofiles  profiles[]     @relation("profiles_responsible_seller_idToprofiles")
+}
+
+model suppliers {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  document     String       @default("")
+  phone        String       @default("")
+  email        String       @default("")
+  cep          String       @default("")
+  city         String       @default("")
+  street       String       @default("")
+  number       String       @default("")
+  no_number    Boolean      @default(false)
+  neighborhood String       @default("")
+  products     String[]     @default([])
+  created_at   DateTime?    @default(now()) @db.Timestamptz(6)
+  components   components[]
+  supplier_products products[]
+}
+
+enum account_status {
+  pending
+  approved
+  rejected
+  inactive
+}
+
+enum app_role {
+  administrador
+  gerente
+  vendedor
+  funcionario
+  tecnico
+  representante
+}
