@@ -2512,7 +2512,15 @@ function Movimentações({ profile }: { profile: Profile }) {
 }
 
 function Componentes({ search }: SearchProps) {
-  const empty = { name: "", category: "", supplier_id: "", quantity: "", min_stock: "" };
+  const empty = {
+    name: "",
+    category: "",
+    supplier_id: "",
+    quantity: "",
+    min_stock: "",
+    equipment_names: [] as string[],
+    equipment_division: {} as Record<string, string>,
+  };
   const [form, setForm] = useState(empty);
   const [items, setItems] = useState<AnyRow[]>([]);
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
@@ -2525,15 +2533,105 @@ function Componentes({ search }: SearchProps) {
   useEffect(() => { carregar(); }, []);
 
   async function carregar() {
-    const { data } = await supabase.from("components").select("*").order("name");
-    setItems(data || []);
-    const { data: sup } = await supabase.from("suppliers").select("*").order("name");
-    setSuppliers(sup || []);
+    try {
+      const [componentsResponse, suppliersResponse] = await Promise.all([
+        fetch("/api/components", { cache: "no-store" }),
+        fetch("/api/suppliers", { cache: "no-store" }),
+      ]);
+
+      const componentsData = await componentsResponse.json();
+      const suppliersData = await suppliersResponse.json();
+
+      if (!componentsResponse.ok || !componentsData.sucesso) {
+        throw new Error(
+          componentsData.erro || "Erro ao carregar componentes."
+        );
+      }
+
+      if (!suppliersResponse.ok || !suppliersData.sucesso) {
+        throw new Error(
+          suppliersData.erro || "Erro ao carregar fornecedores."
+        );
+      }
+
+      setItems(componentsData.components || []);
+      setSuppliers(suppliersData.suppliers || []);
+    } catch (error: any) {
+      setMsg(
+        error.message || "Erro ao carregar componentes."
+      );
+    }
   }
 
-  function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); }
+  function set(c: string, v: any) {
+    setForm((a) => ({
+      ...a,
+      [c]: v,
+    }));
+  }
+
+  function toggleEquipment(equipmentName: string) {
+    setForm((current) => {
+      const isSelected =
+        current.equipment_names.includes(equipmentName);
+
+      const equipmentDivision = {
+        ...current.equipment_division,
+      };
+
+      if (isSelected) {
+        delete equipmentDivision[equipmentName];
+      } else if (!equipmentDivision[equipmentName]) {
+        equipmentDivision[equipmentName] = "1";
+      }
+
+      return {
+        ...current,
+        equipment_names: isSelected
+          ? current.equipment_names.filter(
+              (item) => item !== equipmentName
+            )
+          : [
+              ...current.equipment_names,
+              equipmentName,
+            ],
+        equipment_division: equipmentDivision,
+      };
+    });
+  }
+
+  function setEquipmentQuantity(
+    equipmentName: string,
+    value: string
+  ) {
+    setForm((current) => ({
+      ...current,
+      equipment_division: {
+        ...current.equipment_division,
+        [equipmentName]: value,
+      },
+    }));
+  }
 
   function editar(i: AnyRow) {
+    const savedDivision =
+      Array.isArray(i.equipment_components)
+        ? i.equipment_components
+        : [];
+
+    const fallbackDivision =
+      equipamentosQueUsamComponente(i.name).map(
+        (uso) => ({
+          equipment_name: uso.equipamento,
+          qty_per_equipment: uso.quantity,
+        })
+      );
+
+    const divisionItems =
+      savedDivision.length
+        ? savedDivision
+        : fallbackDivision;
+
     setEditing(i.id);
     setForm({
       name: i.name || "",
@@ -2541,38 +2639,131 @@ function Componentes({ search }: SearchProps) {
       supplier_id: i.supplier_id || "",
       quantity: String(i.quantity || ""),
       min_stock: String(i.min_stock || ""),
+      equipment_names: divisionItems.map(
+        (item: AnyRow) => item.equipment_name
+      ),
+      equipment_division: Object.fromEntries(
+        divisionItems.map((item: AnyRow) => [
+          item.equipment_name,
+          String(item.qty_per_equipment ?? 1),
+        ])
+      ),
     });
   }
 
   async function excluir(id: string) {
     if (!confirm("Excluir este componente do estoque geral?")) return;
-    const { error } = await supabase.from("components").delete().eq("id", id);
-    if (error) return setMsg(error.message);
-    setItems((a) => a.filter((x) => x.id !== id));
-    setMsg("Componente excluído com sucesso.");
+
+    try {
+      const response = await fetch(
+        `/api/components?id=${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        return setMsg(
+          data.erro || "Erro ao excluir componente."
+        );
+      }
+
+      setItems((a) => a.filter((x) => x.id !== id));
+      setMsg("Componente excluído com sucesso.");
+    } catch (error: any) {
+      setMsg(
+        error.message || "Erro ao excluir componente."
+      );
+    }
   }
 
   async function salvar() {
+    setMsg("");
+
+    if (!form.name.trim()) {
+      return setMsg(
+        "Informe o nome do componente."
+      );
+    }
+
+    const invalidEquipment =
+      form.equipment_names.find(
+        (equipmentName) => {
+          const quantity = Number(
+            form.equipment_division[equipmentName] || 0
+          );
+
+          return (
+            !Number.isFinite(quantity) ||
+            quantity <= 0
+          );
+        }
+      );
+
+    if (invalidEquipment) {
+      return setMsg(
+        `Informe uma quantidade válida para ${invalidEquipment}.`
+      );
+    }
+
     const payload = {
-      name: form.name,
-      category: form.category,
+      name: form.name.trim(),
+      category: form.category.trim(),
       equipment: "Estoque geral",
       supplier_id: form.supplier_id || null,
       quantity: Number(form.quantity || 0),
       min_stock: Number(form.min_stock || 0),
-      updated_at: new Date().toISOString(),
+      equipment_names: form.equipment_names,
+      equipment_division:
+        form.equipment_names.map(
+          (equipmentName) => ({
+            equipment_name: equipmentName,
+            qty_per_equipment: Number(
+              form.equipment_division[equipmentName]
+            ),
+          })
+        ),
     };
 
-    const res = editing
-      ? await supabase.from("components").update(payload).eq("id", editing)
-      : await supabase.from("components").insert({ ...payload, created_at: new Date().toISOString() });
+    try {
+      const response = await fetch("/api/components", {
+        method: editing ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          editing
+            ? {
+                id: editing,
+                ...payload,
+              }
+            : payload
+        ),
+      });
 
-    if (res.error) return setMsg(res.error.message);
+      const data = await response.json();
 
-    setMsg(editing ? "Componente atualizado com sucesso." : "Componente salvo no estoque geral.");
-    setForm(empty);
-    setEditing(null);
-    carregar();
+      if (!response.ok || !data.sucesso) {
+        return setMsg(
+          data.erro || "Erro ao salvar componente."
+        );
+      }
+
+      setMsg(
+        editing
+          ? "Componente atualizado com sucesso."
+          : "Componente salvo no estoque geral."
+      );
+      setForm(empty);
+      setEditing(null);
+      await carregar();
+    } catch (error: any) {
+      setMsg(
+        error.message || "Erro ao salvar componente."
+      );
+    }
   }
 
   async function cadastrarPadrao(equipamento?: string) {
@@ -2669,6 +2860,73 @@ function Componentes({ search }: SearchProps) {
           </SelectField>
           <Field label="Quantidade em estoque" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
           <Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} />
+
+          <div className="field full-field">
+            <label>Equipamentos compatíveis</label>
+
+            <div className="mini-grid">
+              {EQUIPAMENTOS.map((equipmentName) => {
+                const selected =
+                  form.equipment_names.includes(
+                    equipmentName
+                  );
+
+                return (
+                  <div
+                    key={equipmentName}
+                    className="stat-card"
+                    style={{
+                      padding: 12,
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
+                    <label className="check-row">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() =>
+                          toggleEquipment(equipmentName)
+                        }
+                      />
+                      {" "}
+                      {equipmentName}
+                    </label>
+
+                    {selected && (
+                      <div className="field">
+                        <label>
+                          Quantidade usada por equipamento
+                        </label>
+                        <input
+                          className="input"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={
+                            form.equipment_division[
+                              equipmentName
+                            ] || "1"
+                          }
+                          onChange={(event) =>
+                            setEquipmentQuantity(
+                              equipmentName,
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <small className="muted">
+              Marque todos os equipamentos nos quais este
+              componente pode ser utilizado.
+            </small>
+          </div>
         </div>
         <div className="form-actions">
           <button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar componente"}</button>
@@ -2702,12 +2960,69 @@ function Componentes({ search }: SearchProps) {
               <small>Fornecedor: {suppliers.find((s) => s.id === i.supplier_id)?.name || "-"}</small>
               <small>Qtd: {quantidadeFormatada(Number(i.quantity || 0))}</small>
               <small>Mínimo: {quantidadeFormatada(Number(i.min_stock || 0))}</small>
+              <small>
+                Equipamentos compatíveis:{" "}
+                {Array.isArray(i.equipment_names) &&
+                i.equipment_names.length
+                  ? i.equipment_names.join(", ")
+                  : equipamentosQueUsamComponente(i.name)
+                      .map((uso) => uso.equipamento)
+                      .join(", ") || "-"}
+              </small>
               {i.equipment && i.equipment !== "Estoque geral" && <small>Origem antiga: {i.equipment}</small>}
-              <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                <small><b>Divisão por equipamento:</b></small>
-                {equipamentosQueUsamComponente(i.name).length ? equipamentosQueUsamComponente(i.name).map((uso) => (
-                  <small key={`${i.id}-${uso.equipamento}`}>• {uso.equipamento}: usa {quantidadeFormatada(uso.quantity)}</small>
-                )) : <small>Este componente ainda não está em nenhuma composição padrão.</small>}
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                <small>
+                  <b>Divisão por equipamento:</b>
+                </small>
+
+                {Array.isArray(
+                  i.equipment_components
+                ) &&
+                i.equipment_components.length ? (
+                  i.equipment_components.map(
+                    (division: AnyRow) => (
+                      <small
+                        key={`${i.id}-${division.equipment_name}`}
+                      >
+                        • {division.equipment_name}: usa{" "}
+                        {quantidadeFormatada(
+                          Number(
+                            division.qty_per_equipment ||
+                              0
+                          )
+                        )}
+                      </small>
+                    )
+                  )
+                ) : equipamentosQueUsamComponente(
+                    i.name
+                  ).length ? (
+                  equipamentosQueUsamComponente(
+                    i.name
+                  ).map((uso) => (
+                    <small
+                      key={`${i.id}-${uso.equipamento}`}
+                    >
+                      • {uso.equipamento}: usa{" "}
+                      {quantidadeFormatada(
+                        uso.quantity
+                      )}
+                      {" "}
+                      (receita padrão)
+                    </small>
+                  ))
+                ) : (
+                  <small>
+                    Nenhuma divisão por equipamento
+                    cadastrada.
+                  </small>
+                )}
               </div>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>

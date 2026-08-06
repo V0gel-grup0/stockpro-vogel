@@ -406,7 +406,8 @@ export const ModelName = {
   playing_with_neon: 'playing_with_neon',
   products: 'products',
   profiles: 'profiles',
-  suppliers: 'suppliers'
+  suppliers: 'suppliers',
+  equipment_components: 'equipment_components'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers"
+    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers" | "equipment_components"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1166,6 +1167,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    equipment_components: {
+      payload: Prisma.$equipment_componentsPayload<ExtArgs>
+      fields: Prisma.equipment_componentsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.equipment_componentsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.equipment_componentsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        findFirst: {
+          args: Prisma.equipment_componentsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.equipment_componentsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        findMany: {
+          args: Prisma.equipment_componentsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>[]
+        }
+        create: {
+          args: Prisma.equipment_componentsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        createMany: {
+          args: Prisma.equipment_componentsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.equipment_componentsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>[]
+        }
+        delete: {
+          args: Prisma.equipment_componentsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        update: {
+          args: Prisma.equipment_componentsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        deleteMany: {
+          args: Prisma.equipment_componentsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.equipment_componentsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.equipment_componentsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>[]
+        }
+        upsert: {
+          args: Prisma.equipment_componentsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$equipment_componentsPayload>
+        }
+        aggregate: {
+          args: Prisma.Equipment_componentsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEquipment_components>
+        }
+        groupBy: {
+          args: Prisma.equipment_componentsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Equipment_componentsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.equipment_componentsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Equipment_componentsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1241,6 +1316,7 @@ export const ComponentsScalarFieldEnum = {
   name: 'name',
   category: 'category',
   equipment: 'equipment',
+  equipment_names: 'equipment_names',
   supplier_id: 'supplier_id',
   quantity: 'quantity',
   min_stock: 'min_stock',
@@ -1373,6 +1449,17 @@ export const SuppliersScalarFieldEnum = {
 } as const
 
 export type SuppliersScalarFieldEnum = (typeof SuppliersScalarFieldEnum)[keyof typeof SuppliersScalarFieldEnum]
+
+
+export const Equipment_componentsScalarFieldEnum = {
+  id: 'id',
+  equipment_name: 'equipment_name',
+  component_id: 'component_id',
+  qty_per_equipment: 'qty_per_equipment',
+  created_at: 'created_at'
+} as const
+
+export type Equipment_componentsScalarFieldEnum = (typeof Equipment_componentsScalarFieldEnum)[keyof typeof Equipment_componentsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1714,6 +1801,7 @@ export type GlobalOmitConfig = {
   products?: Prisma.productsOmit
   profiles?: Prisma.profilesOmit
   suppliers?: Prisma.suppliersOmit
+  equipment_components?: Prisma.equipment_componentsOmit
 }
 
 /* Types for Logging */

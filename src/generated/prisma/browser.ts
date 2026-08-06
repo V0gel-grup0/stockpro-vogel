@@ -67,3 +67,8 @@ export type profiles = Prisma.profilesModel
  * 
  */
 export type suppliers = Prisma.suppliersModel
+/**
+ * Model equipment_components
+ * 
+ */
+export type equipment_components = Prisma.equipment_componentsModel

@@ -60,7 +60,8 @@ export const ModelName = {
   playing_with_neon: 'playing_with_neon',
   products: 'products',
   profiles: 'profiles',
-  suppliers: 'suppliers'
+  suppliers: 'suppliers',
+  equipment_components: 'equipment_components'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -115,6 +116,7 @@ export const ComponentsScalarFieldEnum = {
   name: 'name',
   category: 'category',
   equipment: 'equipment',
+  equipment_names: 'equipment_names',
   supplier_id: 'supplier_id',
   quantity: 'quantity',
   min_stock: 'min_stock',
@@ -247,6 +249,17 @@ export const SuppliersScalarFieldEnum = {
 } as const
 
 export type SuppliersScalarFieldEnum = (typeof SuppliersScalarFieldEnum)[keyof typeof SuppliersScalarFieldEnum]
+
+
+export const Equipment_componentsScalarFieldEnum = {
+  id: 'id',
+  equipment_name: 'equipment_name',
+  component_id: 'component_id',
+  qty_per_equipment: 'qty_per_equipment',
+  created_at: 'created_at'
+} as const
+
+export type Equipment_componentsScalarFieldEnum = (typeof Equipment_componentsScalarFieldEnum)[keyof typeof Equipment_componentsScalarFieldEnum]
 
 
 export const SortOrder = {
