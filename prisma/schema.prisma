@@ -137,7 +137,8 @@ model profiles {
   created_by                                               String?        @db.Uuid
   permissions                                              Json           @default("{}")
   approval_notes                                           String?
-  created_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
+password_hash                                            String?  
+created_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
   assemblies_assemblies_created_byToprofiles               assemblies[]   @relation("assemblies_created_byToprofiles")
   assemblies_assemblies_technician_idToprofiles            assemblies[]   @relation("assemblies_technician_idToprofiles")

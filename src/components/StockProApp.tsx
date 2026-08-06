@@ -529,21 +529,75 @@ export default function StockProApp() {
 
   async function carregarSessao() {
     setSessionLoading(true);
-    const { data: s } = await supabase.auth.getSession();
-    const user = s.session?.user;
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-    if (error) console.error("Erro ao carregar perfil:", error);
-    if (!data || data.status !== "approved") {
+
+    try {
+      const usuarioSalvo = localStorage.getItem("stockpro_usuario");
+
+      if (!usuarioSalvo) {
+        setProfile(null);
+        router.replace("/login");
+        return;
+      }
+
+      const usuarioLocal = JSON.parse(usuarioSalvo);
+
+      if (!usuarioLocal?.id) {
+        localStorage.removeItem("stockpro_usuario");
+        setProfile(null);
+        router.replace("/login");
+        return;
+      }
+
+      const respostaPerfil = await fetch(
+        `/api/auth/profile?id=${encodeURIComponent(usuarioLocal.id)}`,
+        { cache: "no-store" }
+      );
+
+      const perfilCompleto = respostaPerfil.ok
+        ? await respostaPerfil.json()
+        : usuarioLocal;
+
+      const roleNormalizada = String(perfilCompleto.role || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+
+      const rolesPermitidas: Role[] = [
+        "administrador",
+        "gerente",
+        "vendedor",
+        "funcionario",
+        "tecnico",
+        "representante",
+      ];
+
+      if (!rolesPermitidas.includes(roleNormalizada as Role)) {
+        console.error("Perfil com função inválida:", perfilCompleto.role);
+        setProfile(null);
+        return;
+      }
+
+      const perfilFinal = {
+        ...usuarioLocal,
+        ...perfilCompleto,
+        role: roleNormalizada as Role,
+      } as Profile;
+
+      localStorage.setItem(
+        "stockpro_usuario",
+        JSON.stringify(perfilFinal)
+      );
+
+      setProfile(perfilFinal);
+    } catch (error) {
+      console.error("Erro ao carregar usuário:", error);
+      localStorage.removeItem("stockpro_usuario");
       setProfile(null);
+      router.replace("/login");
+    } finally {
       setSessionLoading(false);
-      return;
     }
-    setProfile(data as Profile);
-    setSessionLoading(false);
   }
 
   async function carregarNotificacoes() {
@@ -559,8 +613,9 @@ export default function StockProApp() {
   }
 
   async function logout() {
-    await supabase.auth.signOut();
+    localStorage.removeItem("stockpro_usuario");
     router.replace("/login");
+    router.refresh();
   }
 
   if (sessionLoading) return <FullScreenMessage title="Carregando..." desc="Abrindo o sistema StockPro." />;
@@ -640,22 +695,82 @@ function Produtos({ search }: SearchProps) {
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
-  useEffect(() => { carregar(); }, []);
-  async function carregar() { const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false }); setItems(data || []); const { data: sup } = await supabase.from("suppliers").select("*").order("name"); setSuppliers(sup || []); }
+  async function carregar() {
+    const resposta = await fetch("/api/products");
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      setMsg(resultado.erro || "Erro ao carregar produtos.");
+      return;
+    }
+
+    setItems(resultado.products || []);
+    console.log("Produtos carregados:", resultado.products);
+  }
   function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); }
-  async function carregarPadrao() { for (const p of PRODUTOS_PADRAO) await supabase.from("products").upsert({ ...p, cost_price: 0, sale_price: 0, quantity: 0, min_stock: 0, description: "Produto padrão de revenda" }, { onConflict: "sku" }); setMsg("Produtos padrão carregados com sucesso."); carregar(); }
+  async function carregarPadrao() {
+    const resposta = await fetch("/api/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        produtos: PRODUTOS_PADRAO.map((p) => ({
+          ...p,
+          cost_price: 0,
+          sale_price: 0,
+          quantity: 0,
+          min_stock: 0,
+          description: "Produto padrão de revenda",
+        })),
+      }),
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      return setMsg(resultado.erro || "Erro ao criar produtos padrão.");
+    }
+
+    setMsg("Produtos padrão carregados com sucesso.");
+    carregar();
+  }
   async function salvar() {
     setMsg(""); if (!form.name) return setMsg("Informe o nome do produto.");
     const payload = { name: form.name, sku: form.sku, category: form.category, subcategory: form.subcategory, cost_price: Number(form.cost_price || 0), sale_price: Number(form.sale_price || 0), quantity: Number(form.quantity || 0), min_stock: Number(form.min_stock || 0), supplier_id: form.supplier_id || null, description: form.description, updated_at: new Date().toISOString() };
-    const res = editing ? await supabase.from("products").update(payload).eq("id", editing) : await supabase.from("products").insert(payload);
-    if (res.error) return setMsg(res.error.message);
+    const resposta = await fetch("/api/products", {
+      method: editing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editing ? { id: editing, ...payload } : payload),
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      return setMsg(resultado.erro || "Erro ao salvar produto.");
+    }
     setMsg(editing ? "Produto atualizado com sucesso." : "Produto salvo com sucesso."); setForm(empty); setEditing(null); carregar();
   }
   function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", sku: item.sku || "", category: item.category || "Lâmpadas dimerizáveis", subcategory: item.subcategory || "", cost_price: String(item.cost_price || ""), sale_price: String(item.sale_price || ""), quantity: String(item.quantity || ""), min_stock: String(item.min_stock || ""), supplier_id: item.supplier_id || "", description: item.description || "" }); }
-  async function excluir(id: string) { if (!confirm("Excluir este produto?")) return; const { error } = await supabase.from("products").delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg("Produto excluído com sucesso."); }
+  async function excluir(id: string) {
+    if (!confirm("Excluir este produto?")) return;
+
+    const resposta = await fetch(
+      `/api/products?id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    );
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      return setMsg(resultado.erro || "Erro ao excluir produto.");
+    }
+
+    setItems((a) => a.filter((x) => x.id !== id));
+    setMsg("Produto excluído com sucesso.");
+  }
   const subcats = CATEGORIAS_REVENDA.find((c) => c.category === form.category)?.subcategories || [];
   const filtered = items.filter((i) => textMatch(i, search));
-  return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." /><section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}><button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button></div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button><button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button></div></div>)}</div></section></>;
+ 
+ return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." /><section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}><button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button></div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button><button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button></div></div>)}</div></section></>;
 }
 
 function Pessoas({ title, table, kind, search, profile }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile } & SearchProps) {
@@ -663,7 +778,27 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
   const [form, setForm] = useState(empty); const [items, setItems] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); const [loading, setLoading] = useState(false);
   useEffect(() => { carregar(); }, []);
   function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); }
-  async function carregar() { const { data } = await supabase.from(table).select("*").order("created_at", { ascending: false }); setItems(data || []); }
+  async function carregar() {
+    if (table === "clients") {
+      const resposta = await fetch("/api/clients");
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        setMsg(resultado.erro || "Erro ao carregar clientes.");
+        return;
+      }
+
+      setItems(resultado.clients || []);
+      return;
+    }
+
+    const { data } = await supabase
+      .from(table)
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setItems(data || []);
+  }
   async function buscarCepPorValor(v: string) { const end = await buscarCep(v); if (!end) return setMsg("CEP não encontrado."); setForm((a) => ({ ...a, ...end })); }
   function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", document: maskCpfCnpj(item.document || ""), phone: maskPhone(item.phone || ""), email: item.email || "", cep: maskCep(item.cep || ""), city: item.city || "", street: item.street || "", number: item.number || "", no_number: Boolean(item.no_number), neighborhood: item.neighborhood || "", products: item.products || [], invoice_number: item.invoice_number || "", federal_invoice_number: item.federal_invoice_number || "", proposal_status: item.proposal_status || "Lead Frio" }); }
   async function excluir(id: string) { if (!confirm(`Excluir este ${kind}?`)) return; const { error } = await supabase.from(table).delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg(`${kind === "cliente" ? "Cliente" : "Fornecedor"} excluído com sucesso.`); }
@@ -680,35 +815,166 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const roleList = roles || (role ? [role] : []);
   const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
 
-  useEffect(() => { carregar(); }, [role, JSON.stringify(roles)]);
+  useEffect(() => {
+    carregar();
+  }, [
+    role,
+    JSON.stringify(roles),
+    currentUser?.id,
+    currentUser?.role,
+  ]);
 
   async function carregar() {
-    let q = supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    if (roleList.length === 1) q = q.eq("role", roleList[0]);
-    if (roleList.length > 1) q = q.in("role", roleList);
-    if (isRepresentante && currentUser?.role === "vendedor") q = q.eq("responsible_seller_id", currentUser.id);
-    const { data, error } = await q;
-    if (error) return setMsg(error.message);
-    setItems((data || []) as Profile[]);
+    try {
+      setMsg("");
+
+      const response = await fetch("/api/profiles", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Erro ao carregar os colaboradores."
+        );
+      }
+
+      let profiles = data as Profile[];
+
+      if (roleList.length === 1) {
+        profiles = profiles.filter(
+          (profile) => profile.role === roleList[0]
+        );
+      }
+
+      if (roleList.length > 1) {
+        profiles = profiles.filter((profile) =>
+          roleList.includes(profile.role)
+        );
+      }
+
+      if (
+        isRepresentante &&
+        currentUser?.role === "vendedor"
+      ) {
+        profiles = profiles.filter(
+          (profile) =>
+            profile.responsible_seller_id === currentUser.id
+        );
+      }
+
+      setItems(profiles);
+    } catch (error) {
+      console.error("Erro ao carregar colaboradores:", error);
+
+      setItems([]);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar os colaboradores."
+      );
+    }
   }
 
-  async function avaliar(id: string, status: "approved" | "rejected") {
-    if (!confirm(status === "approved" ? "Aprovar cadastro?" : "Reprovar cadastro?")) return;
-    setLoadingId(id);
-    const { error } = await supabase.from("profiles").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-    setLoadingId(null);
-    if (error) return setMsg(error.message);
-    setMsg(status === "approved" ? "Cadastro aprovado com sucesso." : "Cadastro reprovado.");
-    carregar();
+  async function avaliar(
+    id: string,
+    status: "approved" | "rejected"
+  ) {
+    const confirmado = confirm(
+      status === "approved"
+        ? "Aprovar cadastro?"
+        : "Reprovar cadastro?"
+    );
+
+    if (!confirmado) return;
+
+    try {
+      setLoadingId(id);
+      setMsg("");
+
+      const response = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          status,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Erro ao atualizar o cadastro."
+        );
+      }
+
+      setMsg(
+        status === "approved"
+          ? "Cadastro aprovado com sucesso."
+          : "Cadastro reprovado."
+      );
+
+      await carregar();
+    } catch (error) {
+      console.error("Erro ao avaliar cadastro:", error);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar o cadastro."
+      );
+    } finally {
+      setLoadingId(null);
+    }
   }
 
   async function excluir(id: string) {
     if (!confirm("Excluir este cadastro?")) return;
-    const r = await fetch("/api/admin/excluir-usuário", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    const d = await r.json();
-    if (!r.ok) return setMsg(d.error || "Erro ao excluir cadastro.");
-    setItems((a) => a.filter((x) => x.id !== id));
-    setMsg("Cadastro excluído com sucesso.");
+
+    try {
+      setLoadingId(id);
+      setMsg("");
+
+      const response = await fetch(
+        "/api/admin/excluir-usuario",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Erro ao excluir cadastro."
+        );
+      }
+
+      setItems((currentItems) =>
+        currentItems.filter((item) => item.id !== id)
+      );
+
+      setMsg("Cadastro excluído com sucesso.");
+    } catch (error) {
+      console.error("Erro ao excluir cadastro:", error);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao excluir cadastro."
+      );
+    } finally {
+      setLoadingId(null);
+    }
   }
 
   const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
@@ -752,9 +1018,110 @@ function AnáliseCadastros({ currentUser, search }: { currentUser: Profile } & S
   const [items, setItems] = useState<Profile[]>([]); const [msg, setMsg] = useState("");
   const permissoes = [{ key: "products", label: "Produtos" }, { key: "orders", label: "Pedidos" }, { key: "clients", label: "Clientes" }, { key: "reports", label: "Relatórios" }, { key: "assemblies", label: "Montagens" }];
   useEffect(() => { carregar(); }, []);
-  async function carregar() { const { data, error } = await supabase.from("profiles").select("*").in("status", ["pending", "rejected"]).order("created_at", { ascending: false }); if (error) setMsg(error.message); else setItems((data || []) as Profile[]); }
-  async function mudarStatus(id: string, status: "approved" | "rejected") { const { error } = await supabase.from("profiles").update({ status, updated_at: new Date().toISOString() }).eq("id", id); setMsg(error ? error.message : status === "approved" ? "Cadastro aprovado." : "Cadastro reprovado."); carregar(); }
-  async function salvarPermissao(item: Profile, key: string, checked: boolean) { const permissions = { ...(item.permissions || {}), [key]: checked }; const { error } = await supabase.from("profiles").update({ permissions, updated_at: new Date().toISOString() }).eq("id", item.id); if (error) setMsg(error.message); else carregar(); }
+  async function carregar() {
+    try {
+      const response = await fetch("/api/profiles", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao carregar cadastros.");
+      }
+
+const pendentes = (data as Profile[]).filter(
+  (profile) =>
+    profile.status === "pending" ||
+    profile.status === "rejected"
+);
+
+      setItems(pendentes);
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar cadastros."
+      );
+    }
+  }
+
+   async function mudarStatus(
+    id: string,
+    status: "approved" | "rejected"
+  ) {
+    try {
+      const response = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          status,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao atualizar cadastro.");
+      }
+
+      setMsg(
+        status === "approved"
+          ? "Cadastro aprovado."
+          : "Cadastro reprovado."
+      );
+
+      await carregar();
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar cadastro."
+      );
+    }
+  }
+
+  async function salvarPermissao(
+    item: Profile,
+    key: string,
+    checked: boolean
+  ) {
+    try {
+      const permissions = {
+        ...(item.permissions || {}),
+        [key]: checked,
+      };
+
+      const response = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: item.id,
+          permissions,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao salvar permissão.");
+      }
+
+      await carregar();
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar permissão."
+      );
+    }
+  }
+
   if (currentUser.role !== "administrador") return <FullScreenMessage title="Sem permissão" desc="Apenas administradores acessam a análise de cadastros." />;
   const filtered = items.filter((i) => textMatch(i, search));
   return <><Title title="Análise de Cadastros" desc="Aprovação/reprovação e quadro de permissões por cadastro." />{msg && <Message text={msg} />}<section className="card"><h2 className="card-title">Cadastros aguardando análise</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro pendente.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.email}</small><small>{formatRole(item.role)} - {item.status}</small>{item.seller_code && <small>Código vendedor: {item.seller_code}</small>}{item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}<div className="mini-grid">{permissoes.map((p) => <label key={p.key} className="check-row"><input type="checkbox" checked={Boolean(item.permissions?.[p.key])} onChange={(e) => salvarPermissao(item, p.key, e.target.checked)} /> {p.label}</label>)}</div><div className="form-actions"><button className="btn btn-green" onClick={() => mudarStatus(item.id, "approved")}>Aprovar</button><button className="btn btn-red" onClick={() => mudarStatus(item.id, "rejected")}>Reprovar</button></div></div>)}</div>}</section></>;
