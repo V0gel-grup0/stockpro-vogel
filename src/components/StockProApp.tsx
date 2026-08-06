@@ -695,17 +695,59 @@ function Produtos({ search }: SearchProps) {
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
   async function carregar() {
-    const resposta = await fetch("/api/products");
-    const resultado = await resposta.json();
+    try {
+      setMsg("");
 
-    if (!resposta.ok) {
-      setMsg(resultado.erro || "Erro ao carregar produtos.");
-      return;
+      const [productsResponse, suppliersResponse] =
+        await Promise.all([
+          fetch("/api/products", {
+            cache: "no-store",
+          }),
+          fetch("/api/suppliers", {
+            cache: "no-store",
+          }),
+        ]);
+
+      const [productsResult, suppliersResult] =
+        await Promise.all([
+          productsResponse.json(),
+          suppliersResponse.json(),
+        ]);
+
+      if (!productsResponse.ok) {
+        throw new Error(
+          productsResult.erro ||
+            "Erro ao carregar produtos."
+        );
+      }
+
+      if (!suppliersResponse.ok) {
+        throw new Error(
+          suppliersResult.erro ||
+            "Erro ao carregar fornecedores."
+        );
+      }
+
+      setItems(productsResult.products || []);
+      setSuppliers(suppliersResult.suppliers || []);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar produtos e fornecedores:",
+        error
+      );
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar produtos."
+      );
     }
-
-    setItems(resultado.products || []);
-    console.log("Produtos carregados:", resultado.products);
   }
   function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); }
   async function carregarPadrao() {
@@ -779,33 +821,222 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
   useEffect(() => { carregar(); }, []);
   function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); }
   async function carregar() {
-    if (table === "clients") {
-      const resposta = await fetch("/api/clients");
-      const resultado = await resposta.json();
+    try {
+      setMsg("");
 
-      if (!resposta.ok) {
-        setMsg(resultado.erro || "Erro ao carregar clientes.");
+      if (table === "clients") {
+        const resposta = await fetch("/api/clients", {
+          cache: "no-store",
+        });
+
+        const resultado = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(
+            resultado.erro ||
+              "Erro ao carregar clientes."
+          );
+        }
+
+        setItems(resultado.clients || []);
         return;
       }
 
-      setItems(resultado.clients || []);
-      return;
+      const resposta = await fetch("/api/suppliers", {
+        cache: "no-store",
+      });
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado.erro ||
+            "Erro ao carregar fornecedores."
+        );
+      }
+
+      setItems(resultado.suppliers || []);
+    } catch (error) {
+      console.error("Erro ao carregar cadastros:", error);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar os cadastros."
+      );
     }
-
-    const { data } = await supabase
-      .from(table)
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    setItems(data || []);
   }
   async function buscarCepPorValor(v: string) { const end = await buscarCep(v); if (!end) return setMsg("CEP não encontrado."); setForm((a) => ({ ...a, ...end })); }
   function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", document: maskCpfCnpj(item.document || ""), phone: maskPhone(item.phone || ""), email: item.email || "", cep: maskCep(item.cep || ""), city: item.city || "", street: item.street || "", number: item.number || "", no_number: Boolean(item.no_number), neighborhood: item.neighborhood || "", products: item.products || [], invoice_number: item.invoice_number || "", federal_invoice_number: item.federal_invoice_number || "", proposal_status: item.proposal_status || "Lead Frio" }); }
-  async function excluir(id: string) { if (!confirm(`Excluir este ${kind}?`)) return; const { error } = await supabase.from(table).delete().eq("id", id); if (error) return setMsg(error.message); setItems((a) => a.filter((x) => x.id !== id)); setMsg(`${kind === "cliente" ? "Cliente" : "Fornecedor"} excluído com sucesso.`); }
-  async function salvar() { setLoading(true); setMsg(""); if (!form.name || !form.document || !form.phone || !form.cep || !form.city || !form.street || !form.neighborhood) { setLoading(false); return setMsg("Preencha todos os campos obrigatórios."); } if (!form.no_number && !form.number) { setLoading(false); return setMsg("Informe o número ou marque Sem número."); } const payload: AnyRow = { name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, proposal_status: form.proposal_status || "Lead Frio" }; if (table === "suppliers") { payload.email = form.email; payload.products = form.products; payload.invoice_number = form.invoice_number; payload.federal_invoice_number = form.federal_invoice_number; } const res = editing ? await supabase.from(table).update(payload).eq("id", editing) : await supabase.from(table).insert(payload); setLoading(false); if (res.error) return setMsg(res.error.message); setMsg(editing ? "Cadastro atualizado com sucesso." : "Cadastro salvo com sucesso."); setEditing(null); setForm(empty); carregar(); }
+  async function excluir(id: string) {
+    if (!confirm(`Excluir este ${kind}?`)) return;
+
+    try {
+      setMsg("");
+
+      if (table === "clients") {
+        const { error } = await supabase
+          .from("clients")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+      } else {
+        const resposta = await fetch(
+          `/api/suppliers?id=${encodeURIComponent(id)}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        const resultado = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(
+            resultado.erro ||
+              "Erro ao excluir fornecedor."
+          );
+        }
+      }
+
+      setItems((currentItems) =>
+        currentItems.filter((item) => item.id !== id)
+      );
+
+      setMsg(
+        `${
+          kind === "cliente"
+            ? "Cliente"
+            : "Fornecedor"
+        } excluído com sucesso.`
+      );
+    } catch (error) {
+      console.error("Erro ao excluir cadastro:", error);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao excluir cadastro."
+      );
+    }
+  }
+  async function salvar() {
+    setLoading(true);
+    setMsg("");
+
+    try {
+      if (
+        !form.name ||
+        !form.document ||
+        !form.phone ||
+        !form.cep ||
+        !form.city ||
+        !form.street ||
+        !form.neighborhood
+      ) {
+        throw new Error(
+          "Preencha todos os campos obrigatórios."
+        );
+      }
+
+      if (!form.no_number && !form.number) {
+        throw new Error(
+          "Informe o número ou marque Sem número."
+        );
+      }
+
+      const basePayload: AnyRow = {
+        name: form.name.trim(),
+        document: onlyNumbers(form.document),
+        phone: onlyNumbers(form.phone),
+        cep: onlyNumbers(form.cep),
+        city: form.city.trim(),
+        street: form.street.trim(),
+        number: form.no_number
+          ? ""
+          : form.number.trim(),
+        no_number: form.no_number,
+        neighborhood: form.neighborhood.trim(),
+      };
+
+      if (table === "clients") {
+        const clientPayload = {
+          ...basePayload,
+          proposal_status:
+            form.proposal_status || "Lead Frio",
+        };
+
+        const result = editing
+          ? await supabase
+              .from("clients")
+              .update(clientPayload)
+              .eq("id", editing)
+          : await supabase
+              .from("clients")
+              .insert(clientPayload);
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+      } else {
+        const supplierPayload = {
+          ...basePayload,
+          email: form.email.trim(),
+          products: form.products,
+        };
+
+        const resposta = await fetch("/api/suppliers", {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            editing
+              ? {
+                  id: editing,
+                  ...supplierPayload,
+                }
+              : supplierPayload
+          ),
+        });
+
+        const resultado = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(
+            resultado.erro ||
+              "Erro ao salvar fornecedor."
+          );
+        }
+      }
+
+      setMsg(
+        editing
+          ? "Cadastro atualizado com sucesso."
+          : "Cadastro salvo com sucesso."
+      );
+
+      setEditing(null);
+      setForm(empty);
+
+      await carregar();
+    } catch (error) {
+      console.error("Erro ao salvar cadastro:", error);
+
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar cadastro."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
   function toggleProduct(p: string) { set("products", form.products.includes(p) ? form.products.filter((x) => x !== p) : [...form.products, p]); }
   const filtered = items.filter((i) => textMatch(i, search));
-  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small><small>Proposta: {item.proposal_status || "Lead Frio"}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
+  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} />{kind === "cliente" && <div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>}{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small>{kind === "cliente" && <small>Proposta: {item.proposal_status || "Lead Frio"}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div></div>)}</div>}</section></>;
 }
 
 function Colaboradores({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
