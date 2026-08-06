@@ -35,6 +35,7 @@ export type ClientsMinAggregateOutputType = {
   number: string | null
   no_number: boolean | null
   neighborhood: string | null
+  proposal_status: string | null
   created_by: string | null
   created_at: Date | null
 }
@@ -50,6 +51,7 @@ export type ClientsMaxAggregateOutputType = {
   number: string | null
   no_number: boolean | null
   neighborhood: string | null
+  proposal_status: string | null
   created_by: string | null
   created_at: Date | null
 }
@@ -65,6 +67,7 @@ export type ClientsCountAggregateOutputType = {
   number: number
   no_number: number
   neighborhood: number
+  proposal_status: number
   created_by: number
   created_at: number
   _all: number
@@ -82,6 +85,7 @@ export type ClientsMinAggregateInputType = {
   number?: true
   no_number?: true
   neighborhood?: true
+  proposal_status?: true
   created_by?: true
   created_at?: true
 }
@@ -97,6 +101,7 @@ export type ClientsMaxAggregateInputType = {
   number?: true
   no_number?: true
   neighborhood?: true
+  proposal_status?: true
   created_by?: true
   created_at?: true
 }
@@ -112,6 +117,7 @@ export type ClientsCountAggregateInputType = {
   number?: true
   no_number?: true
   neighborhood?: true
+  proposal_status?: true
   created_by?: true
   created_at?: true
   _all?: true
@@ -200,6 +206,7 @@ export type ClientsGroupByOutputType = {
   number: string
   no_number: boolean
   neighborhood: string
+  proposal_status: string
   created_by: string | null
   created_at: Date | null
   _count: ClientsCountAggregateOutputType | null
@@ -236,6 +243,7 @@ export type clientsWhereInput = {
   number?: Prisma.StringFilter<"clients"> | string
   no_number?: Prisma.BoolFilter<"clients"> | boolean
   neighborhood?: Prisma.StringFilter<"clients"> | string
+  proposal_status?: Prisma.StringFilter<"clients"> | string
   created_by?: Prisma.UuidNullableFilter<"clients"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"clients"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
@@ -253,6 +261,7 @@ export type clientsOrderByWithRelationInput = {
   number?: Prisma.SortOrder
   no_number?: Prisma.SortOrder
   neighborhood?: Prisma.SortOrder
+  proposal_status?: Prisma.SortOrder
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   profiles?: Prisma.profilesOrderByWithRelationInput
@@ -273,6 +282,7 @@ export type clientsWhereUniqueInput = Prisma.AtLeast<{
   number?: Prisma.StringFilter<"clients"> | string
   no_number?: Prisma.BoolFilter<"clients"> | boolean
   neighborhood?: Prisma.StringFilter<"clients"> | string
+  proposal_status?: Prisma.StringFilter<"clients"> | string
   created_by?: Prisma.UuidNullableFilter<"clients"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"clients"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
@@ -290,6 +300,7 @@ export type clientsOrderByWithAggregationInput = {
   number?: Prisma.SortOrder
   no_number?: Prisma.SortOrder
   neighborhood?: Prisma.SortOrder
+  proposal_status?: Prisma.SortOrder
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.clientsCountOrderByAggregateInput
@@ -311,6 +322,7 @@ export type clientsScalarWhereWithAggregatesInput = {
   number?: Prisma.StringWithAggregatesFilter<"clients"> | string
   no_number?: Prisma.BoolWithAggregatesFilter<"clients"> | boolean
   neighborhood?: Prisma.StringWithAggregatesFilter<"clients"> | string
+  proposal_status?: Prisma.StringWithAggregatesFilter<"clients"> | string
   created_by?: Prisma.UuidNullableWithAggregatesFilter<"clients"> | string | null
   created_at?: Prisma.DateTimeNullableWithAggregatesFilter<"clients"> | Date | string | null
 }
@@ -326,6 +338,7 @@ export type clientsCreateInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
@@ -342,6 +355,7 @@ export type clientsUncheckedCreateInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_by?: string | null
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
@@ -358,6 +372,7 @@ export type clientsUpdateInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
@@ -374,6 +389,7 @@ export type clientsUncheckedUpdateInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
@@ -390,6 +406,7 @@ export type clientsCreateManyInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_by?: string | null
   created_at?: Date | string | null
 }
@@ -405,6 +422,7 @@ export type clientsUpdateManyMutationInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
@@ -419,6 +437,7 @@ export type clientsUncheckedUpdateManyInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -434,6 +453,7 @@ export type clientsCountOrderByAggregateInput = {
   number?: Prisma.SortOrder
   no_number?: Prisma.SortOrder
   neighborhood?: Prisma.SortOrder
+  proposal_status?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
@@ -449,6 +469,7 @@ export type clientsMaxOrderByAggregateInput = {
   number?: Prisma.SortOrder
   no_number?: Prisma.SortOrder
   neighborhood?: Prisma.SortOrder
+  proposal_status?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
@@ -464,6 +485,7 @@ export type clientsMinOrderByAggregateInput = {
   number?: Prisma.SortOrder
   no_number?: Prisma.SortOrder
   neighborhood?: Prisma.SortOrder
+  proposal_status?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
@@ -556,6 +578,7 @@ export type clientsCreateWithoutOrdersInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
 }
@@ -571,6 +594,7 @@ export type clientsUncheckedCreateWithoutOrdersInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_by?: string | null
   created_at?: Date | string | null
 }
@@ -602,6 +626,7 @@ export type clientsUpdateWithoutOrdersInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
 }
@@ -617,6 +642,7 @@ export type clientsUncheckedUpdateWithoutOrdersInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -632,6 +658,7 @@ export type clientsCreateWithoutProfilesInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_at?: Date | string | null
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
 }
@@ -647,6 +674,7 @@ export type clientsUncheckedCreateWithoutProfilesInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
 }
@@ -691,6 +719,7 @@ export type clientsScalarWhereInput = {
   number?: Prisma.StringFilter<"clients"> | string
   no_number?: Prisma.BoolFilter<"clients"> | boolean
   neighborhood?: Prisma.StringFilter<"clients"> | string
+  proposal_status?: Prisma.StringFilter<"clients"> | string
   created_by?: Prisma.UuidNullableFilter<"clients"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"clients"> | Date | string | null
 }
@@ -706,6 +735,7 @@ export type clientsCreateManyProfilesInput = {
   number?: string
   no_number?: boolean
   neighborhood?: string
+  proposal_status?: string
   created_at?: Date | string | null
 }
 
@@ -720,6 +750,7 @@ export type clientsUpdateWithoutProfilesInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
 }
@@ -735,6 +766,7 @@ export type clientsUncheckedUpdateWithoutProfilesInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
 }
@@ -750,6 +782,7 @@ export type clientsUncheckedUpdateManyWithoutProfilesInput = {
   number?: Prisma.StringFieldUpdateOperationsInput | string
   no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
@@ -795,6 +828,7 @@ export type clientsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   number?: boolean
   no_number?: boolean
   neighborhood?: boolean
+  proposal_status?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
@@ -813,6 +847,7 @@ export type clientsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   number?: boolean
   no_number?: boolean
   neighborhood?: boolean
+  proposal_status?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
@@ -829,6 +864,7 @@ export type clientsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   number?: boolean
   no_number?: boolean
   neighborhood?: boolean
+  proposal_status?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
@@ -845,11 +881,12 @@ export type clientsSelectScalar = {
   number?: boolean
   no_number?: boolean
   neighborhood?: boolean
+  proposal_status?: boolean
   created_by?: boolean
   created_at?: boolean
 }
 
-export type clientsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "document" | "phone" | "cep" | "city" | "street" | "number" | "no_number" | "neighborhood" | "created_by" | "created_at", ExtArgs["result"]["clients"]>
+export type clientsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "document" | "phone" | "cep" | "city" | "street" | "number" | "no_number" | "neighborhood" | "proposal_status" | "created_by" | "created_at", ExtArgs["result"]["clients"]>
 export type clientsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
   orders?: boolean | Prisma.clients$ordersArgs<ExtArgs>
@@ -879,6 +916,7 @@ export type $clientsPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     number: string
     no_number: boolean
     neighborhood: string
+    proposal_status: string
     created_by: string | null
     created_at: Date | null
   }, ExtArgs["result"]["clients"]>
@@ -1316,6 +1354,7 @@ export interface clientsFieldRefs {
   readonly number: Prisma.FieldRef<"clients", 'String'>
   readonly no_number: Prisma.FieldRef<"clients", 'Boolean'>
   readonly neighborhood: Prisma.FieldRef<"clients", 'String'>
+  readonly proposal_status: Prisma.FieldRef<"clients", 'String'>
   readonly created_by: Prisma.FieldRef<"clients", 'String'>
   readonly created_at: Prisma.FieldRef<"clients", 'DateTime'>
 }

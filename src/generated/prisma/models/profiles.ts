@@ -45,6 +45,7 @@ export type ProfilesMinAggregateOutputType = {
   responsible_manager_id: string | null
   created_by: string | null
   approval_notes: string | null
+  password_hash: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -70,6 +71,7 @@ export type ProfilesMaxAggregateOutputType = {
   responsible_manager_id: string | null
   created_by: string | null
   approval_notes: string | null
+  password_hash: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -96,6 +98,7 @@ export type ProfilesCountAggregateOutputType = {
   created_by: number
   permissions: number
   approval_notes: number
+  password_hash: number
   created_at: number
   updated_at: number
   _all: number
@@ -123,6 +126,7 @@ export type ProfilesMinAggregateInputType = {
   responsible_manager_id?: true
   created_by?: true
   approval_notes?: true
+  password_hash?: true
   created_at?: true
   updated_at?: true
 }
@@ -148,6 +152,7 @@ export type ProfilesMaxAggregateInputType = {
   responsible_manager_id?: true
   created_by?: true
   approval_notes?: true
+  password_hash?: true
   created_at?: true
   updated_at?: true
 }
@@ -174,6 +179,7 @@ export type ProfilesCountAggregateInputType = {
   created_by?: true
   permissions?: true
   approval_notes?: true
+  password_hash?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -273,6 +279,7 @@ export type ProfilesGroupByOutputType = {
   created_by: string | null
   permissions: runtime.JsonValue
   approval_notes: string | null
+  password_hash: string | null
   created_at: Date | null
   updated_at: Date | null
   _count: ProfilesCountAggregateOutputType | null
@@ -320,6 +327,7 @@ export type profilesWhereInput = {
   created_by?: Prisma.UuidNullableFilter<"profiles"> | string | null
   permissions?: Prisma.JsonFilter<"profiles">
   approval_notes?: Prisma.StringNullableFilter<"profiles"> | string | null
+  password_hash?: Prisma.StringNullableFilter<"profiles"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.AssembliesListRelationFilter
@@ -357,6 +365,7 @@ export type profilesOrderByWithRelationInput = {
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   permissions?: Prisma.SortOrder
   approval_notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  password_hash?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesOrderByRelationAggregateInput
@@ -397,6 +406,7 @@ export type profilesWhereUniqueInput = Prisma.AtLeast<{
   created_by?: Prisma.UuidNullableFilter<"profiles"> | string | null
   permissions?: Prisma.JsonFilter<"profiles">
   approval_notes?: Prisma.StringNullableFilter<"profiles"> | string | null
+  password_hash?: Prisma.StringNullableFilter<"profiles"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.AssembliesListRelationFilter
@@ -434,6 +444,7 @@ export type profilesOrderByWithAggregationInput = {
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   permissions?: Prisma.SortOrder
   approval_notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  password_hash?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.profilesCountOrderByAggregateInput
@@ -466,6 +477,7 @@ export type profilesScalarWhereWithAggregatesInput = {
   created_by?: Prisma.UuidNullableWithAggregatesFilter<"profiles"> | string | null
   permissions?: Prisma.JsonWithAggregatesFilter<"profiles">
   approval_notes?: Prisma.StringNullableWithAggregatesFilter<"profiles"> | string | null
+  password_hash?: Prisma.StringNullableWithAggregatesFilter<"profiles"> | string | null
   created_at?: Prisma.DateTimeNullableWithAggregatesFilter<"profiles"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"profiles"> | Date | string | null
 }
@@ -489,6 +501,7 @@ export type profilesCreateInput = {
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -526,6 +539,7 @@ export type profilesUncheckedCreateInput = {
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -557,6 +571,7 @@ export type profilesUpdateInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -594,6 +609,7 @@ export type profilesUncheckedUpdateInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -628,6 +644,7 @@ export type profilesCreateManyInput = {
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
 }
@@ -651,6 +668,7 @@ export type profilesUpdateManyMutationInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -677,6 +695,7 @@ export type profilesUncheckedUpdateManyInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -718,6 +737,7 @@ export type profilesCountOrderByAggregateInput = {
   created_by?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
   approval_notes?: Prisma.SortOrder
+  password_hash?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -743,6 +763,7 @@ export type profilesMaxOrderByAggregateInput = {
   responsible_manager_id?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
   approval_notes?: Prisma.SortOrder
+  password_hash?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -768,6 +789,7 @@ export type profilesMinOrderByAggregateInput = {
   responsible_manager_id?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
   approval_notes?: Prisma.SortOrder
+  password_hash?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -1053,6 +1075,7 @@ export type profilesCreateWithoutAssemblies_assemblies_created_byToprofilesInput
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
@@ -1089,6 +1112,7 @@ export type profilesUncheckedCreateWithoutAssemblies_assemblies_created_byToprof
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
@@ -1124,6 +1148,7 @@ export type profilesCreateWithoutAssemblies_assemblies_technician_idToprofilesIn
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1160,6 +1185,7 @@ export type profilesUncheckedCreateWithoutAssemblies_assemblies_technician_idTop
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1206,6 +1232,7 @@ export type profilesUpdateWithoutAssemblies_assemblies_created_byToprofilesInput
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
@@ -1242,6 +1269,7 @@ export type profilesUncheckedUpdateWithoutAssemblies_assemblies_created_byToprof
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
@@ -1283,6 +1311,7 @@ export type profilesUpdateWithoutAssemblies_assemblies_technician_idToprofilesIn
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1319,6 +1348,7 @@ export type profilesUncheckedUpdateWithoutAssemblies_assemblies_technician_idTop
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1349,6 +1379,7 @@ export type profilesCreateWithoutClientsInput = {
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1385,6 +1416,7 @@ export type profilesUncheckedCreateWithoutClientsInput = {
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1431,6 +1463,7 @@ export type profilesUpdateWithoutClientsInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1467,6 +1500,7 @@ export type profilesUncheckedUpdateWithoutClientsInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1497,6 +1531,7 @@ export type profilesCreateWithoutMovementsInput = {
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1533,6 +1568,7 @@ export type profilesUncheckedCreateWithoutMovementsInput = {
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1579,6 +1615,7 @@ export type profilesUpdateWithoutMovementsInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1615,6 +1652,7 @@ export type profilesUncheckedUpdateWithoutMovementsInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1645,6 +1683,7 @@ export type profilesCreateWithoutOrdersInput = {
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1681,6 +1720,7 @@ export type profilesUncheckedCreateWithoutOrdersInput = {
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1727,6 +1767,7 @@ export type profilesUpdateWithoutOrdersInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1763,6 +1804,7 @@ export type profilesUncheckedUpdateWithoutOrdersInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -1793,6 +1835,7 @@ export type profilesCreateWithoutOther_profiles_profiles_created_byToprofilesInp
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1829,6 +1872,7 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_created_byTopr
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1864,6 +1908,7 @@ export type profilesCreateWithoutProfiles_profiles_created_byToprofilesInput = {
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1899,6 +1944,7 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_created_byToprofiles
   responsible_manager_id?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1940,6 +1986,7 @@ export type profilesCreateWithoutOther_profiles_profiles_responsible_manager_idT
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -1976,6 +2023,7 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_responsible_ma
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2011,6 +2059,7 @@ export type profilesCreateWithoutProfiles_profiles_responsible_manager_idToprofi
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2046,6 +2095,7 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_responsible_manager_
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2087,6 +2137,7 @@ export type profilesCreateWithoutOther_profiles_profiles_responsible_seller_idTo
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2123,6 +2174,7 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_responsible_se
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2158,6 +2210,7 @@ export type profilesCreateWithoutProfiles_profiles_responsible_seller_idToprofil
   manager_code?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2193,6 +2246,7 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_responsible_seller_i
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
@@ -2245,6 +2299,7 @@ export type profilesUpdateWithoutOther_profiles_profiles_created_byToprofilesInp
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2281,6 +2336,7 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_created_byTopr
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2333,6 +2389,7 @@ export type profilesScalarWhereInput = {
   created_by?: Prisma.UuidNullableFilter<"profiles"> | string | null
   permissions?: Prisma.JsonFilter<"profiles">
   approval_notes?: Prisma.StringNullableFilter<"profiles"> | string | null
+  password_hash?: Prisma.StringNullableFilter<"profiles"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"profiles"> | Date | string | null
 }
@@ -2367,6 +2424,7 @@ export type profilesUpdateWithoutOther_profiles_profiles_responsible_manager_idT
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2403,6 +2461,7 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_responsible_ma
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2460,6 +2519,7 @@ export type profilesUpdateWithoutOther_profiles_profiles_responsible_seller_idTo
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2496,6 +2556,7 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_responsible_se
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2544,6 +2605,7 @@ export type profilesCreateManyProfiles_profiles_created_byToprofilesInput = {
   responsible_manager_id?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
 }
@@ -2569,6 +2631,7 @@ export type profilesCreateManyProfiles_profiles_responsible_manager_idToprofiles
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
 }
@@ -2594,6 +2657,7 @@ export type profilesCreateManyProfiles_profiles_responsible_seller_idToprofilesI
   created_by?: string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: string | null
+  password_hash?: string | null
   created_at?: Date | string | null
   updated_at?: Date | string | null
 }
@@ -2617,6 +2681,7 @@ export type profilesUpdateWithoutProfiles_profiles_created_byToprofilesInput = {
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2652,6 +2717,7 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_created_byToprofiles
   responsible_manager_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2685,6 +2751,7 @@ export type profilesUncheckedUpdateManyWithoutProfiles_profiles_created_byToprof
   responsible_manager_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -2708,6 +2775,7 @@ export type profilesUpdateWithoutProfiles_profiles_responsible_manager_idToprofi
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2743,6 +2811,7 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_responsible_manager_
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2776,6 +2845,7 @@ export type profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_mana
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -2799,6 +2869,7 @@ export type profilesUpdateWithoutProfiles_profiles_responsible_seller_idToprofil
   manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2834,6 +2905,7 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_responsible_seller_i
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
@@ -2867,6 +2939,7 @@ export type profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_sell
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -2987,6 +3060,7 @@ export type profilesSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   created_by?: boolean
   permissions?: boolean
   approval_notes?: boolean
+  password_hash?: boolean
   created_at?: boolean
   updated_at?: boolean
   assemblies_assemblies_created_byToprofiles?: boolean | Prisma.profiles$assemblies_assemblies_created_byToprofilesArgs<ExtArgs>
@@ -3025,6 +3099,7 @@ export type profilesSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   created_by?: boolean
   permissions?: boolean
   approval_notes?: boolean
+  password_hash?: boolean
   created_at?: boolean
   updated_at?: boolean
   profiles_profiles_created_byToprofiles?: boolean | Prisma.profiles$profiles_profiles_created_byToprofilesArgs<ExtArgs>
@@ -3054,6 +3129,7 @@ export type profilesSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   created_by?: boolean
   permissions?: boolean
   approval_notes?: boolean
+  password_hash?: boolean
   created_at?: boolean
   updated_at?: boolean
   profiles_profiles_created_byToprofiles?: boolean | Prisma.profiles$profiles_profiles_created_byToprofilesArgs<ExtArgs>
@@ -3083,11 +3159,12 @@ export type profilesSelectScalar = {
   created_by?: boolean
   permissions?: boolean
   approval_notes?: boolean
+  password_hash?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type profilesOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "role" | "status" | "name" | "document" | "phone" | "cep" | "city" | "street" | "number" | "no_number" | "neighborhood" | "access_code" | "seller_code" | "manager_code" | "responsible_seller_id" | "responsible_manager_id" | "created_by" | "permissions" | "approval_notes" | "created_at" | "updated_at", ExtArgs["result"]["profiles"]>
+export type profilesOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "role" | "status" | "name" | "document" | "phone" | "cep" | "city" | "street" | "number" | "no_number" | "neighborhood" | "access_code" | "seller_code" | "manager_code" | "responsible_seller_id" | "responsible_manager_id" | "created_by" | "permissions" | "approval_notes" | "password_hash" | "created_at" | "updated_at", ExtArgs["result"]["profiles"]>
 export type profilesInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   assemblies_assemblies_created_byToprofiles?: boolean | Prisma.profiles$assemblies_assemblies_created_byToprofilesArgs<ExtArgs>
   assemblies_assemblies_technician_idToprofiles?: boolean | Prisma.profiles$assemblies_assemblies_technician_idToprofilesArgs<ExtArgs>
@@ -3150,6 +3227,7 @@ export type $profilesPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     created_by: string | null
     permissions: runtime.JsonValue
     approval_notes: string | null
+    password_hash: string | null
     created_at: Date | null
     updated_at: Date | null
   }, ExtArgs["result"]["profiles"]>
@@ -3607,6 +3685,7 @@ export interface profilesFieldRefs {
   readonly created_by: Prisma.FieldRef<"profiles", 'String'>
   readonly permissions: Prisma.FieldRef<"profiles", 'Json'>
   readonly approval_notes: Prisma.FieldRef<"profiles", 'String'>
+  readonly password_hash: Prisma.FieldRef<"profiles", 'String'>
   readonly created_at: Prisma.FieldRef<"profiles", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"profiles", 'DateTime'>
 }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,10 +13,31 @@ export default function LoginPage() {
   async function entrar() {
     setLoading(true);
     setMsg("");
-    const { error } = await supabase.auth.signInWithPassword({ email: login.trim(), password: senha });
-    setLoading(false);
-    if (error) { setMsg(error.message || "Erro ao fazer login."); return; }
-    router.replace("/");
+
+    try {
+      const resposta = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: login.trim(),
+          password: senha,
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok || !dados.sucesso) {
+        setMsg(dados.erro || "Erro ao fazer login.");
+        return;
+      }
+
+      localStorage.setItem("stockpro_usuario", JSON.stringify(dados.usuario));
+      router.replace("/");
+    } catch {
+      setMsg("Não foi possível conectar ao sistema.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

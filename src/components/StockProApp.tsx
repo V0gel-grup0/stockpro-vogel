@@ -1,5 +1,7 @@
 "use client";
 
+import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
+
 function getSaleCode(order: any) {
   return order?.sale_code || order?.codigo_venda || "Gerando código...";
 }
@@ -875,13 +877,20 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
       setMsg("");
 
       if (table === "clients") {
-        const { error } = await supabase
-          .from("clients")
-          .delete()
-          .eq("id", id);
+        const response = await fetch(
+          `/api/clients?id=${encodeURIComponent(id)}`,
+          {
+            method: "DELETE",
+          }
+        );
 
-        if (error) {
-          throw new Error(error.message);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.erro ||
+              "Erro ao excluir cliente."
+          );
         }
       } else {
         const resposta = await fetch(
@@ -927,39 +936,23 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
     setMsg("");
 
     try {
-      if (
-        !form.name ||
-        !form.document ||
-        !form.phone ||
-        !form.cep ||
-        !form.city ||
-        !form.street ||
-        !form.neighborhood
-      ) {
-        throw new Error(
-          "Preencha todos os campos obrigatórios."
-        );
-      }
-
-      if (!form.no_number && !form.number) {
-        throw new Error(
-          "Informe o número ou marque Sem número."
-        );
-      }
-
-      const basePayload: AnyRow = {
-        name: form.name.trim(),
-        document: onlyNumbers(form.document),
-        phone: onlyNumbers(form.phone),
-        cep: onlyNumbers(form.cep),
-        city: form.city.trim(),
-        street: form.street.trim(),
-        number: form.no_number
-          ? ""
-          : form.number.trim(),
+      const validation = validarCadastroPessoa({
+        name: form.name,
+        document: form.document,
+        phone: form.phone,
+        cep: form.cep,
+        city: form.city,
+        street: form.street,
+        number: form.number,
         no_number: form.no_number,
-        neighborhood: form.neighborhood.trim(),
-      };
+        neighborhood: form.neighborhood,
+      });
+
+      if (validation.valido === false) {
+        throw new Error(validation.erro);
+      }
+
+      const basePayload: AnyRow = validation.dados;
 
       if (table === "clients") {
         const clientPayload = {
@@ -968,17 +961,28 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
             form.proposal_status || "Lead Frio",
         };
 
-        const result = editing
-          ? await supabase
-              .from("clients")
-              .update(clientPayload)
-              .eq("id", editing)
-          : await supabase
-              .from("clients")
-              .insert(clientPayload);
+        const response = await fetch("/api/clients", {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            editing
+              ? {
+                  id: editing,
+                  ...clientPayload,
+                }
+              : clientPayload
+          ),
+        });
 
-        if (result.error) {
-          throw new Error(result.error.message);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.erro ||
+              "Erro ao salvar cliente."
+          );
         }
       } else {
         const supplierPayload = {

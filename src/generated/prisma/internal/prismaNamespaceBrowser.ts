@@ -102,6 +102,7 @@ export const ClientsScalarFieldEnum = {
   number: 'number',
   no_number: 'no_number',
   neighborhood: 'neighborhood',
+  proposal_status: 'proposal_status',
   created_by: 'created_by',
   created_at: 'created_at'
 } as const
@@ -221,6 +222,7 @@ export const ProfilesScalarFieldEnum = {
   created_by: 'created_by',
   permissions: 'permissions',
   approval_notes: 'approval_notes',
+  password_hash: 'password_hash',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const

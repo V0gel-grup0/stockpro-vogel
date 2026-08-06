@@ -1,0 +1,378 @@
+export type CadastroPessoaInput = {
+  name: unknown;
+  document: unknown;
+  phone: unknown;
+  cep: unknown;
+  city: unknown;
+  street: unknown;
+  number: unknown;
+  no_number: unknown;
+  neighborhood: unknown;
+};
+
+export type CadastroPessoaNormalizado = {
+  name: string;
+  document: string;
+  phone: string;
+  cep: string;
+  city: string;
+  street: string;
+  number: string;
+  no_number: boolean;
+  neighborhood: string;
+};
+
+export type ResultadoValidacaoCadastro =
+  | {
+      valido: true;
+      dados: CadastroPessoaNormalizado;
+    }
+  | {
+      valido: false;
+      erro: string;
+    };
+
+export function somenteDigitos(value: unknown): string {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function normalizarTexto(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function todosCaracteresIguais(value: string): boolean {
+  return /^([A-Za-z0-9])\1+$/.test(
+    value.replace(/[\s./,\-]/g, "")
+  );
+}
+
+function textoValido(
+  value: string,
+  minimumLength: number
+): boolean {
+  if (value.length < minimumLength) return false;
+
+  if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(value)) {
+    return false;
+  }
+
+  if (todosCaracteresIguais(value)) {
+    return false;
+  }
+
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const invalidValues = new Set([
+    "teste",
+    "nao informado",
+    "nao possui",
+    "sem informacao",
+    "desconhecido",
+    "xxx",
+    "aaaa",
+  ]);
+
+  return !invalidValues.has(normalized);
+}
+
+export function validarNomeCompleto(
+  value: unknown,
+  documentValue: unknown
+): boolean {
+  const name = normalizarTexto(value);
+  const document = somenteDigitos(documentValue);
+
+  if (!textoValido(name, 3)) {
+    return false;
+  }
+
+  /*
+   * Empresas podem ter razões sociais curtas ou
+   * conter números, siglas e outros caracteres.
+   */
+  if (document.length === 14) {
+    return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(name);
+  }
+
+  if (document.length !== 11) {
+    return false;
+  }
+
+  const parts = name
+    .split(" ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  /*
+   * Para CPF, exigimos pelo menos nome e sobrenome.
+   * Algumas pessoas possuem legalmente apenas duas partes,
+   * como "Matheus Meert".
+   */
+  if (parts.length < 2) {
+    return false;
+  }
+
+  const particles = new Set([
+    "da",
+    "das",
+    "de",
+    "do",
+    "dos",
+    "e",
+  ]);
+
+  return parts.every((part) => {
+    const normalizedPart = part
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    if (particles.has(normalizedPart)) {
+      return true;
+    }
+
+    if (
+      !/^[A-Za-zÀ-ÖØ-öø-ÿ'’-]+$/.test(part)
+    ) {
+      return false;
+    }
+
+    const lettersOnly = part.replace(
+      /['’\-]/g,
+      ""
+    );
+
+    /*
+     * Impede iniciais isoladas, como:
+     * João P Silva
+     */
+    return lettersOnly.length >= 2;
+  });
+}
+
+function digitosRepetidos(value: string): boolean {
+  return /^(\d)\1+$/.test(value);
+}
+
+export function validarCpf(value: unknown): boolean {
+  const cpf = somenteDigitos(value);
+
+  if (cpf.length !== 11 || digitosRepetidos(cpf)) {
+    return false;
+  }
+
+  let sum = 0;
+
+  for (let index = 0; index < 9; index += 1) {
+    sum += Number(cpf[index]) * (10 - index);
+  }
+
+  let digit = (sum * 10) % 11;
+
+  if (digit === 10) digit = 0;
+
+  if (digit !== Number(cpf[9])) {
+    return false;
+  }
+
+  sum = 0;
+
+  for (let index = 0; index < 10; index += 1) {
+    sum += Number(cpf[index]) * (11 - index);
+  }
+
+  digit = (sum * 10) % 11;
+
+  if (digit === 10) digit = 0;
+
+  return digit === Number(cpf[10]);
+}
+
+export function validarCnpj(value: unknown): boolean {
+  const cnpj = somenteDigitos(value);
+
+  if (cnpj.length !== 14 || digitosRepetidos(cnpj)) {
+    return false;
+  }
+
+  const calcularDigito = (
+    base: string,
+    weights: number[]
+  ) => {
+    const sum = base
+      .split("")
+      .reduce(
+        (total, number, index) =>
+          total + Number(number) * weights[index],
+        0
+      );
+
+    const remainder = sum % 11;
+
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+
+  const firstDigit = calcularDigito(
+    cnpj.slice(0, 12),
+    [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  );
+
+  if (firstDigit !== Number(cnpj[12])) {
+    return false;
+  }
+
+  const secondDigit = calcularDigito(
+    cnpj.slice(0, 13),
+    [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  );
+
+  return secondDigit === Number(cnpj[13]);
+}
+
+export function validarCpfCnpj(value: unknown): boolean {
+  const document = somenteDigitos(value);
+
+  if (document.length === 11) {
+    return validarCpf(document);
+  }
+
+  if (document.length === 14) {
+    return validarCnpj(document);
+  }
+
+  return false;
+}
+
+export function validarTelefone(value: unknown): boolean {
+  const phone = somenteDigitos(value);
+
+  if (
+    ![10, 11].includes(phone.length) ||
+    digitosRepetidos(phone)
+  ) {
+    return false;
+  }
+
+  const areaCode = phone.slice(0, 2);
+  const subscriberNumber = phone.slice(2);
+
+  if (
+    areaCode === "00" ||
+    Number(areaCode) < 11 ||
+    /^0+$/.test(subscriberNumber)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function validarCep(value: unknown): boolean {
+  const cep = somenteDigitos(value);
+
+  return cep.length === 8 && !digitosRepetidos(cep);
+}
+
+export function validarCadastroPessoa(
+  input: CadastroPessoaInput
+): ResultadoValidacaoCadastro {
+  const name = normalizarTexto(input.name);
+  const document = somenteDigitos(input.document);
+  const phone = somenteDigitos(input.phone);
+  const cep = somenteDigitos(input.cep);
+  const city = normalizarTexto(input.city);
+  const street = normalizarTexto(input.street);
+  const number = normalizarTexto(input.number);
+  const no_number = Boolean(input.no_number);
+  const neighborhood = normalizarTexto(
+    input.neighborhood
+  );
+
+  if (!validarNomeCompleto(name, document)) {
+    return {
+      valido: false,
+      erro:
+        document.length === 11
+          ? "Informe o nome completo, com nome e sobrenome."
+          : "Informe uma razão social válida.",
+    };
+  }
+
+  if (!validarCpfCnpj(document)) {
+    return {
+      valido: false,
+      erro: "Informe um CPF ou CNPJ válido.",
+    };
+  }
+
+  if (!validarTelefone(phone)) {
+    return {
+      valido: false,
+      erro:
+        "Informe um telefone válido com DDD.",
+    };
+  }
+
+  if (!validarCep(cep)) {
+    return {
+      valido: false,
+      erro: "Informe um CEP válido.",
+    };
+  }
+
+  if (!textoValido(city, 2)) {
+    return {
+      valido: false,
+      erro: "Informe uma cidade válida.",
+    };
+  }
+
+  if (!textoValido(street, 2)) {
+    return {
+      valido: false,
+      erro: "Informe uma rua válida.",
+    };
+  }
+
+  if (!textoValido(neighborhood, 2)) {
+    return {
+      valido: false,
+      erro: "Informe um bairro válido.",
+    };
+  }
+
+  if (
+    !no_number &&
+    (
+      !number ||
+      !/[1-9A-Za-zÀ-ÖØ-öø-ÿ]/.test(number) ||
+      /^0+$/.test(number)
+    )
+  ) {
+    return {
+      valido: false,
+      erro:
+        "Informe um número válido ou marque Sem número.",
+    };
+  }
+
+  return {
+    valido: true,
+    dados: {
+      name,
+      document,
+      phone,
+      cep,
+      city,
+      street,
+      number: no_number ? "" : number,
+      no_number,
+      neighborhood,
+    },
+  };
+}

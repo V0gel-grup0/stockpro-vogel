@@ -29,8 +29,9 @@ model clients {
   street       String    @default("")
   number       String    @default("")
   no_number    Boolean   @default(false)
-  neighborhood String    @default("")
-  created_by   String?   @db.Uuid
+  neighborhood  String    @default("")
+  proposal_status String @default("Lead Frio")
+  created_by    String?   @db.Uuid
   created_at   DateTime? @default(now()) @db.Timestamptz(6)
   profiles     profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders       orders[]
