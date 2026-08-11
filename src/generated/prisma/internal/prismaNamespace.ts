@@ -407,7 +407,8 @@ export const ModelName = {
   products: 'products',
   profiles: 'profiles',
   suppliers: 'suppliers',
-  equipment_components: 'equipment_components'
+  equipment_components: 'equipment_components',
+  mounted_equipments: 'mounted_equipments'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers" | "equipment_components"
+    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers" | "equipment_components" | "mounted_equipments"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    mounted_equipments: {
+      payload: Prisma.$mounted_equipmentsPayload<ExtArgs>
+      fields: Prisma.mounted_equipmentsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.mounted_equipmentsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.mounted_equipmentsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        findFirst: {
+          args: Prisma.mounted_equipmentsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.mounted_equipmentsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        findMany: {
+          args: Prisma.mounted_equipmentsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>[]
+        }
+        create: {
+          args: Prisma.mounted_equipmentsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        createMany: {
+          args: Prisma.mounted_equipmentsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.mounted_equipmentsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>[]
+        }
+        delete: {
+          args: Prisma.mounted_equipmentsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        update: {
+          args: Prisma.mounted_equipmentsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        deleteMany: {
+          args: Prisma.mounted_equipmentsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.mounted_equipmentsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.mounted_equipmentsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>[]
+        }
+        upsert: {
+          args: Prisma.mounted_equipmentsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$mounted_equipmentsPayload>
+        }
+        aggregate: {
+          args: Prisma.Mounted_equipmentsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMounted_equipments>
+        }
+        groupBy: {
+          args: Prisma.mounted_equipmentsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Mounted_equipmentsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.mounted_equipmentsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Mounted_equipmentsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1320,7 +1395,11 @@ export const ComponentsScalarFieldEnum = {
   supplier_id: 'supplier_id',
   quantity: 'quantity',
   min_stock: 'min_stock',
-  created_at: 'created_at'
+  cost_price: 'cost_price',
+  nf_number: 'nf_number',
+  receita_federal_nf: 'receita_federal_nf',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
 } as const
 
 export type ComponentsScalarFieldEnum = (typeof ComponentsScalarFieldEnum)[keyof typeof ComponentsScalarFieldEnum]
@@ -1341,8 +1420,20 @@ export const MovementsScalarFieldEnum = {
   id: 'id',
   type: 'type',
   item_type: 'item_type',
+  item_kind: 'item_kind',
+  nf_item_kind: 'nf_item_kind',
   item_id: 'item_id',
+  item_name: 'item_name',
+  product_id: 'product_id',
+  component_id: 'component_id',
+  supplier_id: 'supplier_id',
+  order_id: 'order_id',
   quantity: 'quantity',
+  unit_cost: 'unit_cost',
+  total_cost: 'total_cost',
+  nf_key: 'nf_key',
+  nf_number: 'nf_number',
+  receita_federal_nf: 'receita_federal_nf',
   notes: 'notes',
   created_by: 'created_by',
   created_at: 'created_at'
@@ -1462,6 +1553,19 @@ export const Equipment_componentsScalarFieldEnum = {
 export type Equipment_componentsScalarFieldEnum = (typeof Equipment_componentsScalarFieldEnum)[keyof typeof Equipment_componentsScalarFieldEnum]
 
 
+export const Mounted_equipmentsScalarFieldEnum = {
+  id: 'id',
+  equipment_name: 'equipment_name',
+  quantity: 'quantity',
+  min_stock: 'min_stock',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Mounted_equipmentsScalarFieldEnum = (typeof Mounted_equipmentsScalarFieldEnum)[keyof typeof Mounted_equipmentsScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1558,20 +1662,6 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'BigInt'
- */
-export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
-    
-
-
-/**
- * Reference to a field of type 'BigInt[]'
- */
-export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
-    
-
-
-/**
  * Reference to a field of type 'Decimal'
  */
 export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -1582,6 +1672,20 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
     
 
 
@@ -1802,6 +1906,7 @@ export type GlobalOmitConfig = {
   profiles?: Prisma.profilesOmit
   suppliers?: Prisma.suppliersOmit
   equipment_components?: Prisma.equipment_componentsOmit
+  mounted_equipments?: Prisma.mounted_equipmentsOmit
 }
 
 /* Types for Logging */

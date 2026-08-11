@@ -1,6 +1,6 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../src/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 function somenteNumeros(valor: string) {
   return String(valor || "").replace(/\D/g, "");

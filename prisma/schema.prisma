@@ -38,17 +38,22 @@ model clients {
 }
 
 model components {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  category    String     @default("")
-  equipment   String     @default("")
-  equipment_names String[] @default([])
-  supplier_id String?    @db.Uuid
-  quantity    Int        @default(0)
-  min_stock   Int        @default(0)
-  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
-  suppliers   suppliers? @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String
+  category             String                 @default("")
+  equipment            String                 @default("")
+  equipment_names      String[]               @default([])
+  supplier_id          String?                @db.Uuid
+  quantity             Decimal                @default(0) @db.Decimal
+  min_stock            Decimal                @default(0) @db.Decimal
+  cost_price           Decimal                @default(0) @db.Decimal
+  nf_number            String                 @default("")
+  receita_federal_nf   String                 @default("")
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  suppliers            suppliers?             @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   equipment_components equipment_components[]
+  movements            movements[]
 }
 
 model conta_azul_logs {
@@ -61,38 +66,55 @@ model conta_azul_logs {
 }
 
 model movements {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       String
-  item_type  String
-  item_id    String?   @db.Uuid
-  quantity   Int       @default(0)
-  notes      String    @default("")
-  created_by String?   @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  profiles   profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                String
+  item_type           String
+  item_kind           String?     @default("")
+  nf_item_kind        String?     @default("")
+  item_id             String?     @db.Uuid
+  item_name           String      @default("")
+  product_id          String?     @db.Uuid
+  component_id        String?     @db.Uuid
+  supplier_id         String?     @db.Uuid
+  order_id            String?     @db.Uuid
+  quantity            Decimal     @default(0) @db.Decimal
+  unit_cost           Decimal     @default(0) @db.Decimal
+  total_cost          Decimal     @default(0) @db.Decimal
+  nf_key              String      @default("")
+  nf_number           String      @default("")
+  receita_federal_nf  String      @default("")
+  notes               String      @default("")
+  created_by          String?     @db.Uuid
+  created_at          DateTime?   @default(now()) @db.Timestamptz(6)
+  profiles            profiles?   @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders              orders?     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products            products?   @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  components          components? @relation(fields: [component_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  suppliers           suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model orders {
-  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_number      BigInt            @default(autoincrement())
-  created_by        String?           @db.Uuid
-  client_id         String?           @db.Uuid
-  status            String            @default("pendente")
-  item_type         String            @default("")
-  item_id           String?           @db.Uuid
-  equipment_name    String            @default("")
-  quantity          Int               @default(1)
-  total_value       Decimal           @default(0) @db.Decimal
-  shipping_value    Decimal           @default(0) @db.Decimal
-  tracking_code     String            @default("")
-  tracking_location String            @default("")
-  conta_azul_status String            @default("")
-  notes             String            @default("")
-  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime?         @default(now()) @db.Timestamptz(6)
-  conta_azul_logs   conta_azul_logs[]
-  clients           clients?          @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  profiles          profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number       BigInt            @default(autoincrement())
+  created_by         String?           @db.Uuid
+  client_id          String?           @db.Uuid
+  status             String            @default("pendente")
+  item_type          String            @default("")
+  item_id            String?           @db.Uuid
+  equipment_name     String            @default("")
+  quantity           Int               @default(1)
+  total_value        Decimal           @default(0) @db.Decimal
+  shipping_value     Decimal           @default(0) @db.Decimal
+  tracking_code      String            @default("")
+  tracking_location  String            @default("")
+  conta_azul_status  String            @default("")
+  notes              String            @default("")
+  created_at         DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?         @default(now()) @db.Timestamptz(6)
+  conta_azul_logs    conta_azul_logs[]
+  movements          movements[]
+  clients            clients?          @relation(fields: [client_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  profiles           profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model playing_with_neon {
@@ -116,6 +138,7 @@ model products {
   created_at  DateTime?  @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
   suppliers   suppliers? @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movements   movements[]
 }
 
 model profiles {
@@ -172,6 +195,7 @@ model suppliers {
   created_at   DateTime?    @default(now()) @db.Timestamptz(6)
   components   components[]
   supplier_products products[]
+  movements         movements[]
 }
 
 enum account_status {
@@ -199,4 +223,14 @@ model equipment_components {
   components        components @relation(fields: [component_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([equipment_name, component_id])
+}
+
+model mounted_equipments {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  equipment_name String   @unique
+  quantity       Decimal  @default(0) @db.Decimal
+  min_stock      Decimal  @default(0) @db.Decimal
+  notes          String   @default("")
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
 }

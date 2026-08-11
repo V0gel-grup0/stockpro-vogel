@@ -61,7 +61,8 @@ export const ModelName = {
   products: 'products',
   profiles: 'profiles',
   suppliers: 'suppliers',
-  equipment_components: 'equipment_components'
+  equipment_components: 'equipment_components',
+  mounted_equipments: 'mounted_equipments'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -120,7 +121,11 @@ export const ComponentsScalarFieldEnum = {
   supplier_id: 'supplier_id',
   quantity: 'quantity',
   min_stock: 'min_stock',
-  created_at: 'created_at'
+  cost_price: 'cost_price',
+  nf_number: 'nf_number',
+  receita_federal_nf: 'receita_federal_nf',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
 } as const
 
 export type ComponentsScalarFieldEnum = (typeof ComponentsScalarFieldEnum)[keyof typeof ComponentsScalarFieldEnum]
@@ -141,8 +146,20 @@ export const MovementsScalarFieldEnum = {
   id: 'id',
   type: 'type',
   item_type: 'item_type',
+  item_kind: 'item_kind',
+  nf_item_kind: 'nf_item_kind',
   item_id: 'item_id',
+  item_name: 'item_name',
+  product_id: 'product_id',
+  component_id: 'component_id',
+  supplier_id: 'supplier_id',
+  order_id: 'order_id',
   quantity: 'quantity',
+  unit_cost: 'unit_cost',
+  total_cost: 'total_cost',
+  nf_key: 'nf_key',
+  nf_number: 'nf_number',
+  receita_federal_nf: 'receita_federal_nf',
   notes: 'notes',
   created_by: 'created_by',
   created_at: 'created_at'
@@ -260,6 +277,19 @@ export const Equipment_componentsScalarFieldEnum = {
 } as const
 
 export type Equipment_componentsScalarFieldEnum = (typeof Equipment_componentsScalarFieldEnum)[keyof typeof Equipment_componentsScalarFieldEnum]
+
+
+export const Mounted_equipmentsScalarFieldEnum = {
+  id: 'id',
+  equipment_name: 'equipment_name',
+  quantity: 'quantity',
+  min_stock: 'min_stock',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Mounted_equipmentsScalarFieldEnum = (typeof Mounted_equipmentsScalarFieldEnum)[keyof typeof Mounted_equipmentsScalarFieldEnum]
 
 
 export const SortOrder = {

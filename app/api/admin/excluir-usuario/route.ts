@@ -7,66 +7,66 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { id } = body;
+    const id = typeof body?.id === "string" ? body.id.trim() : "";
 
-    if (!id || typeof id !== "string") {
+    if (!id) {
       return NextResponse.json(
-        {
-          error: "ID do usuário é obrigatório.",
-        },
-        {
-          status: 400,
-        }
+        { error: "ID do usuário é obrigatório." },
+        { status: 400 }
       );
     }
 
     const profile = await prisma.profiles.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-      },
+      where: { id },
+      select: { id: true },
     });
 
     if (!profile) {
       return NextResponse.json(
-        {
-          error: "Usuário não encontrado.",
-        },
-        {
-          status: 404,
-        }
+        { error: "Usuário não encontrado." },
+        { status: 404 }
       );
     }
 
-    await prisma.$transaction(async (transaction) => {
-      await transaction.profiles.updateMany({
-        where: {
-          OR: [
-            {
-              responsible_seller_id: id,
-            },
-            {
-              responsible_manager_id: id,
-            },
-            {
-              created_by: id,
-            },
-          ],
-        },
-        data: {
-          responsible_seller_id: null,
-          responsible_manager_id: null,
-          created_by: null,
-        },
+    await prisma.$transaction(async (tx) => {
+      // Remove apenas o vínculo que aponta para o usuário excluído, sem
+      // apagar outros responsáveis válidos do mesmo perfil.
+      await tx.profiles.updateMany({
+        where: { responsible_seller_id: id },
+        data: { responsible_seller_id: null },
+      });
+      await tx.profiles.updateMany({
+        where: { responsible_manager_id: id },
+        data: { responsible_manager_id: null },
+      });
+      await tx.profiles.updateMany({
+        where: { created_by: id },
+        data: { created_by: null },
       });
 
-      await transaction.profiles.delete({
-        where: {
-          id,
-        },
+      // Preserva o histórico operacional e apenas remove a FK do usuário.
+      await tx.assemblies.updateMany({
+        where: { created_by: id },
+        data: { created_by: null },
       });
+      await tx.assemblies.updateMany({
+        where: { technician_id: id },
+        data: { technician_id: null },
+      });
+      await tx.clients.updateMany({
+        where: { created_by: id },
+        data: { created_by: null },
+      });
+      await tx.movements.updateMany({
+        where: { created_by: id },
+        data: { created_by: null },
+      });
+      await tx.orders.updateMany({
+        where: { created_by: id },
+        data: { created_by: null },
+      });
+
+      await tx.profiles.delete({ where: { id } });
     });
 
     return NextResponse.json({
@@ -79,11 +79,11 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Não foi possível excluir o usuário. Verifique se existem pedidos ou outros registros vinculados a ele.",
+          error instanceof Error
+            ? error.message
+            : "Não foi possível excluir o usuário.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

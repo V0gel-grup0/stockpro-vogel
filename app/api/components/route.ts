@@ -55,12 +55,11 @@ function normalizeEquipmentNames(value: unknown) {
   );
 }
 
-function normalizeIntegerStock(value: unknown) {
+function normalizeStock(value: unknown) {
   const numberValue = Number(value ?? 0);
 
   if (
     !Number.isFinite(numberValue) ||
-    !Number.isInteger(numberValue) ||
     numberValue < 0
   ) {
     return null;
@@ -168,7 +167,7 @@ function normalizeComponentData(
   }
 
   if (!partial || "quantity" in body) {
-    const quantity = normalizeIntegerStock(
+    const quantity = normalizeStock(
       body.quantity
     );
 
@@ -176,7 +175,7 @@ function normalizeComponentData(
       return {
         data,
         error:
-          "A quantidade deve ser um número inteiro maior ou igual a zero.",
+          "A quantidade deve ser um número maior ou igual a zero.",
       };
     }
 
@@ -184,7 +183,7 @@ function normalizeComponentData(
   }
 
   if (!partial || "min_stock" in body) {
-    const minStock = normalizeIntegerStock(
+    const minStock = normalizeStock(
       body.min_stock
     );
 
@@ -192,7 +191,7 @@ function normalizeComponentData(
       return {
         data,
         error:
-          "O estoque mínimo deve ser um número inteiro maior ou igual a zero.",
+          "O estoque mínimo deve ser um número maior ou igual a zero.",
       };
     }
 
@@ -277,17 +276,12 @@ function buildUpdateData(
   return updateData;
 }
 
-function serializeComponent<
-  T extends {
-    equipment_components?: Array<{
-      qty_per_equipment: unknown;
-      [key: string]: unknown;
-    }>;
-    [key: string]: unknown;
-  },
->(component: T) {
+function serializeComponent(component: any) {
   return {
     ...component,
+    quantity: Number(component.quantity ?? 0),
+    min_stock: Number(component.min_stock ?? 0),
+    cost_price: Number(component.cost_price ?? 0),
     equipment_components:
       component.equipment_components?.map(
         (item) => ({
@@ -623,10 +617,10 @@ export async function DELETE(
       );
     }
 
-    await prisma.components.delete({
-      where: {
-        id,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.movements.updateMany({ where: { component_id: id }, data: { component_id: null } });
+      await tx.movements.updateMany({ where: { item_type: "componente", item_id: id }, data: { item_id: null } });
+      await tx.components.delete({ where: { id } });
     });
 
     return NextResponse.json({
@@ -648,5 +642,160 @@ export async function DELETE(
       },
       { status: 500 }
     );
+  }
+}
+
+
+function normalizeName(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " " );
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = (await request.json()) as Record<string, any>;
+    const action = normalizeString(body.action);
+
+    if (action === "upsert_defaults") {
+      const items = Array.isArray(body.items) ? body.items : [];
+      if (!items.length) {
+        return NextResponse.json({ sucesso: false, erro: "Nenhum componente padrão informado." }, { status: 400 });
+      }
+
+      let criados = 0;
+      let atualizados = 0;
+
+      await prisma.$transaction(async (tx) => {
+        for (const raw of items) {
+          const name = normalizeString(raw?.name);
+          if (!name) continue;
+          const category = normalizeString(raw?.category) || "Componente";
+          const divisionResult = normalizeEquipmentDivision(raw?.equipment_division || []);
+          if (divisionResult.error) throw new Error(divisionResult.error);
+          const division = divisionResult.items || [];
+
+          const existing = await tx.components.findFirst({
+            where: { name: { equals: name, mode: "insensitive" } },
+            include: { equipment_components: true },
+            orderBy: { created_at: "asc" },
+          });
+
+          let componentId: string;
+          const mergedDivision = new Map<string, number>();
+          if (existing) {
+            for (const item of existing.equipment_components) mergedDivision.set(item.equipment_name, Number(item.qty_per_equipment));
+          }
+          for (const item of division) mergedDivision.set(item.equipment_name, item.qty_per_equipment);
+
+          if (existing) {
+            componentId = existing.id;
+            await tx.components.update({
+              where: { id: existing.id },
+              data: {
+                category,
+                equipment: "Estoque geral",
+                equipment_names: Array.from(mergedDivision.keys()),
+                updated_at: new Date(),
+              },
+            });
+            atualizados += 1;
+          } else {
+            const created = await tx.components.create({
+              data: {
+                name,
+                category,
+                equipment: "Estoque geral",
+                quantity: 0,
+                min_stock: 0,
+                equipment_names: Array.from(mergedDivision.keys()),
+              },
+            });
+            componentId = created.id;
+            criados += 1;
+          }
+
+          if (mergedDivision.size) {
+            await tx.equipment_components.deleteMany({ where: { component_id: componentId } });
+            await tx.equipment_components.createMany({
+              data: Array.from(mergedDivision.entries()).map(([equipment_name, qty_per_equipment]) => ({
+                component_id: componentId, equipment_name, qty_per_equipment,
+              })),
+            });
+          }
+        }
+      });
+
+      return NextResponse.json({ sucesso: true, criados, atualizados });
+    }
+
+    if (action === "unify_duplicates") {
+      const components = await prisma.components.findMany({
+        include: { equipment_components: true },
+        orderBy: { created_at: "asc" },
+      });
+      const groups = new Map<string, typeof components>();
+      for (const item of components) {
+        const key = normalizeName(item.name);
+        const group = groups.get(key) || [];
+        group.push(item);
+        groups.set(key, group);
+      }
+
+      let unificados = 0;
+      await prisma.$transaction(async (tx) => {
+        for (const group of groups.values()) {
+          if (group.length <= 1) continue;
+          const principal = group[0];
+          const rest = group.slice(1);
+          const restIds = rest.map((item) => item.id);
+          const allIds = group.map((item) => item.id);
+          const total = group.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+          const minStock = Math.max(...group.map((item) => Number(item.min_stock || 0)));
+          const category = principal.category || group.find((item) => item.category)?.category || "Componente";
+          const divisions = new Map<string, number>();
+          for (const item of group) {
+            for (const div of item.equipment_components) {
+              divisions.set(div.equipment_name, Math.max(divisions.get(div.equipment_name) || 0, Number(div.qty_per_equipment || 0)));
+            }
+          }
+
+          if (restIds.length) {
+            await tx.movements.updateMany({ where: { component_id: { in: restIds } }, data: { component_id: principal.id } });
+            await tx.movements.updateMany({ where: { item_type: "componente", item_id: { in: restIds } }, data: { item_id: principal.id } });
+          }
+          await tx.equipment_components.deleteMany({ where: { component_id: { in: allIds } } });
+          await tx.components.update({
+            where: { id: principal.id },
+            data: {
+              quantity: total,
+              min_stock: minStock,
+              category,
+              equipment: "Estoque geral",
+              equipment_names: Array.from(divisions.keys()),
+              updated_at: new Date(),
+            },
+          });
+          if (restIds.length) await tx.components.deleteMany({ where: { id: { in: restIds } } });
+          if (divisions.size) {
+            await tx.equipment_components.createMany({
+              data: Array.from(divisions.entries()).map(([equipment_name, qty_per_equipment]) => ({
+                component_id: principal.id, equipment_name, qty_per_equipment,
+              })),
+            });
+          }
+          unificados += rest.length;
+        }
+      });
+      return NextResponse.json({ sucesso: true, unificados });
+    }
+
+    return NextResponse.json({ sucesso: false, erro: "Ação não reconhecida." }, { status: 400 });
+  } catch (error) {
+    console.error("Erro na ação de componentes:", error);
+    return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao processar componentes." }, { status: 500 });
   }
 }

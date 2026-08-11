@@ -27,19 +27,35 @@ export type AggregateMovements = {
 }
 
 export type MovementsAvgAggregateOutputType = {
-  quantity: number | null
+  quantity: runtime.Decimal | null
+  unit_cost: runtime.Decimal | null
+  total_cost: runtime.Decimal | null
 }
 
 export type MovementsSumAggregateOutputType = {
-  quantity: number | null
+  quantity: runtime.Decimal | null
+  unit_cost: runtime.Decimal | null
+  total_cost: runtime.Decimal | null
 }
 
 export type MovementsMinAggregateOutputType = {
   id: string | null
   type: string | null
   item_type: string | null
+  item_kind: string | null
+  nf_item_kind: string | null
   item_id: string | null
-  quantity: number | null
+  item_name: string | null
+  product_id: string | null
+  component_id: string | null
+  supplier_id: string | null
+  order_id: string | null
+  quantity: runtime.Decimal | null
+  unit_cost: runtime.Decimal | null
+  total_cost: runtime.Decimal | null
+  nf_key: string | null
+  nf_number: string | null
+  receita_federal_nf: string | null
   notes: string | null
   created_by: string | null
   created_at: Date | null
@@ -49,8 +65,20 @@ export type MovementsMaxAggregateOutputType = {
   id: string | null
   type: string | null
   item_type: string | null
+  item_kind: string | null
+  nf_item_kind: string | null
   item_id: string | null
-  quantity: number | null
+  item_name: string | null
+  product_id: string | null
+  component_id: string | null
+  supplier_id: string | null
+  order_id: string | null
+  quantity: runtime.Decimal | null
+  unit_cost: runtime.Decimal | null
+  total_cost: runtime.Decimal | null
+  nf_key: string | null
+  nf_number: string | null
+  receita_federal_nf: string | null
   notes: string | null
   created_by: string | null
   created_at: Date | null
@@ -60,8 +88,20 @@ export type MovementsCountAggregateOutputType = {
   id: number
   type: number
   item_type: number
+  item_kind: number
+  nf_item_kind: number
   item_id: number
+  item_name: number
+  product_id: number
+  component_id: number
+  supplier_id: number
+  order_id: number
   quantity: number
+  unit_cost: number
+  total_cost: number
+  nf_key: number
+  nf_number: number
+  receita_federal_nf: number
   notes: number
   created_by: number
   created_at: number
@@ -71,18 +111,34 @@ export type MovementsCountAggregateOutputType = {
 
 export type MovementsAvgAggregateInputType = {
   quantity?: true
+  unit_cost?: true
+  total_cost?: true
 }
 
 export type MovementsSumAggregateInputType = {
   quantity?: true
+  unit_cost?: true
+  total_cost?: true
 }
 
 export type MovementsMinAggregateInputType = {
   id?: true
   type?: true
   item_type?: true
+  item_kind?: true
+  nf_item_kind?: true
   item_id?: true
+  item_name?: true
+  product_id?: true
+  component_id?: true
+  supplier_id?: true
+  order_id?: true
   quantity?: true
+  unit_cost?: true
+  total_cost?: true
+  nf_key?: true
+  nf_number?: true
+  receita_federal_nf?: true
   notes?: true
   created_by?: true
   created_at?: true
@@ -92,8 +148,20 @@ export type MovementsMaxAggregateInputType = {
   id?: true
   type?: true
   item_type?: true
+  item_kind?: true
+  nf_item_kind?: true
   item_id?: true
+  item_name?: true
+  product_id?: true
+  component_id?: true
+  supplier_id?: true
+  order_id?: true
   quantity?: true
+  unit_cost?: true
+  total_cost?: true
+  nf_key?: true
+  nf_number?: true
+  receita_federal_nf?: true
   notes?: true
   created_by?: true
   created_at?: true
@@ -103,8 +171,20 @@ export type MovementsCountAggregateInputType = {
   id?: true
   type?: true
   item_type?: true
+  item_kind?: true
+  nf_item_kind?: true
   item_id?: true
+  item_name?: true
+  product_id?: true
+  component_id?: true
+  supplier_id?: true
+  order_id?: true
   quantity?: true
+  unit_cost?: true
+  total_cost?: true
+  nf_key?: true
+  nf_number?: true
+  receita_federal_nf?: true
   notes?: true
   created_by?: true
   created_at?: true
@@ -201,8 +281,20 @@ export type MovementsGroupByOutputType = {
   id: string
   type: string
   item_type: string
+  item_kind: string | null
+  nf_item_kind: string | null
   item_id: string | null
-  quantity: number
+  item_name: string
+  product_id: string | null
+  component_id: string | null
+  supplier_id: string | null
+  order_id: string | null
+  quantity: runtime.Decimal
+  unit_cost: runtime.Decimal
+  total_cost: runtime.Decimal
+  nf_key: string
+  nf_number: string
+  receita_federal_nf: string
   notes: string
   created_by: string | null
   created_at: Date | null
@@ -235,24 +327,56 @@ export type movementsWhereInput = {
   id?: Prisma.UuidFilter<"movements"> | string
   type?: Prisma.StringFilter<"movements"> | string
   item_type?: Prisma.StringFilter<"movements"> | string
+  item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
+  nf_item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
   item_id?: Prisma.UuidNullableFilter<"movements"> | string | null
-  quantity?: Prisma.IntFilter<"movements"> | number
+  item_name?: Prisma.StringFilter<"movements"> | string
+  product_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  component_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  supplier_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  order_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  quantity?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFilter<"movements"> | string
+  nf_number?: Prisma.StringFilter<"movements"> | string
+  receita_federal_nf?: Prisma.StringFilter<"movements"> | string
   notes?: Prisma.StringFilter<"movements"> | string
   created_by?: Prisma.UuidNullableFilter<"movements"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"movements"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
+  orders?: Prisma.XOR<Prisma.OrdersNullableScalarRelationFilter, Prisma.ordersWhereInput> | null
+  products?: Prisma.XOR<Prisma.ProductsNullableScalarRelationFilter, Prisma.productsWhereInput> | null
+  components?: Prisma.XOR<Prisma.ComponentsNullableScalarRelationFilter, Prisma.componentsWhereInput> | null
+  suppliers?: Prisma.XOR<Prisma.SuppliersNullableScalarRelationFilter, Prisma.suppliersWhereInput> | null
 }
 
 export type movementsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   item_type?: Prisma.SortOrder
+  item_kind?: Prisma.SortOrderInput | Prisma.SortOrder
+  nf_item_kind?: Prisma.SortOrderInput | Prisma.SortOrder
   item_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  item_name?: Prisma.SortOrder
+  product_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  component_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  supplier_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  order_id?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+  nf_key?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   profiles?: Prisma.profilesOrderByWithRelationInput
+  orders?: Prisma.ordersOrderByWithRelationInput
+  products?: Prisma.productsOrderByWithRelationInput
+  components?: Prisma.componentsOrderByWithRelationInput
+  suppliers?: Prisma.suppliersOrderByWithRelationInput
 }
 
 export type movementsWhereUniqueInput = Prisma.AtLeast<{
@@ -262,20 +386,48 @@ export type movementsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.movementsWhereInput | Prisma.movementsWhereInput[]
   type?: Prisma.StringFilter<"movements"> | string
   item_type?: Prisma.StringFilter<"movements"> | string
+  item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
+  nf_item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
   item_id?: Prisma.UuidNullableFilter<"movements"> | string | null
-  quantity?: Prisma.IntFilter<"movements"> | number
+  item_name?: Prisma.StringFilter<"movements"> | string
+  product_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  component_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  supplier_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  order_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  quantity?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFilter<"movements"> | string
+  nf_number?: Prisma.StringFilter<"movements"> | string
+  receita_federal_nf?: Prisma.StringFilter<"movements"> | string
   notes?: Prisma.StringFilter<"movements"> | string
   created_by?: Prisma.UuidNullableFilter<"movements"> | string | null
   created_at?: Prisma.DateTimeNullableFilter<"movements"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
+  orders?: Prisma.XOR<Prisma.OrdersNullableScalarRelationFilter, Prisma.ordersWhereInput> | null
+  products?: Prisma.XOR<Prisma.ProductsNullableScalarRelationFilter, Prisma.productsWhereInput> | null
+  components?: Prisma.XOR<Prisma.ComponentsNullableScalarRelationFilter, Prisma.componentsWhereInput> | null
+  suppliers?: Prisma.XOR<Prisma.SuppliersNullableScalarRelationFilter, Prisma.suppliersWhereInput> | null
 }, "id">
 
 export type movementsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   item_type?: Prisma.SortOrder
+  item_kind?: Prisma.SortOrderInput | Prisma.SortOrder
+  nf_item_kind?: Prisma.SortOrderInput | Prisma.SortOrder
   item_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  item_name?: Prisma.SortOrder
+  product_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  component_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  supplier_id?: Prisma.SortOrderInput | Prisma.SortOrder
+  order_id?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+  nf_key?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   created_by?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -293,8 +445,20 @@ export type movementsScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"movements"> | string
   type?: Prisma.StringWithAggregatesFilter<"movements"> | string
   item_type?: Prisma.StringWithAggregatesFilter<"movements"> | string
+  item_kind?: Prisma.StringNullableWithAggregatesFilter<"movements"> | string | null
+  nf_item_kind?: Prisma.StringNullableWithAggregatesFilter<"movements"> | string | null
   item_id?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
-  quantity?: Prisma.IntWithAggregatesFilter<"movements"> | number
+  item_name?: Prisma.StringWithAggregatesFilter<"movements"> | string
+  product_id?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
+  component_id?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
+  supplier_id?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
+  order_id?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
+  quantity?: Prisma.DecimalWithAggregatesFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalWithAggregatesFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalWithAggregatesFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringWithAggregatesFilter<"movements"> | string
+  nf_number?: Prisma.StringWithAggregatesFilter<"movements"> | string
+  receita_federal_nf?: Prisma.StringWithAggregatesFilter<"movements"> | string
   notes?: Prisma.StringWithAggregatesFilter<"movements"> | string
   created_by?: Prisma.UuidNullableWithAggregatesFilter<"movements"> | string | null
   created_at?: Prisma.DateTimeNullableWithAggregatesFilter<"movements"> | Date | string | null
@@ -304,19 +468,43 @@ export type movementsCreateInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutMovementsInput
+  orders?: Prisma.ordersCreateNestedOneWithoutMovementsInput
+  products?: Prisma.productsCreateNestedOneWithoutMovementsInput
+  components?: Prisma.componentsCreateNestedOneWithoutMovementsInput
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutMovementsInput
 }
 
 export type movementsUncheckedCreateInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_by?: string | null
   created_at?: Date | string | null
@@ -326,19 +514,43 @@ export type movementsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutMovementsNestedInput
+  orders?: Prisma.ordersUpdateOneWithoutMovementsNestedInput
+  products?: Prisma.productsUpdateOneWithoutMovementsNestedInput
+  components?: Prisma.componentsUpdateOneWithoutMovementsNestedInput
+  suppliers?: Prisma.suppliersUpdateOneWithoutMovementsNestedInput
 }
 
 export type movementsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -348,8 +560,20 @@ export type movementsCreateManyInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_by?: string | null
   created_at?: Date | string | null
@@ -359,8 +583,16 @@ export type movementsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -369,52 +601,23 @@ export type movementsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-}
-
-export type movementsCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  item_type?: Prisma.SortOrder
-  item_id?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  created_by?: Prisma.SortOrder
-  created_at?: Prisma.SortOrder
-}
-
-export type movementsAvgOrderByAggregateInput = {
-  quantity?: Prisma.SortOrder
-}
-
-export type movementsMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  item_type?: Prisma.SortOrder
-  item_id?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  created_by?: Prisma.SortOrder
-  created_at?: Prisma.SortOrder
-}
-
-export type movementsMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  item_type?: Prisma.SortOrder
-  item_id?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  created_by?: Prisma.SortOrder
-  created_at?: Prisma.SortOrder
-}
-
-export type movementsSumOrderByAggregateInput = {
-  quantity?: Prisma.SortOrder
 }
 
 export type MovementsListRelationFilter = {
@@ -425,6 +628,213 @@ export type MovementsListRelationFilter = {
 
 export type movementsOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type movementsCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  item_type?: Prisma.SortOrder
+  item_kind?: Prisma.SortOrder
+  nf_item_kind?: Prisma.SortOrder
+  item_id?: Prisma.SortOrder
+  item_name?: Prisma.SortOrder
+  product_id?: Prisma.SortOrder
+  component_id?: Prisma.SortOrder
+  supplier_id?: Prisma.SortOrder
+  order_id?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+  nf_key?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
+  created_at?: Prisma.SortOrder
+}
+
+export type movementsAvgOrderByAggregateInput = {
+  quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+}
+
+export type movementsMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  item_type?: Prisma.SortOrder
+  item_kind?: Prisma.SortOrder
+  nf_item_kind?: Prisma.SortOrder
+  item_id?: Prisma.SortOrder
+  item_name?: Prisma.SortOrder
+  product_id?: Prisma.SortOrder
+  component_id?: Prisma.SortOrder
+  supplier_id?: Prisma.SortOrder
+  order_id?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+  nf_key?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
+  created_at?: Prisma.SortOrder
+}
+
+export type movementsMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  item_type?: Prisma.SortOrder
+  item_kind?: Prisma.SortOrder
+  nf_item_kind?: Prisma.SortOrder
+  item_id?: Prisma.SortOrder
+  item_name?: Prisma.SortOrder
+  product_id?: Prisma.SortOrder
+  component_id?: Prisma.SortOrder
+  supplier_id?: Prisma.SortOrder
+  order_id?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+  nf_key?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
+  created_at?: Prisma.SortOrder
+}
+
+export type movementsSumOrderByAggregateInput = {
+  quantity?: Prisma.SortOrder
+  unit_cost?: Prisma.SortOrder
+  total_cost?: Prisma.SortOrder
+}
+
+export type movementsCreateNestedManyWithoutComponentsInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput> | Prisma.movementsCreateWithoutComponentsInput[] | Prisma.movementsUncheckedCreateWithoutComponentsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutComponentsInput | Prisma.movementsCreateOrConnectWithoutComponentsInput[]
+  createMany?: Prisma.movementsCreateManyComponentsInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUncheckedCreateNestedManyWithoutComponentsInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput> | Prisma.movementsCreateWithoutComponentsInput[] | Prisma.movementsUncheckedCreateWithoutComponentsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutComponentsInput | Prisma.movementsCreateOrConnectWithoutComponentsInput[]
+  createMany?: Prisma.movementsCreateManyComponentsInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUpdateManyWithoutComponentsNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput> | Prisma.movementsCreateWithoutComponentsInput[] | Prisma.movementsUncheckedCreateWithoutComponentsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutComponentsInput | Prisma.movementsCreateOrConnectWithoutComponentsInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutComponentsInput | Prisma.movementsUpsertWithWhereUniqueWithoutComponentsInput[]
+  createMany?: Prisma.movementsCreateManyComponentsInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutComponentsInput | Prisma.movementsUpdateWithWhereUniqueWithoutComponentsInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutComponentsInput | Prisma.movementsUpdateManyWithWhereWithoutComponentsInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsUncheckedUpdateManyWithoutComponentsNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput> | Prisma.movementsCreateWithoutComponentsInput[] | Prisma.movementsUncheckedCreateWithoutComponentsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutComponentsInput | Prisma.movementsCreateOrConnectWithoutComponentsInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutComponentsInput | Prisma.movementsUpsertWithWhereUniqueWithoutComponentsInput[]
+  createMany?: Prisma.movementsCreateManyComponentsInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutComponentsInput | Prisma.movementsUpdateWithWhereUniqueWithoutComponentsInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutComponentsInput | Prisma.movementsUpdateManyWithWhereWithoutComponentsInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsCreateNestedManyWithoutOrdersInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput> | Prisma.movementsCreateWithoutOrdersInput[] | Prisma.movementsUncheckedCreateWithoutOrdersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutOrdersInput | Prisma.movementsCreateOrConnectWithoutOrdersInput[]
+  createMany?: Prisma.movementsCreateManyOrdersInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUncheckedCreateNestedManyWithoutOrdersInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput> | Prisma.movementsCreateWithoutOrdersInput[] | Prisma.movementsUncheckedCreateWithoutOrdersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutOrdersInput | Prisma.movementsCreateOrConnectWithoutOrdersInput[]
+  createMany?: Prisma.movementsCreateManyOrdersInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUpdateManyWithoutOrdersNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput> | Prisma.movementsCreateWithoutOrdersInput[] | Prisma.movementsUncheckedCreateWithoutOrdersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutOrdersInput | Prisma.movementsCreateOrConnectWithoutOrdersInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutOrdersInput | Prisma.movementsUpsertWithWhereUniqueWithoutOrdersInput[]
+  createMany?: Prisma.movementsCreateManyOrdersInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutOrdersInput | Prisma.movementsUpdateWithWhereUniqueWithoutOrdersInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutOrdersInput | Prisma.movementsUpdateManyWithWhereWithoutOrdersInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsUncheckedUpdateManyWithoutOrdersNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput> | Prisma.movementsCreateWithoutOrdersInput[] | Prisma.movementsUncheckedCreateWithoutOrdersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutOrdersInput | Prisma.movementsCreateOrConnectWithoutOrdersInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutOrdersInput | Prisma.movementsUpsertWithWhereUniqueWithoutOrdersInput[]
+  createMany?: Prisma.movementsCreateManyOrdersInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutOrdersInput | Prisma.movementsUpdateWithWhereUniqueWithoutOrdersInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutOrdersInput | Prisma.movementsUpdateManyWithWhereWithoutOrdersInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsCreateNestedManyWithoutProductsInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput> | Prisma.movementsCreateWithoutProductsInput[] | Prisma.movementsUncheckedCreateWithoutProductsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutProductsInput | Prisma.movementsCreateOrConnectWithoutProductsInput[]
+  createMany?: Prisma.movementsCreateManyProductsInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUncheckedCreateNestedManyWithoutProductsInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput> | Prisma.movementsCreateWithoutProductsInput[] | Prisma.movementsUncheckedCreateWithoutProductsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutProductsInput | Prisma.movementsCreateOrConnectWithoutProductsInput[]
+  createMany?: Prisma.movementsCreateManyProductsInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUpdateManyWithoutProductsNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput> | Prisma.movementsCreateWithoutProductsInput[] | Prisma.movementsUncheckedCreateWithoutProductsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutProductsInput | Prisma.movementsCreateOrConnectWithoutProductsInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutProductsInput | Prisma.movementsUpsertWithWhereUniqueWithoutProductsInput[]
+  createMany?: Prisma.movementsCreateManyProductsInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutProductsInput | Prisma.movementsUpdateWithWhereUniqueWithoutProductsInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutProductsInput | Prisma.movementsUpdateManyWithWhereWithoutProductsInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsUncheckedUpdateManyWithoutProductsNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput> | Prisma.movementsCreateWithoutProductsInput[] | Prisma.movementsUncheckedCreateWithoutProductsInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutProductsInput | Prisma.movementsCreateOrConnectWithoutProductsInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutProductsInput | Prisma.movementsUpsertWithWhereUniqueWithoutProductsInput[]
+  createMany?: Prisma.movementsCreateManyProductsInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutProductsInput | Prisma.movementsUpdateWithWhereUniqueWithoutProductsInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutProductsInput | Prisma.movementsUpdateManyWithWhereWithoutProductsInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
 }
 
 export type movementsCreateNestedManyWithoutProfilesInput = {
@@ -469,22 +879,324 @@ export type movementsUncheckedUpdateManyWithoutProfilesNestedInput = {
   deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
 }
 
+export type movementsCreateNestedManyWithoutSuppliersInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput> | Prisma.movementsCreateWithoutSuppliersInput[] | Prisma.movementsUncheckedCreateWithoutSuppliersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutSuppliersInput | Prisma.movementsCreateOrConnectWithoutSuppliersInput[]
+  createMany?: Prisma.movementsCreateManySuppliersInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUncheckedCreateNestedManyWithoutSuppliersInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput> | Prisma.movementsCreateWithoutSuppliersInput[] | Prisma.movementsUncheckedCreateWithoutSuppliersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutSuppliersInput | Prisma.movementsCreateOrConnectWithoutSuppliersInput[]
+  createMany?: Prisma.movementsCreateManySuppliersInputEnvelope
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+}
+
+export type movementsUpdateManyWithoutSuppliersNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput> | Prisma.movementsCreateWithoutSuppliersInput[] | Prisma.movementsUncheckedCreateWithoutSuppliersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutSuppliersInput | Prisma.movementsCreateOrConnectWithoutSuppliersInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutSuppliersInput | Prisma.movementsUpsertWithWhereUniqueWithoutSuppliersInput[]
+  createMany?: Prisma.movementsCreateManySuppliersInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutSuppliersInput | Prisma.movementsUpdateWithWhereUniqueWithoutSuppliersInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutSuppliersInput | Prisma.movementsUpdateManyWithWhereWithoutSuppliersInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsUncheckedUpdateManyWithoutSuppliersNestedInput = {
+  create?: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput> | Prisma.movementsCreateWithoutSuppliersInput[] | Prisma.movementsUncheckedCreateWithoutSuppliersInput[]
+  connectOrCreate?: Prisma.movementsCreateOrConnectWithoutSuppliersInput | Prisma.movementsCreateOrConnectWithoutSuppliersInput[]
+  upsert?: Prisma.movementsUpsertWithWhereUniqueWithoutSuppliersInput | Prisma.movementsUpsertWithWhereUniqueWithoutSuppliersInput[]
+  createMany?: Prisma.movementsCreateManySuppliersInputEnvelope
+  set?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  disconnect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  delete?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  connect?: Prisma.movementsWhereUniqueInput | Prisma.movementsWhereUniqueInput[]
+  update?: Prisma.movementsUpdateWithWhereUniqueWithoutSuppliersInput | Prisma.movementsUpdateWithWhereUniqueWithoutSuppliersInput[]
+  updateMany?: Prisma.movementsUpdateManyWithWhereWithoutSuppliersInput | Prisma.movementsUpdateManyWithWhereWithoutSuppliersInput[]
+  deleteMany?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+}
+
+export type movementsCreateWithoutComponentsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_at?: Date | string | null
+  profiles?: Prisma.profilesCreateNestedOneWithoutMovementsInput
+  orders?: Prisma.ordersCreateNestedOneWithoutMovementsInput
+  products?: Prisma.productsCreateNestedOneWithoutMovementsInput
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutMovementsInput
+}
+
+export type movementsUncheckedCreateWithoutComponentsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsCreateOrConnectWithoutComponentsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  create: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput>
+}
+
+export type movementsCreateManyComponentsInputEnvelope = {
+  data: Prisma.movementsCreateManyComponentsInput | Prisma.movementsCreateManyComponentsInput[]
+  skipDuplicates?: boolean
+}
+
+export type movementsUpsertWithWhereUniqueWithoutComponentsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  update: Prisma.XOR<Prisma.movementsUpdateWithoutComponentsInput, Prisma.movementsUncheckedUpdateWithoutComponentsInput>
+  create: Prisma.XOR<Prisma.movementsCreateWithoutComponentsInput, Prisma.movementsUncheckedCreateWithoutComponentsInput>
+}
+
+export type movementsUpdateWithWhereUniqueWithoutComponentsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  data: Prisma.XOR<Prisma.movementsUpdateWithoutComponentsInput, Prisma.movementsUncheckedUpdateWithoutComponentsInput>
+}
+
+export type movementsUpdateManyWithWhereWithoutComponentsInput = {
+  where: Prisma.movementsScalarWhereInput
+  data: Prisma.XOR<Prisma.movementsUpdateManyMutationInput, Prisma.movementsUncheckedUpdateManyWithoutComponentsInput>
+}
+
+export type movementsScalarWhereInput = {
+  AND?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+  OR?: Prisma.movementsScalarWhereInput[]
+  NOT?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
+  id?: Prisma.UuidFilter<"movements"> | string
+  type?: Prisma.StringFilter<"movements"> | string
+  item_type?: Prisma.StringFilter<"movements"> | string
+  item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
+  nf_item_kind?: Prisma.StringNullableFilter<"movements"> | string | null
+  item_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  item_name?: Prisma.StringFilter<"movements"> | string
+  product_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  component_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  supplier_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  order_id?: Prisma.UuidNullableFilter<"movements"> | string | null
+  quantity?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFilter<"movements"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFilter<"movements"> | string
+  nf_number?: Prisma.StringFilter<"movements"> | string
+  receita_federal_nf?: Prisma.StringFilter<"movements"> | string
+  notes?: Prisma.StringFilter<"movements"> | string
+  created_by?: Prisma.UuidNullableFilter<"movements"> | string | null
+  created_at?: Prisma.DateTimeNullableFilter<"movements"> | Date | string | null
+}
+
+export type movementsCreateWithoutOrdersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_at?: Date | string | null
+  profiles?: Prisma.profilesCreateNestedOneWithoutMovementsInput
+  products?: Prisma.productsCreateNestedOneWithoutMovementsInput
+  components?: Prisma.componentsCreateNestedOneWithoutMovementsInput
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutMovementsInput
+}
+
+export type movementsUncheckedCreateWithoutOrdersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsCreateOrConnectWithoutOrdersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  create: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput>
+}
+
+export type movementsCreateManyOrdersInputEnvelope = {
+  data: Prisma.movementsCreateManyOrdersInput | Prisma.movementsCreateManyOrdersInput[]
+  skipDuplicates?: boolean
+}
+
+export type movementsUpsertWithWhereUniqueWithoutOrdersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  update: Prisma.XOR<Prisma.movementsUpdateWithoutOrdersInput, Prisma.movementsUncheckedUpdateWithoutOrdersInput>
+  create: Prisma.XOR<Prisma.movementsCreateWithoutOrdersInput, Prisma.movementsUncheckedCreateWithoutOrdersInput>
+}
+
+export type movementsUpdateWithWhereUniqueWithoutOrdersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  data: Prisma.XOR<Prisma.movementsUpdateWithoutOrdersInput, Prisma.movementsUncheckedUpdateWithoutOrdersInput>
+}
+
+export type movementsUpdateManyWithWhereWithoutOrdersInput = {
+  where: Prisma.movementsScalarWhereInput
+  data: Prisma.XOR<Prisma.movementsUpdateManyMutationInput, Prisma.movementsUncheckedUpdateManyWithoutOrdersInput>
+}
+
+export type movementsCreateWithoutProductsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_at?: Date | string | null
+  profiles?: Prisma.profilesCreateNestedOneWithoutMovementsInput
+  orders?: Prisma.ordersCreateNestedOneWithoutMovementsInput
+  components?: Prisma.componentsCreateNestedOneWithoutMovementsInput
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutMovementsInput
+}
+
+export type movementsUncheckedCreateWithoutProductsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsCreateOrConnectWithoutProductsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  create: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput>
+}
+
+export type movementsCreateManyProductsInputEnvelope = {
+  data: Prisma.movementsCreateManyProductsInput | Prisma.movementsCreateManyProductsInput[]
+  skipDuplicates?: boolean
+}
+
+export type movementsUpsertWithWhereUniqueWithoutProductsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  update: Prisma.XOR<Prisma.movementsUpdateWithoutProductsInput, Prisma.movementsUncheckedUpdateWithoutProductsInput>
+  create: Prisma.XOR<Prisma.movementsCreateWithoutProductsInput, Prisma.movementsUncheckedCreateWithoutProductsInput>
+}
+
+export type movementsUpdateWithWhereUniqueWithoutProductsInput = {
+  where: Prisma.movementsWhereUniqueInput
+  data: Prisma.XOR<Prisma.movementsUpdateWithoutProductsInput, Prisma.movementsUncheckedUpdateWithoutProductsInput>
+}
+
+export type movementsUpdateManyWithWhereWithoutProductsInput = {
+  where: Prisma.movementsScalarWhereInput
+  data: Prisma.XOR<Prisma.movementsUpdateManyMutationInput, Prisma.movementsUncheckedUpdateManyWithoutProductsInput>
+}
+
 export type movementsCreateWithoutProfilesInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_at?: Date | string | null
+  orders?: Prisma.ordersCreateNestedOneWithoutMovementsInput
+  products?: Prisma.productsCreateNestedOneWithoutMovementsInput
+  components?: Prisma.componentsCreateNestedOneWithoutMovementsInput
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutMovementsInput
 }
 
 export type movementsUncheckedCreateWithoutProfilesInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_at?: Date | string | null
 }
@@ -515,26 +1227,358 @@ export type movementsUpdateManyWithWhereWithoutProfilesInput = {
   data: Prisma.XOR<Prisma.movementsUpdateManyMutationInput, Prisma.movementsUncheckedUpdateManyWithoutProfilesInput>
 }
 
-export type movementsScalarWhereInput = {
-  AND?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
-  OR?: Prisma.movementsScalarWhereInput[]
-  NOT?: Prisma.movementsScalarWhereInput | Prisma.movementsScalarWhereInput[]
-  id?: Prisma.UuidFilter<"movements"> | string
-  type?: Prisma.StringFilter<"movements"> | string
-  item_type?: Prisma.StringFilter<"movements"> | string
-  item_id?: Prisma.UuidNullableFilter<"movements"> | string | null
-  quantity?: Prisma.IntFilter<"movements"> | number
-  notes?: Prisma.StringFilter<"movements"> | string
-  created_by?: Prisma.UuidNullableFilter<"movements"> | string | null
-  created_at?: Prisma.DateTimeNullableFilter<"movements"> | Date | string | null
+export type movementsCreateWithoutSuppliersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_at?: Date | string | null
+  profiles?: Prisma.profilesCreateNestedOneWithoutMovementsInput
+  orders?: Prisma.ordersCreateNestedOneWithoutMovementsInput
+  products?: Prisma.productsCreateNestedOneWithoutMovementsInput
+  components?: Prisma.componentsCreateNestedOneWithoutMovementsInput
+}
+
+export type movementsUncheckedCreateWithoutSuppliersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsCreateOrConnectWithoutSuppliersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  create: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput>
+}
+
+export type movementsCreateManySuppliersInputEnvelope = {
+  data: Prisma.movementsCreateManySuppliersInput | Prisma.movementsCreateManySuppliersInput[]
+  skipDuplicates?: boolean
+}
+
+export type movementsUpsertWithWhereUniqueWithoutSuppliersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  update: Prisma.XOR<Prisma.movementsUpdateWithoutSuppliersInput, Prisma.movementsUncheckedUpdateWithoutSuppliersInput>
+  create: Prisma.XOR<Prisma.movementsCreateWithoutSuppliersInput, Prisma.movementsUncheckedCreateWithoutSuppliersInput>
+}
+
+export type movementsUpdateWithWhereUniqueWithoutSuppliersInput = {
+  where: Prisma.movementsWhereUniqueInput
+  data: Prisma.XOR<Prisma.movementsUpdateWithoutSuppliersInput, Prisma.movementsUncheckedUpdateWithoutSuppliersInput>
+}
+
+export type movementsUpdateManyWithWhereWithoutSuppliersInput = {
+  where: Prisma.movementsScalarWhereInput
+  data: Prisma.XOR<Prisma.movementsUpdateManyMutationInput, Prisma.movementsUncheckedUpdateManyWithoutSuppliersInput>
+}
+
+export type movementsCreateManyComponentsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsUpdateWithoutComponentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profiles?: Prisma.profilesUpdateOneWithoutMovementsNestedInput
+  orders?: Prisma.ordersUpdateOneWithoutMovementsNestedInput
+  products?: Prisma.productsUpdateOneWithoutMovementsNestedInput
+  suppliers?: Prisma.suppliersUpdateOneWithoutMovementsNestedInput
+}
+
+export type movementsUncheckedUpdateWithoutComponentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsUncheckedUpdateManyWithoutComponentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsCreateManyOrdersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsUpdateWithoutOrdersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profiles?: Prisma.profilesUpdateOneWithoutMovementsNestedInput
+  products?: Prisma.productsUpdateOneWithoutMovementsNestedInput
+  components?: Prisma.componentsUpdateOneWithoutMovementsNestedInput
+  suppliers?: Prisma.suppliersUpdateOneWithoutMovementsNestedInput
+}
+
+export type movementsUncheckedUpdateWithoutOrdersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsUncheckedUpdateManyWithoutOrdersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsCreateManyProductsInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsUpdateWithoutProductsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profiles?: Prisma.profilesUpdateOneWithoutMovementsNestedInput
+  orders?: Prisma.ordersUpdateOneWithoutMovementsNestedInput
+  components?: Prisma.componentsUpdateOneWithoutMovementsNestedInput
+  suppliers?: Prisma.suppliersUpdateOneWithoutMovementsNestedInput
+}
+
+export type movementsUncheckedUpdateWithoutProductsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsUncheckedUpdateManyWithoutProductsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type movementsCreateManyProfilesInput = {
   id?: string
   type: string
   item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
   item_id?: string | null
-  quantity?: number
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  supplier_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
   notes?: string
   created_at?: Date | string | null
 }
@@ -543,18 +1587,42 @@ export type movementsUpdateWithoutProfilesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  orders?: Prisma.ordersUpdateOneWithoutMovementsNestedInput
+  products?: Prisma.productsUpdateOneWithoutMovementsNestedInput
+  components?: Prisma.componentsUpdateOneWithoutMovementsNestedInput
+  suppliers?: Prisma.suppliersUpdateOneWithoutMovementsNestedInput
 }
 
 export type movementsUncheckedUpdateWithoutProfilesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -563,9 +1631,109 @@ export type movementsUncheckedUpdateManyWithoutProfilesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsCreateManySuppliersInput = {
+  id?: string
+  type: string
+  item_type: string
+  item_kind?: string | null
+  nf_item_kind?: string | null
+  item_id?: string | null
+  item_name?: string
+  product_id?: string | null
+  component_id?: string | null
+  order_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: string
+  nf_number?: string
+  receita_federal_nf?: string
+  notes?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+}
+
+export type movementsUpdateWithoutSuppliersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profiles?: Prisma.profilesUpdateOneWithoutMovementsNestedInput
+  orders?: Prisma.ordersUpdateOneWithoutMovementsNestedInput
+  products?: Prisma.productsUpdateOneWithoutMovementsNestedInput
+  components?: Prisma.componentsUpdateOneWithoutMovementsNestedInput
+}
+
+export type movementsUncheckedUpdateWithoutSuppliersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type movementsUncheckedUpdateManyWithoutSuppliersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nf_item_kind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item_name?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  component_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  unit_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_cost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_key?: Prisma.StringFieldUpdateOperationsInput | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
@@ -575,71 +1743,159 @@ export type movementsSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   type?: boolean
   item_type?: boolean
+  item_kind?: boolean
+  nf_item_kind?: boolean
   item_id?: boolean
+  item_name?: boolean
+  product_id?: boolean
+  component_id?: boolean
+  supplier_id?: boolean
+  order_id?: boolean
   quantity?: boolean
+  unit_cost?: boolean
+  total_cost?: boolean
+  nf_key?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   notes?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }, ExtArgs["result"]["movements"]>
 
 export type movementsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   type?: boolean
   item_type?: boolean
+  item_kind?: boolean
+  nf_item_kind?: boolean
   item_id?: boolean
+  item_name?: boolean
+  product_id?: boolean
+  component_id?: boolean
+  supplier_id?: boolean
+  order_id?: boolean
   quantity?: boolean
+  unit_cost?: boolean
+  total_cost?: boolean
+  nf_key?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   notes?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }, ExtArgs["result"]["movements"]>
 
 export type movementsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   type?: boolean
   item_type?: boolean
+  item_kind?: boolean
+  nf_item_kind?: boolean
   item_id?: boolean
+  item_name?: boolean
+  product_id?: boolean
+  component_id?: boolean
+  supplier_id?: boolean
+  order_id?: boolean
   quantity?: boolean
+  unit_cost?: boolean
+  total_cost?: boolean
+  nf_key?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   notes?: boolean
   created_by?: boolean
   created_at?: boolean
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }, ExtArgs["result"]["movements"]>
 
 export type movementsSelectScalar = {
   id?: boolean
   type?: boolean
   item_type?: boolean
+  item_kind?: boolean
+  nf_item_kind?: boolean
   item_id?: boolean
+  item_name?: boolean
+  product_id?: boolean
+  component_id?: boolean
+  supplier_id?: boolean
+  order_id?: boolean
   quantity?: boolean
+  unit_cost?: boolean
+  total_cost?: boolean
+  nf_key?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   notes?: boolean
   created_by?: boolean
   created_at?: boolean
 }
 
-export type movementsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "item_type" | "item_id" | "quantity" | "notes" | "created_by" | "created_at", ExtArgs["result"]["movements"]>
+export type movementsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "item_type" | "item_kind" | "nf_item_kind" | "item_id" | "item_name" | "product_id" | "component_id" | "supplier_id" | "order_id" | "quantity" | "unit_cost" | "total_cost" | "nf_key" | "nf_number" | "receita_federal_nf" | "notes" | "created_by" | "created_at", ExtArgs["result"]["movements"]>
 export type movementsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }
 export type movementsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }
 export type movementsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profiles?: boolean | Prisma.movements$profilesArgs<ExtArgs>
+  orders?: boolean | Prisma.movements$ordersArgs<ExtArgs>
+  products?: boolean | Prisma.movements$productsArgs<ExtArgs>
+  components?: boolean | Prisma.movements$componentsArgs<ExtArgs>
+  suppliers?: boolean | Prisma.movements$suppliersArgs<ExtArgs>
 }
 
 export type $movementsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "movements"
   objects: {
     profiles: Prisma.$profilesPayload<ExtArgs> | null
+    orders: Prisma.$ordersPayload<ExtArgs> | null
+    products: Prisma.$productsPayload<ExtArgs> | null
+    components: Prisma.$componentsPayload<ExtArgs> | null
+    suppliers: Prisma.$suppliersPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     type: string
     item_type: string
+    item_kind: string | null
+    nf_item_kind: string | null
     item_id: string | null
-    quantity: number
+    item_name: string
+    product_id: string | null
+    component_id: string | null
+    supplier_id: string | null
+    order_id: string | null
+    quantity: runtime.Decimal
+    unit_cost: runtime.Decimal
+    total_cost: runtime.Decimal
+    nf_key: string
+    nf_number: string
+    receita_federal_nf: string
     notes: string
     created_by: string | null
     created_at: Date | null
@@ -1038,6 +2294,10 @@ readonly fields: movementsFieldRefs;
 export interface Prisma__movementsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profiles<T extends Prisma.movements$profilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.movements$profilesArgs<ExtArgs>>): Prisma.Prisma__profilesClient<runtime.Types.Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  orders<T extends Prisma.movements$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.movements$ordersArgs<ExtArgs>>): Prisma.Prisma__ordersClient<runtime.Types.Result.GetResult<Prisma.$ordersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  products<T extends Prisma.movements$productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.movements$productsArgs<ExtArgs>>): Prisma.Prisma__productsClient<runtime.Types.Result.GetResult<Prisma.$productsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  components<T extends Prisma.movements$componentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.movements$componentsArgs<ExtArgs>>): Prisma.Prisma__componentsClient<runtime.Types.Result.GetResult<Prisma.$componentsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  suppliers<T extends Prisma.movements$suppliersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.movements$suppliersArgs<ExtArgs>>): Prisma.Prisma__suppliersClient<runtime.Types.Result.GetResult<Prisma.$suppliersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1070,8 +2330,20 @@ export interface movementsFieldRefs {
   readonly id: Prisma.FieldRef<"movements", 'String'>
   readonly type: Prisma.FieldRef<"movements", 'String'>
   readonly item_type: Prisma.FieldRef<"movements", 'String'>
+  readonly item_kind: Prisma.FieldRef<"movements", 'String'>
+  readonly nf_item_kind: Prisma.FieldRef<"movements", 'String'>
   readonly item_id: Prisma.FieldRef<"movements", 'String'>
-  readonly quantity: Prisma.FieldRef<"movements", 'Int'>
+  readonly item_name: Prisma.FieldRef<"movements", 'String'>
+  readonly product_id: Prisma.FieldRef<"movements", 'String'>
+  readonly component_id: Prisma.FieldRef<"movements", 'String'>
+  readonly supplier_id: Prisma.FieldRef<"movements", 'String'>
+  readonly order_id: Prisma.FieldRef<"movements", 'String'>
+  readonly quantity: Prisma.FieldRef<"movements", 'Decimal'>
+  readonly unit_cost: Prisma.FieldRef<"movements", 'Decimal'>
+  readonly total_cost: Prisma.FieldRef<"movements", 'Decimal'>
+  readonly nf_key: Prisma.FieldRef<"movements", 'String'>
+  readonly nf_number: Prisma.FieldRef<"movements", 'String'>
+  readonly receita_federal_nf: Prisma.FieldRef<"movements", 'String'>
   readonly notes: Prisma.FieldRef<"movements", 'String'>
   readonly created_by: Prisma.FieldRef<"movements", 'String'>
   readonly created_at: Prisma.FieldRef<"movements", 'DateTime'>
@@ -1492,6 +2764,82 @@ export type movements$profilesArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.profilesInclude<ExtArgs> | null
   where?: Prisma.profilesWhereInput
+}
+
+/**
+ * movements.orders
+ */
+export type movements$ordersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the orders
+   */
+  select?: Prisma.ordersSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the orders
+   */
+  omit?: Prisma.ordersOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ordersInclude<ExtArgs> | null
+  where?: Prisma.ordersWhereInput
+}
+
+/**
+ * movements.products
+ */
+export type movements$productsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the products
+   */
+  select?: Prisma.productsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the products
+   */
+  omit?: Prisma.productsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.productsInclude<ExtArgs> | null
+  where?: Prisma.productsWhereInput
+}
+
+/**
+ * movements.components
+ */
+export type movements$componentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the components
+   */
+  select?: Prisma.componentsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the components
+   */
+  omit?: Prisma.componentsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.componentsInclude<ExtArgs> | null
+  where?: Prisma.componentsWhereInput
+}
+
+/**
+ * movements.suppliers
+ */
+export type movements$suppliersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the suppliers
+   */
+  select?: Prisma.suppliersSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the suppliers
+   */
+  omit?: Prisma.suppliersOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.suppliersInclude<ExtArgs> | null
+  where?: Prisma.suppliersWhereInput
 }
 
 /**

@@ -27,13 +27,15 @@ export type AggregateComponents = {
 }
 
 export type ComponentsAvgAggregateOutputType = {
-  quantity: number | null
-  min_stock: number | null
+  quantity: runtime.Decimal | null
+  min_stock: runtime.Decimal | null
+  cost_price: runtime.Decimal | null
 }
 
 export type ComponentsSumAggregateOutputType = {
-  quantity: number | null
-  min_stock: number | null
+  quantity: runtime.Decimal | null
+  min_stock: runtime.Decimal | null
+  cost_price: runtime.Decimal | null
 }
 
 export type ComponentsMinAggregateOutputType = {
@@ -42,9 +44,13 @@ export type ComponentsMinAggregateOutputType = {
   category: string | null
   equipment: string | null
   supplier_id: string | null
-  quantity: number | null
-  min_stock: number | null
+  quantity: runtime.Decimal | null
+  min_stock: runtime.Decimal | null
+  cost_price: runtime.Decimal | null
+  nf_number: string | null
+  receita_federal_nf: string | null
   created_at: Date | null
+  updated_at: Date | null
 }
 
 export type ComponentsMaxAggregateOutputType = {
@@ -53,9 +59,13 @@ export type ComponentsMaxAggregateOutputType = {
   category: string | null
   equipment: string | null
   supplier_id: string | null
-  quantity: number | null
-  min_stock: number | null
+  quantity: runtime.Decimal | null
+  min_stock: runtime.Decimal | null
+  cost_price: runtime.Decimal | null
+  nf_number: string | null
+  receita_federal_nf: string | null
   created_at: Date | null
+  updated_at: Date | null
 }
 
 export type ComponentsCountAggregateOutputType = {
@@ -67,7 +77,11 @@ export type ComponentsCountAggregateOutputType = {
   supplier_id: number
   quantity: number
   min_stock: number
+  cost_price: number
+  nf_number: number
+  receita_federal_nf: number
   created_at: number
+  updated_at: number
   _all: number
 }
 
@@ -75,11 +89,13 @@ export type ComponentsCountAggregateOutputType = {
 export type ComponentsAvgAggregateInputType = {
   quantity?: true
   min_stock?: true
+  cost_price?: true
 }
 
 export type ComponentsSumAggregateInputType = {
   quantity?: true
   min_stock?: true
+  cost_price?: true
 }
 
 export type ComponentsMinAggregateInputType = {
@@ -90,7 +106,11 @@ export type ComponentsMinAggregateInputType = {
   supplier_id?: true
   quantity?: true
   min_stock?: true
+  cost_price?: true
+  nf_number?: true
+  receita_federal_nf?: true
   created_at?: true
+  updated_at?: true
 }
 
 export type ComponentsMaxAggregateInputType = {
@@ -101,7 +121,11 @@ export type ComponentsMaxAggregateInputType = {
   supplier_id?: true
   quantity?: true
   min_stock?: true
+  cost_price?: true
+  nf_number?: true
+  receita_federal_nf?: true
   created_at?: true
+  updated_at?: true
 }
 
 export type ComponentsCountAggregateInputType = {
@@ -113,7 +137,11 @@ export type ComponentsCountAggregateInputType = {
   supplier_id?: true
   quantity?: true
   min_stock?: true
+  cost_price?: true
+  nf_number?: true
+  receita_federal_nf?: true
   created_at?: true
+  updated_at?: true
   _all?: true
 }
 
@@ -210,9 +238,13 @@ export type ComponentsGroupByOutputType = {
   equipment: string
   equipment_names: string[]
   supplier_id: string | null
-  quantity: number
-  min_stock: number
+  quantity: runtime.Decimal
+  min_stock: runtime.Decimal
+  cost_price: runtime.Decimal
+  nf_number: string
+  receita_federal_nf: string
   created_at: Date | null
+  updated_at: Date | null
   _count: ComponentsCountAggregateOutputType | null
   _avg: ComponentsAvgAggregateOutputType | null
   _sum: ComponentsSumAggregateOutputType | null
@@ -245,11 +277,16 @@ export type componentsWhereInput = {
   equipment?: Prisma.StringFilter<"components"> | string
   equipment_names?: Prisma.StringNullableListFilter<"components">
   supplier_id?: Prisma.UuidNullableFilter<"components"> | string | null
-  quantity?: Prisma.IntFilter<"components"> | number
-  min_stock?: Prisma.IntFilter<"components"> | number
+  quantity?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFilter<"components"> | string
+  receita_federal_nf?: Prisma.StringFilter<"components"> | string
   created_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
+  updated_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
   suppliers?: Prisma.XOR<Prisma.SuppliersNullableScalarRelationFilter, Prisma.suppliersWhereInput> | null
   equipment_components?: Prisma.Equipment_componentsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
 }
 
 export type componentsOrderByWithRelationInput = {
@@ -261,9 +298,14 @@ export type componentsOrderByWithRelationInput = {
   supplier_id?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   suppliers?: Prisma.suppliersOrderByWithRelationInput
   equipment_components?: Prisma.equipment_componentsOrderByRelationAggregateInput
+  movements?: Prisma.movementsOrderByRelationAggregateInput
 }
 
 export type componentsWhereUniqueInput = Prisma.AtLeast<{
@@ -276,11 +318,16 @@ export type componentsWhereUniqueInput = Prisma.AtLeast<{
   equipment?: Prisma.StringFilter<"components"> | string
   equipment_names?: Prisma.StringNullableListFilter<"components">
   supplier_id?: Prisma.UuidNullableFilter<"components"> | string | null
-  quantity?: Prisma.IntFilter<"components"> | number
-  min_stock?: Prisma.IntFilter<"components"> | number
+  quantity?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFilter<"components"> | string
+  receita_federal_nf?: Prisma.StringFilter<"components"> | string
   created_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
+  updated_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
   suppliers?: Prisma.XOR<Prisma.SuppliersNullableScalarRelationFilter, Prisma.suppliersWhereInput> | null
   equipment_components?: Prisma.Equipment_componentsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
 }, "id">
 
 export type componentsOrderByWithAggregationInput = {
@@ -292,7 +339,11 @@ export type componentsOrderByWithAggregationInput = {
   supplier_id?: Prisma.SortOrderInput | Prisma.SortOrder
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.componentsCountOrderByAggregateInput
   _avg?: Prisma.componentsAvgOrderByAggregateInput
   _max?: Prisma.componentsMaxOrderByAggregateInput
@@ -310,9 +361,13 @@ export type componentsScalarWhereWithAggregatesInput = {
   equipment?: Prisma.StringWithAggregatesFilter<"components"> | string
   equipment_names?: Prisma.StringNullableListFilter<"components">
   supplier_id?: Prisma.UuidNullableWithAggregatesFilter<"components"> | string | null
-  quantity?: Prisma.IntWithAggregatesFilter<"components"> | number
-  min_stock?: Prisma.IntWithAggregatesFilter<"components"> | number
+  quantity?: Prisma.DecimalWithAggregatesFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalWithAggregatesFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalWithAggregatesFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringWithAggregatesFilter<"components"> | string
+  receita_federal_nf?: Prisma.StringWithAggregatesFilter<"components"> | string
   created_at?: Prisma.DateTimeNullableWithAggregatesFilter<"components"> | Date | string | null
+  updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"components"> | Date | string | null
 }
 
 export type componentsCreateInput = {
@@ -321,11 +376,16 @@ export type componentsCreateInput = {
   category?: string
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
   suppliers?: Prisma.suppliersCreateNestedOneWithoutComponentsInput
   equipment_components?: Prisma.equipment_componentsCreateNestedManyWithoutComponentsInput
+  movements?: Prisma.movementsCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsUncheckedCreateInput = {
@@ -335,10 +395,15 @@ export type componentsUncheckedCreateInput = {
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
   supplier_id?: string | null
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
   equipment_components?: Prisma.equipment_componentsUncheckedCreateNestedManyWithoutComponentsInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsUpdateInput = {
@@ -347,11 +412,16 @@ export type componentsUpdateInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suppliers?: Prisma.suppliersUpdateOneWithoutComponentsNestedInput
   equipment_components?: Prisma.equipment_componentsUpdateManyWithoutComponentsNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsUncheckedUpdateInput = {
@@ -361,10 +431,15 @@ export type componentsUncheckedUpdateInput = {
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
   supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   equipment_components?: Prisma.equipment_componentsUncheckedUpdateManyWithoutComponentsNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsCreateManyInput = {
@@ -374,9 +449,13 @@ export type componentsCreateManyInput = {
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
   supplier_id?: string | null
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
 }
 
 export type componentsUpdateManyMutationInput = {
@@ -385,9 +464,13 @@ export type componentsUpdateManyMutationInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type componentsUncheckedUpdateManyInput = {
@@ -397,9 +480,13 @@ export type componentsUncheckedUpdateManyInput = {
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
   supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type StringNullableListFilter<$PrismaModel = never> = {
@@ -419,12 +506,17 @@ export type componentsCountOrderByAggregateInput = {
   supplier_id?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
 }
 
 export type componentsAvgOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
 }
 
 export type componentsMaxOrderByAggregateInput = {
@@ -435,7 +527,11 @@ export type componentsMaxOrderByAggregateInput = {
   supplier_id?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
 }
 
 export type componentsMinOrderByAggregateInput = {
@@ -446,12 +542,22 @@ export type componentsMinOrderByAggregateInput = {
   supplier_id?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+  nf_number?: Prisma.SortOrder
+  receita_federal_nf?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
 }
 
 export type componentsSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   min_stock?: Prisma.SortOrder
+  cost_price?: Prisma.SortOrder
+}
+
+export type ComponentsNullableScalarRelationFilter = {
+  is?: Prisma.componentsWhereInput | null
+  isNot?: Prisma.componentsWhereInput | null
 }
 
 export type ComponentsListRelationFilter = {
@@ -476,6 +582,30 @@ export type componentsCreateequipment_namesInput = {
 export type componentsUpdateequipment_namesInput = {
   set?: string[]
   push?: string | string[]
+}
+
+export type DecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+}
+
+export type componentsCreateNestedOneWithoutMovementsInput = {
+  create?: Prisma.XOR<Prisma.componentsCreateWithoutMovementsInput, Prisma.componentsUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.componentsCreateOrConnectWithoutMovementsInput
+  connect?: Prisma.componentsWhereUniqueInput
+}
+
+export type componentsUpdateOneWithoutMovementsNestedInput = {
+  create?: Prisma.XOR<Prisma.componentsCreateWithoutMovementsInput, Prisma.componentsUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.componentsCreateOrConnectWithoutMovementsInput
+  upsert?: Prisma.componentsUpsertWithoutMovementsInput
+  disconnect?: Prisma.componentsWhereInput | boolean
+  delete?: Prisma.componentsWhereInput | boolean
+  connect?: Prisma.componentsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.componentsUpdateToOneWithWhereWithoutMovementsInput, Prisma.componentsUpdateWithoutMovementsInput>, Prisma.componentsUncheckedUpdateWithoutMovementsInput>
 }
 
 export type componentsCreateNestedManyWithoutSuppliersInput = {
@@ -534,16 +664,105 @@ export type componentsUpdateOneRequiredWithoutEquipment_componentsNestedInput = 
   update?: Prisma.XOR<Prisma.XOR<Prisma.componentsUpdateToOneWithWhereWithoutEquipment_componentsInput, Prisma.componentsUpdateWithoutEquipment_componentsInput>, Prisma.componentsUncheckedUpdateWithoutEquipment_componentsInput>
 }
 
+export type componentsCreateWithoutMovementsInput = {
+  id?: string
+  name: string
+  category?: string
+  equipment?: string
+  equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  suppliers?: Prisma.suppliersCreateNestedOneWithoutComponentsInput
+  equipment_components?: Prisma.equipment_componentsCreateNestedManyWithoutComponentsInput
+}
+
+export type componentsUncheckedCreateWithoutMovementsInput = {
+  id?: string
+  name: string
+  category?: string
+  equipment?: string
+  equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
+  supplier_id?: string | null
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  equipment_components?: Prisma.equipment_componentsUncheckedCreateNestedManyWithoutComponentsInput
+}
+
+export type componentsCreateOrConnectWithoutMovementsInput = {
+  where: Prisma.componentsWhereUniqueInput
+  create: Prisma.XOR<Prisma.componentsCreateWithoutMovementsInput, Prisma.componentsUncheckedCreateWithoutMovementsInput>
+}
+
+export type componentsUpsertWithoutMovementsInput = {
+  update: Prisma.XOR<Prisma.componentsUpdateWithoutMovementsInput, Prisma.componentsUncheckedUpdateWithoutMovementsInput>
+  create: Prisma.XOR<Prisma.componentsCreateWithoutMovementsInput, Prisma.componentsUncheckedCreateWithoutMovementsInput>
+  where?: Prisma.componentsWhereInput
+}
+
+export type componentsUpdateToOneWithWhereWithoutMovementsInput = {
+  where?: Prisma.componentsWhereInput
+  data: Prisma.XOR<Prisma.componentsUpdateWithoutMovementsInput, Prisma.componentsUncheckedUpdateWithoutMovementsInput>
+}
+
+export type componentsUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  equipment?: Prisma.StringFieldUpdateOperationsInput | string
+  equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suppliers?: Prisma.suppliersUpdateOneWithoutComponentsNestedInput
+  equipment_components?: Prisma.equipment_componentsUpdateManyWithoutComponentsNestedInput
+}
+
+export type componentsUncheckedUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  equipment?: Prisma.StringFieldUpdateOperationsInput | string
+  equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
+  supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  equipment_components?: Prisma.equipment_componentsUncheckedUpdateManyWithoutComponentsNestedInput
+}
+
 export type componentsCreateWithoutSuppliersInput = {
   id?: string
   name: string
   category?: string
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
   equipment_components?: Prisma.equipment_componentsCreateNestedManyWithoutComponentsInput
+  movements?: Prisma.movementsCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsUncheckedCreateWithoutSuppliersInput = {
@@ -552,10 +771,15 @@ export type componentsUncheckedCreateWithoutSuppliersInput = {
   category?: string
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
   equipment_components?: Prisma.equipment_componentsUncheckedCreateNestedManyWithoutComponentsInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsCreateOrConnectWithoutSuppliersInput = {
@@ -594,9 +818,13 @@ export type componentsScalarWhereInput = {
   equipment?: Prisma.StringFilter<"components"> | string
   equipment_names?: Prisma.StringNullableListFilter<"components">
   supplier_id?: Prisma.UuidNullableFilter<"components"> | string | null
-  quantity?: Prisma.IntFilter<"components"> | number
-  min_stock?: Prisma.IntFilter<"components"> | number
+  quantity?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFilter<"components"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFilter<"components"> | string
+  receita_federal_nf?: Prisma.StringFilter<"components"> | string
   created_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
+  updated_at?: Prisma.DateTimeNullableFilter<"components"> | Date | string | null
 }
 
 export type componentsCreateWithoutEquipment_componentsInput = {
@@ -605,10 +833,15 @@ export type componentsCreateWithoutEquipment_componentsInput = {
   category?: string
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
   suppliers?: Prisma.suppliersCreateNestedOneWithoutComponentsInput
+  movements?: Prisma.movementsCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsUncheckedCreateWithoutEquipment_componentsInput = {
@@ -618,9 +851,14 @@ export type componentsUncheckedCreateWithoutEquipment_componentsInput = {
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
   supplier_id?: string | null
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutComponentsInput
 }
 
 export type componentsCreateOrConnectWithoutEquipment_componentsInput = {
@@ -645,10 +883,15 @@ export type componentsUpdateWithoutEquipment_componentsInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   suppliers?: Prisma.suppliersUpdateOneWithoutComponentsNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsUncheckedUpdateWithoutEquipment_componentsInput = {
@@ -658,9 +901,14 @@ export type componentsUncheckedUpdateWithoutEquipment_componentsInput = {
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
   supplier_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsCreateManySuppliersInput = {
@@ -669,9 +917,13 @@ export type componentsCreateManySuppliersInput = {
   category?: string
   equipment?: string
   equipment_names?: Prisma.componentsCreateequipment_namesInput | string[]
-  quantity?: number
-  min_stock?: number
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: string
+  receita_federal_nf?: string
   created_at?: Date | string | null
+  updated_at?: Date | string | null
 }
 
 export type componentsUpdateWithoutSuppliersInput = {
@@ -680,10 +932,15 @@ export type componentsUpdateWithoutSuppliersInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   equipment_components?: Prisma.equipment_componentsUpdateManyWithoutComponentsNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsUncheckedUpdateWithoutSuppliersInput = {
@@ -692,10 +949,15 @@ export type componentsUncheckedUpdateWithoutSuppliersInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   equipment_components?: Prisma.equipment_componentsUncheckedUpdateManyWithoutComponentsNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutComponentsNestedInput
 }
 
 export type componentsUncheckedUpdateManyWithoutSuppliersInput = {
@@ -704,9 +966,13 @@ export type componentsUncheckedUpdateManyWithoutSuppliersInput = {
   category?: Prisma.StringFieldUpdateOperationsInput | string
   equipment?: Prisma.StringFieldUpdateOperationsInput | string
   equipment_names?: Prisma.componentsUpdateequipment_namesInput | string[]
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  min_stock?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  min_stock?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  cost_price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  nf_number?: Prisma.StringFieldUpdateOperationsInput | string
+  receita_federal_nf?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 
@@ -716,10 +982,12 @@ export type componentsUncheckedUpdateManyWithoutSuppliersInput = {
 
 export type ComponentsCountOutputType = {
   equipment_components: number
+  movements: number
 }
 
 export type ComponentsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   equipment_components?: boolean | ComponentsCountOutputTypeCountEquipment_componentsArgs
+  movements?: boolean | ComponentsCountOutputTypeCountMovementsArgs
 }
 
 /**
@@ -739,6 +1007,13 @@ export type ComponentsCountOutputTypeCountEquipment_componentsArgs<ExtArgs exten
   where?: Prisma.equipment_componentsWhereInput
 }
 
+/**
+ * ComponentsCountOutputType without action
+ */
+export type ComponentsCountOutputTypeCountMovementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.movementsWhereInput
+}
+
 
 export type componentsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -749,9 +1024,14 @@ export type componentsSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   supplier_id?: boolean
   quantity?: boolean
   min_stock?: boolean
+  cost_price?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   created_at?: boolean
+  updated_at?: boolean
   suppliers?: boolean | Prisma.components$suppliersArgs<ExtArgs>
   equipment_components?: boolean | Prisma.components$equipment_componentsArgs<ExtArgs>
+  movements?: boolean | Prisma.components$movementsArgs<ExtArgs>
   _count?: boolean | Prisma.ComponentsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["components"]>
 
@@ -764,7 +1044,11 @@ export type componentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   supplier_id?: boolean
   quantity?: boolean
   min_stock?: boolean
+  cost_price?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   created_at?: boolean
+  updated_at?: boolean
   suppliers?: boolean | Prisma.components$suppliersArgs<ExtArgs>
 }, ExtArgs["result"]["components"]>
 
@@ -777,7 +1061,11 @@ export type componentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   supplier_id?: boolean
   quantity?: boolean
   min_stock?: boolean
+  cost_price?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   created_at?: boolean
+  updated_at?: boolean
   suppliers?: boolean | Prisma.components$suppliersArgs<ExtArgs>
 }, ExtArgs["result"]["components"]>
 
@@ -790,13 +1078,18 @@ export type componentsSelectScalar = {
   supplier_id?: boolean
   quantity?: boolean
   min_stock?: boolean
+  cost_price?: boolean
+  nf_number?: boolean
+  receita_federal_nf?: boolean
   created_at?: boolean
+  updated_at?: boolean
 }
 
-export type componentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "equipment" | "equipment_names" | "supplier_id" | "quantity" | "min_stock" | "created_at", ExtArgs["result"]["components"]>
+export type componentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "equipment" | "equipment_names" | "supplier_id" | "quantity" | "min_stock" | "cost_price" | "nf_number" | "receita_federal_nf" | "created_at" | "updated_at", ExtArgs["result"]["components"]>
 export type componentsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   suppliers?: boolean | Prisma.components$suppliersArgs<ExtArgs>
   equipment_components?: boolean | Prisma.components$equipment_componentsArgs<ExtArgs>
+  movements?: boolean | Prisma.components$movementsArgs<ExtArgs>
   _count?: boolean | Prisma.ComponentsCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type componentsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -811,6 +1104,7 @@ export type $componentsPayload<ExtArgs extends runtime.Types.Extensions.Internal
   objects: {
     suppliers: Prisma.$suppliersPayload<ExtArgs> | null
     equipment_components: Prisma.$equipment_componentsPayload<ExtArgs>[]
+    movements: Prisma.$movementsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -819,9 +1113,13 @@ export type $componentsPayload<ExtArgs extends runtime.Types.Extensions.Internal
     equipment: string
     equipment_names: string[]
     supplier_id: string | null
-    quantity: number
-    min_stock: number
+    quantity: runtime.Decimal
+    min_stock: runtime.Decimal
+    cost_price: runtime.Decimal
+    nf_number: string
+    receita_federal_nf: string
     created_at: Date | null
+    updated_at: Date | null
   }, ExtArgs["result"]["components"]>
   composites: {}
 }
@@ -1218,6 +1516,7 @@ export interface Prisma__componentsClient<T, Null = never, ExtArgs extends runti
   readonly [Symbol.toStringTag]: "PrismaPromise"
   suppliers<T extends Prisma.components$suppliersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.components$suppliersArgs<ExtArgs>>): Prisma.Prisma__suppliersClient<runtime.Types.Result.GetResult<Prisma.$suppliersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   equipment_components<T extends Prisma.components$equipment_componentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.components$equipment_componentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$equipment_componentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  movements<T extends Prisma.components$movementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.components$movementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$movementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1253,9 +1552,13 @@ export interface componentsFieldRefs {
   readonly equipment: Prisma.FieldRef<"components", 'String'>
   readonly equipment_names: Prisma.FieldRef<"components", 'String[]'>
   readonly supplier_id: Prisma.FieldRef<"components", 'String'>
-  readonly quantity: Prisma.FieldRef<"components", 'Int'>
-  readonly min_stock: Prisma.FieldRef<"components", 'Int'>
+  readonly quantity: Prisma.FieldRef<"components", 'Decimal'>
+  readonly min_stock: Prisma.FieldRef<"components", 'Decimal'>
+  readonly cost_price: Prisma.FieldRef<"components", 'Decimal'>
+  readonly nf_number: Prisma.FieldRef<"components", 'String'>
+  readonly receita_federal_nf: Prisma.FieldRef<"components", 'String'>
   readonly created_at: Prisma.FieldRef<"components", 'DateTime'>
+  readonly updated_at: Prisma.FieldRef<"components", 'DateTime'>
 }
     
 
@@ -1697,6 +2000,30 @@ export type components$equipment_componentsArgs<ExtArgs extends runtime.Types.Ex
   take?: number
   skip?: number
   distinct?: Prisma.Equipment_componentsScalarFieldEnum | Prisma.Equipment_componentsScalarFieldEnum[]
+}
+
+/**
+ * components.movements
+ */
+export type components$movementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the movements
+   */
+  select?: Prisma.movementsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the movements
+   */
+  omit?: Prisma.movementsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.movementsInclude<ExtArgs> | null
+  where?: Prisma.movementsWhereInput
+  orderBy?: Prisma.movementsOrderByWithRelationInput | Prisma.movementsOrderByWithRelationInput[]
+  cursor?: Prisma.movementsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MovementsScalarFieldEnum | Prisma.MovementsScalarFieldEnum[]
 }
 
 /**

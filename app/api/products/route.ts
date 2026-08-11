@@ -100,8 +100,10 @@ export async function DELETE(req: Request) {
       );
     }
 
-    await prisma.products.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      await tx.movements.updateMany({ where: { product_id: id }, data: { product_id: null } });
+      await tx.movements.updateMany({ where: { item_type: "produto", item_id: id }, data: { item_id: null } });
+      await tx.products.delete({ where: { id } });
     });
 
     return NextResponse.json({

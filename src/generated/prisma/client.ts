@@ -96,3 +96,8 @@ export type suppliers = Prisma.suppliersModel
  * 
  */
 export type equipment_components = Prisma.equipment_componentsModel
+/**
+ * Model mounted_equipments
+ * 
+ */
+export type mounted_equipments = Prisma.mounted_equipmentsModel

@@ -265,10 +265,17 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.clients.delete({
-      where: {
-        id,
-      },
+    await prisma.$transaction(async (tx) => {
+      // client_id e opcional em orders. Preservamos o pedido e removemos
+      // apenas o vinculo antes de excluir o cadastro do cliente.
+      await tx.orders.updateMany({
+        where: { client_id: id },
+        data: { client_id: null },
+      });
+
+      await tx.clients.delete({
+        where: { id },
+      });
     });
 
     return NextResponse.json({

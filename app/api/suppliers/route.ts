@@ -372,6 +372,11 @@ export async function DELETE(request: Request) {
           },
         });
 
+        await transaction.movements.updateMany({
+          where: { supplier_id: id },
+          data: { supplier_id: null },
+        });
+
         await transaction.suppliers.delete({
           where: {
             id,

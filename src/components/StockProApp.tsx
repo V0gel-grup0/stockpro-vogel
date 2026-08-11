@@ -3,13 +3,15 @@
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 
 function getSaleCode(order: any) {
-  return order?.sale_code || order?.codigo_venda || "Gerando código...";
+  if (order?.order_number !== undefined && order?.order_number !== null) {
+    return `PV-${String(order.order_number).padStart(6, "0")}`;
+  }
+  return order?.id ? `PV-${String(order.id).slice(0, 6).toUpperCase()}` : "Pedido";
 }
 
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase-browser";
 
 type Role = "administrador" | "gerente" | "vendedor" | "funcionario" | "tecnico" | "representante";
 type Profile = {
@@ -204,272 +206,47 @@ function quantidadeFormatada(valor: number) {
 
 async function cadastrarComponentesPadrao(equipamentoSelecionado?: string) {
   const equipamentos = equipamentoSelecionado ? [equipamentoSelecionado] : EQUIPAMENTOS;
-  const componentesUnicos = new Map<string, ComposiçãoItem>();
-  let criados = 0;
-  let atualizados = 0;
+  const componentes = new Map<string, { name: string; category: string; equipment_division: { equipment_name: string; qty_per_equipment: number }[] }>();
 
   for (const equipamento of equipamentos) {
     for (const item of composiçãoDoEquipamento(equipamento)) {
       const chave = normalizarComponente(item.name);
-      if (!componentesUnicos.has(chave)) componentesUnicos.set(chave, item);
+      const atual = componentes.get(chave) || { name: item.name, category: item.category, equipment_division: [] };
+      atual.equipment_division.push({ equipment_name: equipamento, qty_per_equipment: Number(item.quantity || 0) });
+      componentes.set(chave, atual);
     }
   }
 
-  for (const item of componentesUnicos.values()) {
-    const { data: existentes, error: erroBusca } = await supabase
-      .from("components")
-      .select("*")
-      .eq("name", item.name)
-      .order("created_at", { ascending: true });
-
-    if (erroBusca) throw new Error(erroBusca.message);
-
-    if (existentes && existentes.length) {
-      const principal = existentes[0];
-      const { error } = await supabase
-        .from("components")
-        .update({ category: item.category, equipment: "Estoque geral", updated_at: new Date().toISOString() })
-        .eq("id", principal.id);
-      if (error) throw new Error(error.message);
-      atualizados += 1;
-    } else {
-      const { error } = await supabase.from("components").insert({
-        name: item.name,
-        category: item.category,
-        equipment: "Estoque geral",
-        quantity: 0,
-        min_stock: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      if (error) throw new Error(error.message);
-      criados += 1;
-    }
-  }
-
-  return { criados, atualizados };
+  const response = await fetch("/api/components", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "upsert_defaults", items: Array.from(componentes.values()) }),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao cadastrar componentes padrão.");
+  return { criados: Number(data.criados || 0), atualizados: Number(data.atualizados || 0) };
 }
 
 async function unificarComponentesDuplicados() {
-  const { data, error } = await supabase.from("components").select("*").order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
-
-  const grupos = new Map<string, AnyRow[]>();
-  (data || []).forEach((item) => {
-    const chave = normalizarComponente(item.name);
-    if (!grupos.has(chave)) grupos.set(chave, []);
-    grupos.get(chave)!.push(item);
+  const response = await fetch("/api/components", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "unify_duplicates" }),
   });
-
-  let unificados = 0;
-
-  for (const grupo of grupos.values()) {
-    if (grupo.length <= 1) continue;
-
-    const principal = grupo[0];
-    const restantes = grupo.slice(1);
-    const quantidadeTotal = grupo.reduce((total, item) => total + Number(item.quantity || 0), 0);
-    const estoqueMinimo = Math.max(...grupo.map((item) => Number(item.min_stock || 0)));
-    const categoria = principal.category || grupo.find((item) => item.category)?.category || "Componente";
-
-    const { error: erroUpdate } = await supabase
-      .from("components")
-      .update({
-        quantity: Number(quantidadeTotal.toFixed(4)),
-        min_stock: estoqueMinimo,
-        category: categoria,
-        equipment: "Estoque geral",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", principal.id);
-
-    if (erroUpdate) throw new Error(erroUpdate.message);
-
-    const idsExcluir = restantes.map((item) => item.id);
-    if (idsExcluir.length) {
-      const { error: erroDelete } = await supabase.from("components").delete().in("id", idsExcluir);
-      if (erroDelete) throw new Error(erroDelete.message);
-    }
-
-    unificados += restantes.length;
-  }
-
-  return unificados;
-}
-
-async function baixarComponentesDaComposição(equipmentName: string, equipmentQty: number, profileId: string, origem: string) {
-  const composição = composiçãoDoEquipamento(equipmentName);
-  const qtdEquipamento = Number(equipmentQty || 0);
-
-  if (!composição.length || qtdEquipamento <= 0) return;
-
-  const { data: componentes, error } = await supabase.from("components").select("*").order("created_at", { ascending: true });
-
-  if (error) throw new Error(error.message);
-
-  const porNome = new Map<string, AnyRow[]>();
-  (componentes || []).forEach((item) => {
-    const chave = normalizarComponente(item.name);
-    if (!porNome.has(chave)) porNome.set(chave, []);
-    porNome.get(chave)!.push(item);
-  });
-
-  const faltando = composição.filter((item) => !(porNome.get(normalizarComponente(item.name)) || []).length);
-  if (faltando.length) {
-    throw new Error(
-      `Cadastre primeiro os componentes padrão do estoque geral. Faltando: ${faltando.map((item) => item.name).join(", ")}.`
-    );
-  }
-
-  const insuficientes = composição
-    .map((item) => {
-      const linhas = porNome.get(normalizarComponente(item.name)) || [];
-      const necessario = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
-      const disponivel = linhas.reduce((total, linha) => total + Number(linha.quantity || 0), 0);
-      return { item, linhas, necessario, disponivel };
-    })
-    .filter((item) => item.disponivel < item.necessario);
-
-  if (insuficientes.length) {
-    throw new Error(
-      `Estoque insuficiente para montar/baixar ${equipmentName}: ${insuficientes
-        .map((i) => `${i.item.name} precisa ${quantidadeFormatada(i.necessario)} e tem ${quantidadeFormatada(i.disponivel)}`)
-        .join("; ")}.`
-    );
-  }
-
-  for (const item of composição) {
-    const linhas = porNome.get(normalizarComponente(item.name)) || [];
-    let restante = Number((Number(item.quantity || 0) * qtdEquipamento).toFixed(4));
-
-    for (const componente of linhas) {
-      if (restante <= 0) break;
-      const disponivel = Number(componente.quantity || 0);
-      if (disponivel <= 0) continue;
-
-      const baixa = Math.min(disponivel, restante);
-      const novaQuantidade = Number((disponivel - baixa).toFixed(4));
-      restante = Number((restante - baixa).toFixed(4));
-
-      const { error: erroAtualizacao } = await supabase
-        .from("components")
-        .update({ quantity: novaQuantidade, equipment: "Estoque geral", updated_at: new Date().toISOString() })
-        .eq("id", componente.id);
-
-      if (erroAtualizacao) throw new Error(erroAtualizacao.message);
-
-      await supabase.from("movements").insert({
-        type: "saída",
-        item_type: "componente",
-        item_id: componente.id,
-        quantity: baixa,
-        notes: `Baixa automática de componente: ${origem} - ${equipmentName}`,
-        created_by: profileId,
-      });
-    }
-  }
-}
-
-async function aumentarEquipamentoMontado(equipmentName: string, quantidade: number) {
-  const qtd = Number(quantidade || 0);
-  if (!equipmentName || qtd <= 0) return;
-
-  const { data: existente, error: erroBusca } = await supabase
-    .from("mounted_equipments")
-    .select("*")
-    .eq("equipment_name", equipmentName)
-    .maybeSingle();
-
-  if (erroBusca) throw new Error(erroBusca.message);
-
-  if (existente) {
-    const novaQuantidade = Number((Number(existente.quantity || 0) + qtd).toFixed(4));
-    const { error } = await supabase
-      .from("mounted_equipments")
-      .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
-      .eq("id", existente.id);
-    if (error) throw new Error(error.message);
-    return;
-  }
-
-  const { error } = await supabase.from("mounted_equipments").insert({
-    equipment_name: equipmentName,
-    quantity: qtd,
-    min_stock: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) throw new Error(error.message);
-}
-
-async function baixarEquipamentoMontado(equipmentName: string, quantidade: number, profileId: string, origem: string) {
-  const qtd = Number(quantidade || 0);
-  if (!equipmentName || qtd <= 0) return;
-
-  const { data: existente, error: erroBusca } = await supabase
-    .from("mounted_equipments")
-    .select("*")
-    .eq("equipment_name", equipmentName)
-    .maybeSingle();
-
-  if (erroBusca) throw new Error(erroBusca.message);
-
-  const disponivel = Number(existente?.quantity || 0);
-
-  if (!existente || disponivel < qtd) {
-    throw new Error(`Estoque insuficiente de equipamento montado: ${equipmentName}. Disponível: ${quantidadeFormatada(disponivel)}. Necessário: ${quantidadeFormatada(qtd)}.`);
-  }
-
-  const novaQuantidade = Number((disponivel - qtd).toFixed(4));
-  const { error: erroUpdate } = await supabase
-    .from("mounted_equipments")
-    .update({ quantity: novaQuantidade, updated_at: new Date().toISOString() })
-    .eq("id", existente.id);
-
-  if (erroUpdate) throw new Error(erroUpdate.message);
-
-  await supabase.from("movements").insert({
-    type: "saída",
-    item_type: "equipamento",
-    item_name: equipmentName,
-    quantity: qtd,
-    notes: `Baixa automática de equipamento montado: ${origem}`,
-    created_by: profileId,
-  });
+  const data = await response.json();
+  if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao unificar componentes.");
+  return Number(data.unificados || 0);
 }
 
 async function cadastrarEquipamentosMontadosPadrao() {
-  let criados = 0;
-  let atualizados = 0;
-
-  for (const equipamento of EQUIPAMENTOS) {
-    const { data: existente, error: erroBusca } = await supabase
-      .from("mounted_equipments")
-      .select("*")
-      .eq("equipment_name", equipamento)
-      .maybeSingle();
-
-    if (erroBusca) throw new Error(erroBusca.message);
-
-    if (existente) {
-      atualizados += 1;
-      continue;
-    }
-
-    const { error } = await supabase.from("mounted_equipments").insert({
-      equipment_name: equipamento,
-      quantity: 0,
-      min_stock: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-
-    if (error) throw new Error(error.message);
-    criados += 1;
-  }
-
-  return { criados, atualizados };
+  const response = await fetch("/api/mounted-equipments", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ equipment_names: EQUIPAMENTOS }),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao cadastrar equipamentos montados padrão.");
+  return { criados: Number(data.criados || 0), atualizados: Number(data.atualizados || 0) };
 }
 
 
@@ -603,15 +380,18 @@ export default function StockProApp() {
   }
 
   async function carregarNotificacoes() {
-    const items: string[] = [];
-    const { data: pending } = await supabase.from("profiles").select("id, role, name").eq("status", "pending").limit(20);
-    if (pending?.length) items.push(`${pending.length} cadastro(s) aguardando análise`);
-    const { data: lowProducts } = await supabase.from("products").select("id, name, quantity, min_stock").lte("quantity", 5).limit(20);
-    const baixos = (lowProducts || []).filter((p) => Number(p.quantity || 0) <= Number(p.min_stock || 0));
-    if (baixos.length) items.push(`${baixos.length} produto(s) abaixo do estoque mínimo`);
-    const { data: pendingNf } = await supabase.from("orders").select("id").in("invoice_status", ["error", "pending", "not_issued"]).limit(20);
-    if (pendingNf?.length) items.push(`${pendingNf.length} pedido(s) com NF pendente ou não emitida`);
-    setNotificationItems(items);
+    try {
+      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) return;
+      const items: string[] = [];
+      if (data.counts.pending) items.push(`${data.counts.pending} cadastro(s) aguardando análise`);
+      if (data.counts.low) items.push(`${data.counts.low} produto(s) abaixo do estoque mínimo`);
+      if (data.counts.pendingNf) items.push(`${data.counts.pendingNf} pedido(s) com NF pendente ou não emitida`);
+      setNotificationItems(items);
+    } catch (error) {
+      console.error("Erro ao carregar notificações:", error);
+    }
   }
 
   async function logout() {
@@ -678,14 +458,13 @@ function StatCard({ label, value, color }: { label: string; value: string; color
 function Dashboard({ profile }: { profile: Profile }) {
   const [counts, setCounts] = useState({ products: 0, clients: 0, orders: 0, pending: 0, low: 0 });
   useEffect(() => { (async () => {
-    const [p, c, o, pend] = await Promise.all([
-      supabase.from("products").select("id, quantity, min_stock"),
-      supabase.from("clients").select("id"),
-      supabase.from("orders").select("id"),
-      supabase.from("profiles").select("id").eq("status", "pending"),
-    ]);
-    const low = (p.data || []).filter((x) => Number(x.quantity || 0) <= Number(x.min_stock || 0)).length;
-    setCounts({ products: p.data?.length || 0, clients: c.data?.length || 0, orders: o.data?.length || 0, pending: pend.data?.length || 0, low });
+    try {
+      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok && data.sucesso) setCounts(data.counts);
+    } catch (error) {
+      console.error("Erro ao carregar dashboard:", error);
+    }
   })(); }, []);
   return <><Title title="Dashboard" desc={`Resumo geral do sistema. Bem-vindo, ${profile.name || "usuário"}.`} /><div className="reports-grid"><StatCard label="Produtos" value={String(counts.products)} /><StatCard label="Clientes" value={String(counts.clients)} /><StatCard label="Pedidos" value={String(counts.orders)} /><StatCard label="Cadastros pendentes" value={String(counts.pending)} color="#facc15" /><StatCard label="Estoque baixo" value={String(counts.low)} color="#f87171" /><StatCard label="Acesso" value={formatRole(profile.role)} /></div></>;
 }
@@ -1380,12 +1159,24 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   function set(c: string, v: string) { setForm((a) => ({ ...a, [c]: v })); }
 
   async function carregar() {
-    const { data: o } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    setOrders(o || []);
-    const { data: c } = await supabase.from("clients").select("*").order("name");
-    setClients(c || []);
-    const { data: p } = await supabase.from("products").select("*").order("name");
-    setProducts(p || []);
+    try {
+      const [ordersResponse, clientsResponse, productsResponse] = await Promise.all([
+        fetch("/api/orders", { cache: "no-store" }),
+        fetch("/api/clients", { cache: "no-store" }),
+        fetch("/api/products", { cache: "no-store" }),
+      ]);
+      const [ordersData, clientsData, productsData] = await Promise.all([
+        ordersResponse.json(), clientsResponse.json(), productsResponse.json(),
+      ]);
+      if (!ordersResponse.ok || !ordersData.sucesso) throw new Error(ordersData.erro || "Erro ao carregar pedidos.");
+      if (!clientsResponse.ok || !clientsData.sucesso) throw new Error(clientsData.erro || "Erro ao carregar clientes.");
+      if (!productsResponse.ok || !productsData.sucesso) throw new Error(productsData.erro || "Erro ao carregar produtos.");
+      setOrders(ordersData.orders || []);
+      setClients((clientsData.clients || []).sort((a: AnyRow, b: AnyRow) => String(a.name).localeCompare(String(b.name))));
+      setProducts((productsData.products || []).sort((a: AnyRow, b: AnyRow) => String(a.name).localeCompare(String(b.name))));
+    } catch (error: any) {
+      setMsg(error.message || "Erro ao carregar pedidos.");
+    }
   }
 
   function toggleEquipment(nome: string) {
@@ -1397,7 +1188,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setShowForm(true);
     setSelectedEquipments(o.equipment_name ? [o.equipment_name] : []);
     setForm({
-      item_type: o.item_type || o.item_kind || "produto",
+      item_type: o.item_type || "produto",
       item_id: o.item_id || "",
       equipment_name: o.equipment_name || EQUIPAMENTOS[0],
       quantity: String(o.quantity || 1),
@@ -1420,50 +1211,44 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       created_by: profile.id,
       client_id: form.client_id || null,
       item_type: form.item_type,
-      item_kind: form.item_type,
       quantity: qtd,
       total_value: Number(form.total_value || 0),
       shipping_value: Number(form.shipping_value || 0),
       notes: form.notes,
-      updated_at: new Date().toISOString(),
     } as AnyRow;
 
-    if (editing) {
-      const payload = {
-        ...basePayload,
-        item_id: form.item_type === "produto" ? form.item_id || null : null,
-        equipment_name: form.item_type === "equipamento" ? (selectedEquipments[0] || form.equipment_name) : "",
-      };
-      const res = await supabase.from("orders").update(payload).eq("id", editing);
-      if (res.error) return setMsg(res.error.message);
-      setMsg("Pedido atualizado com sucesso.");
-    } else {
-      const pedidosParaCriar = form.item_type === "equipamento"
-        ? selectedEquipments.map((equipmentName) => ({ ...basePayload, status: "pendente", invoice_status: "not_issued", item_id: null, equipment_name: equipmentName }))
-        : [{ ...basePayload, status: "pendente", invoice_status: "not_issued", item_id: form.item_id || null, equipment_name: "" }];
-
-      const res = await supabase.from("orders").insert(pedidosParaCriar);
-      if (res.error) return setMsg(res.error.message);
-      setMsg(pedidosParaCriar.length > 1 ? `${pedidosParaCriar.length} pedidos criados com sucesso.` : "Pedido criado com sucesso.");
-    }
-
-    setForm(empty);
-    setSelectedEquipments([]);
-    setEditing(null);
-    setShowForm(false);
-    carregar();
+    try {
+      if (editing) {
+        const payload = { ...basePayload, id: editing, item_id: form.item_type === "produto" ? form.item_id || null : null, equipment_name: form.item_type === "equipamento" ? (selectedEquipments[0] || form.equipment_name) : "" };
+        const response = await fetch("/api/orders", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const data = await response.json();
+        if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao atualizar pedido.");
+        setMsg("Pedido atualizado com sucesso.");
+      } else {
+        const pedidosParaCriar = form.item_type === "equipamento"
+          ? selectedEquipments.map((equipmentName) => ({ ...basePayload, status: "pendente", item_id: null, equipment_name: equipmentName }))
+          : [{ ...basePayload, status: "pendente", item_id: form.item_id || null, equipment_name: "" }];
+        const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orders: pedidosParaCriar }) });
+        const data = await response.json();
+        if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao criar pedido.");
+        setMsg(pedidosParaCriar.length > 1 ? `${pedidosParaCriar.length} pedidos criados com sucesso.` : "Pedido criado com sucesso.");
+      }
+      setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); await carregar();
+    } catch (error: any) { setMsg(error.message || "Erro ao salvar pedido."); }
   }
 
   async function mudarStatus(id: string, status: string) {
-    const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) return setMsg(error.message);
+    const response = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
+    const data = await response.json();
+    if (!response.ok || !data.sucesso) return setMsg(data.erro || "Erro ao atualizar status.");
     carregar();
   }
 
   async function excluir(id: string) {
     if (!confirm("Excluir este pedido?")) return;
-    const { error } = await supabase.from("orders").delete().eq("id", id);
-    if (error) return setMsg(error.message);
+    const response = await fetch(`/api/orders?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const data = await response.json();
+    if (!response.ok || !data.sucesso) return setMsg(data.erro || "Erro ao excluir pedido.");
     setOrders((a) => a.filter((x) => x.id !== id));
     setMsg("Pedido excluído com sucesso.");
   }
@@ -1529,7 +1314,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Qtd: {o.quantity}</small>
             <small>Total: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
-            <small>NF: {o.invoice_status === "not_issued" ? "Não emitida" : o.invoice_status || "Não emitida"}</small>
+            <small>NF/Conta Azul: {o.conta_azul_status ? String(o.conta_azul_status).replaceAll("_", " ") : "Não solicitada"}</small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
             <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canManage && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
@@ -1630,38 +1415,27 @@ function Movimentações({ profile }: { profile: Profile }) {
   }
 
   async function carregar() {
-    const { data: produtos } = await supabase
-      .from("products")
-      .select("*")
-      .order("name");
-
-    setProducts(produtos || []);
-
-    const { data: comps } = await supabase
-      .from("components")
-      .select("*")
-      .order("name");
-
-    setComponents(comps || []);
-
-    const { data: pedidos } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    setOrders(pedidos || []);
-
-    const { data: movs, error } = await supabase
-      .from("movements")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      setMsg(error.message);
-      return;
+    try {
+      const [productsResponse, componentsResponse, ordersResponse, movementsResponse] = await Promise.all([
+        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/components", { cache: "no-store" }),
+        fetch("/api/orders", { cache: "no-store" }),
+        fetch("/api/movements", { cache: "no-store" }),
+      ]);
+      const [productsData, componentsData, ordersData, movementsData] = await Promise.all([
+        productsResponse.json(), componentsResponse.json(), ordersResponse.json(), movementsResponse.json(),
+      ]);
+      if (!productsResponse.ok || !productsData.sucesso) throw new Error(productsData.erro || "Erro ao carregar produtos.");
+      if (!componentsResponse.ok || !componentsData.sucesso) throw new Error(componentsData.erro || "Erro ao carregar componentes.");
+      if (!ordersResponse.ok || !ordersData.sucesso) throw new Error(ordersData.erro || "Erro ao carregar pedidos.");
+      if (!movementsResponse.ok || !movementsData.sucesso) throw new Error(movementsData.erro || "Erro ao carregar movimentações.");
+      setProducts((productsData.products || []).sort((a: AnyRow, b: AnyRow) => String(a.name).localeCompare(String(b.name))));
+      setComponents((componentsData.components || []).sort((a: AnyRow, b: AnyRow) => String(a.name).localeCompare(String(b.name))));
+      setOrders(ordersData.orders || []);
+      setMovements(movementsData.movements || []);
+    } catch (error: any) {
+      setMsg(error.message || "Erro ao carregar movimentações.");
     }
-
-    setMovements(movs || []);
   }
 
   async function buscarDadosNf() {
@@ -1705,215 +1479,24 @@ function Movimentações({ profile }: { profile: Profile }) {
     }
   }
 
-  async function criarOuAtualizarFornecedor() {
-    const documentoFornecedor = onlyNumbers(nfForm.fornecedor_document);
-
-    if (!nfForm.fornecedor_nome) {
-      throw new Error("Informe o fornecedor da NF.");
-    }
-
-    if (documentoFornecedor) {
-      const { data: fornecedorExistente } = await supabase
-        .from("suppliers")
-        .select("*")
-        .eq("document", documentoFornecedor)
-        .maybeSingle();
-
-      if (fornecedorExistente) {
-        await supabase
-          .from("suppliers")
-          .update({
-            name: nfForm.fornecedor_nome,
-            phone: onlyNumbers(nfForm.fornecedor_phone),
-            email: nfForm.fornecedor_email,
-            nf_number: nfForm.nf_number,
-            receita_federal_nf: nfForm.receita_federal_nf,
-          })
-          .eq("id", fornecedorExistente.id);
-
-        return fornecedorExistente.id as string;
-      }
-    }
-
-    const { data: novoFornecedor, error } = await supabase
-      .from("suppliers")
-      .insert({
-        name: nfForm.fornecedor_nome,
-        document: documentoFornecedor,
-        phone: onlyNumbers(nfForm.fornecedor_phone),
-        email: nfForm.fornecedor_email,
-        nf_number: nfForm.nf_number,
-        receita_federal_nf: nfForm.receita_federal_nf,
-        products: [],
-        default_items: [],
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return novoFornecedor.id as string;
-  }
-
-  async function criarOuAtualizarProduto(
-    supplierId: string,
-    quantidade: number,
-    custoUnitario: number
-  ) {
-    const nomeProduto = nfForm.produto_nome.trim();
-
-    if (!nomeProduto) {
-      throw new Error("Informe o produto da NF.");
-    }
-
-    const { data: produtoExistente } = await supabase
-      .from("products")
-      .select("*")
-      .eq("name", nomeProduto)
-      .maybeSingle();
-
-    if (produtoExistente) {
-      const { error } = await supabase
-        .from("products")
-        .update({
-          quantity: Number(produtoExistente.quantity || 0) + quantidade,
-          cost_price: custoUnitario,
-          supplier_id: supplierId,
-          category: nfForm.produto_categoria,
-          subcategory: nfForm.produto_subcategoria,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", produtoExistente.id);
-
-      if (error) throw new Error(error.message);
-
-      return produtoExistente.id as string;
-    }
-
-    const { data: novoProduto, error } = await supabase
-      .from("products")
-      .insert({
-        name: nomeProduto,
-        sku: "",
-        category: nfForm.produto_categoria,
-        subcategory: nfForm.produto_subcategoria,
-        cost_price: custoUnitario,
-        sale_price: 0,
-        quantity: quantidade,
-        min_stock: 0,
-        supplier_id: supplierId,
-        description: `Produto cadastrado automaticamente pela NF ${
-          nfForm.nf_number || nfForm.nf_key
-        }`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
-    if (error) throw new Error(error.message);
-
-    return novoProduto.id as string;
-  }
-
-  async function criarOuAtualizarComponente(
-    supplierId: string,
-    quantidade: number,
-    custoUnitario: number
-  ) {
-    const componenteSelecionado = components.find((item) => item.id === nfForm.component_id);
-
-    if (!componenteSelecionado) {
-      throw new Error("Selecione um componente já cadastrado no estoque geral.");
-    }
-
-    const { error } = await supabase
-      .from("components")
-      .update({
-        quantity: Number(componenteSelecionado.quantity || 0) + quantidade,
-        cost_price: custoUnitario,
-        supplier_id: supplierId,
-        category: componenteSelecionado.category || nfForm.component_category || "",
-        equipment: "Estoque geral",
-        nf_number: nfForm.nf_number,
-        receita_federal_nf: nfForm.receita_federal_nf,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", componenteSelecionado.id);
-
-    if (error) throw new Error(error.message);
-
-    return componenteSelecionado.id as string;
-  }
-
   async function cadastrarEntradaNf() {
     setMsg("");
-
     try {
-      if (!nfForm.approved) {
-        setMsg("Aprove a NF antes de cadastrar a entrada.");
-        return;
-      }
-
-      if (!nfForm.nf_key && !nfForm.nf_number) {
-        setMsg("Informe a chave ou número da NF.");
-        return;
-      }
-
+      if (!nfForm.approved) return setMsg("Aprove a NF antes de cadastrar a entrada.");
+      if (!nfForm.nf_key && !nfForm.nf_number) return setMsg("Informe a chave ou número da NF.");
       const quantidade = Number(nfForm.quantity || 0);
-      const custoUnitario = Number(nfForm.unit_cost || 0);
+      if (quantidade <= 0) return setMsg("Informe a quantidade da NF.");
 
-      if (quantidade <= 0) {
-        setMsg("Informe a quantidade da NF.");
-        return;
-      }
-
-      const supplierId = await criarOuAtualizarFornecedor();
-
-      let itemId: string | null = null;
-
-      if (nfForm.item_kind === "produto") {
-        itemId = await criarOuAtualizarProduto(
-          supplierId,
-          quantidade,
-          custoUnitario
-        );
-      } else {
-        itemId = await criarOuAtualizarComponente(
-          supplierId,
-          quantidade,
-          custoUnitario
-        );
-      }
-
-      const { error } = await supabase.from("movements").insert({
-        type: "entrada",
-        item_type: nfForm.item_kind === "produto" ? "produto" : "componente",
-        nf_item_kind: nfForm.item_kind,
-        item_id: itemId,
-        quantity: quantidade,
-        notes:
-          nfForm.notes ||
-          `Entrada automática pela NF ${nfForm.nf_number || nfForm.nf_key}`,
-        created_by: profile.id,
-        supplier_id: supplierId,
-        nf_number: nfForm.nf_number,
-        receita_federal_nf: nfForm.receita_federal_nf,
-        nf_key: nfForm.nf_key,
-        unit_cost: custoUnitario,
-        total_cost: quantidade * custoUnitario,
+      const response = await fetch("/api/movements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "nf_entry", created_by: profile.id, nf: nfForm }),
       });
-
-      if (error) {
-        setMsg(error.message);
-        return;
-      }
-
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao cadastrar entrada por NF.");
       setMsg("Entrada por NF cadastrada com sucesso.");
       setNfForm(emptyNf);
-      carregar();
+      await carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao cadastrar entrada por NF.");
     }
@@ -1929,101 +1512,19 @@ function Movimentações({ profile }: { profile: Profile }) {
 
   async function cadastrarSaídaPedido() {
     setMsg("");
-
+    if (!saídaForm.order_id) return setMsg("Selecione o pedido para gerar a saída.");
+    if (!saídaForm.approved) return setMsg("Aprove a saída antes de cadastrar a movimentação.");
     try {
-      if (!saídaForm.order_id) {
-        setMsg("Selecione o pedido para gerar a saída.");
-        return;
-      }
-
-      if (!saídaForm.approved) {
-        setMsg("Aprove a saída antes de cadastrar a movimentação.");
-        return;
-      }
-
-      const pedido = orders.find((item) => item.id === saídaForm.order_id);
-
-      if (!pedido) {
-        setMsg("Pedido não encontrado.");
-        return;
-      }
-
-      const quantidade = Number(pedido.quantity || 0);
-
-      if (quantidade <= 0) {
-        setMsg("O pedido não possui quantidade válida.");
-        return;
-      }
-
-      const tipoItem = pedido.item_type || pedido.item_kind || "produto";
-      const produto = pedido.item_id ? products.find((item) => item.id === pedido.item_id) : null;
-
-      if (tipoItem === "produto") {
-        if (!produto) {
-          setMsg("Produto do pedido não encontrado no estoque.");
-          return;
-        }
-
-        const estoqueAtual = Number(produto.quantity || 0);
-
-        if (estoqueAtual < quantidade) {
-          setMsg(`Estoque insuficiente. Disponível: ${estoqueAtual}. Pedido: ${quantidade}.`);
-          return;
-        }
-
-        const { error: erroProduto } = await supabase
-          .from("products")
-          .update({
-            quantity: estoqueAtual - quantidade,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", produto.id);
-
-        if (erroProduto) throw new Error(erroProduto.message);
-      }
-
-      if (tipoItem === "equipamento") {
-        await baixarEquipamentoMontado(
-          pedido.equipment_name,
-          quantidade,
-          profile.id,
-          `pedido #${pedido.order_number || String(pedido.id || "").slice(0, 6)}`
-        );
-      }
-
-      const numeroPedido = pedido.order_number || String(pedido.id || "").slice(0, 6);
-      const descricaoItem = tipoItem === "produto" ? produto?.name || "Produto" : pedido.equipment_name || "Equipamento";
-
-      const movimento: AnyRow = {
-        type: "saída",
-        item_type: tipoItem === "produto" ? "produto" : "equipamento",
-        item_id: tipoItem === "produto" ? pedido.item_id || null : null,
-        quantity: quantidade,
-        notes: saídaForm.notes || `Saída automática pelo pedido #${numeroPedido} - ${descricaoItem}`,
-        created_by: profile.id,
-        order_id: pedido.id,
-      };
-
-      const { error: erroMovimento } = await supabase.from("movements").insert(movimento);
-
-      if (erroMovimento) {
-        const movimentoSemPedido = { ...movimento };
-        delete movimentoSemPedido.order_id;
-        const { error: erroMovimentoSemPedido } = await supabase.from("movements").insert(movimentoSemPedido);
-        if (erroMovimentoSemPedido) throw new Error(erroMovimentoSemPedido.message);
-      }
-
-      await supabase
-        .from("orders")
-        .update({
-          status: "enviado",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", pedido.id);
-
+      const response = await fetch("/api/movements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "order_exit", order_id: saídaForm.order_id, created_by: profile.id, notes: saídaForm.notes }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao cadastrar saída automática.");
       setMsg("Saída automática cadastrada com sucesso.");
       setSaídaForm(emptySaída);
-      carregar();
+      await carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao cadastrar saída automática.");
     }
@@ -2031,67 +1532,23 @@ function Movimentações({ profile }: { profile: Profile }) {
 
   async function salvarManual() {
     setMsg("");
-
     const qtd = Number(manual.quantity || 0);
-
-    if (!manual.item_id) {
-      setMsg(manual.item_type === "componente" ? "Selecione o componente." : "Selecione o produto.");
-      return;
+    if (!manual.item_id) return setMsg(manual.item_type === "componente" ? "Selecione o componente." : "Selecione o produto.");
+    if (qtd <= 0) return setMsg("Informe a quantidade.");
+    try {
+      const response = await fetch("/api/movements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "manual", ...manual, quantity: qtd, created_by: profile.id }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao salvar movimentação.");
+      setMsg("Movimentação manual salva com sucesso.");
+      setManual(emptyManual);
+      await carregar();
+    } catch (error: any) {
+      setMsg(error.message || "Erro ao salvar movimentação.");
     }
-
-    if (qtd <= 0) {
-      setMsg("Informe a quantidade.");
-      return;
-    }
-
-    const tabela = manual.item_type === "componente" ? "components" : "products";
-    const item = manual.item_type === "componente"
-      ? components.find((i) => i.id === manual.item_id)
-      : products.find((i) => i.id === manual.item_id);
-
-    if (!item) {
-      setMsg(manual.item_type === "componente" ? "Componente não encontrado." : "Produto não encontrado.");
-      return;
-    }
-
-    const estoqueAtual = Number(item.quantity || 0);
-    const novaQtd = manual.type === "entrada" ? estoqueAtual + qtd : estoqueAtual - qtd;
-
-    if (manual.type === "saída" && novaQtd < 0) {
-      setMsg(`Estoque insuficiente. Disponível: ${quantidadeFormatada(estoqueAtual)}.`);
-      return;
-    }
-
-    const { error } = await supabase.from("movements").insert({
-      type: manual.type,
-      item_type: manual.item_type,
-      item_id: manual.item_id || null,
-      quantity: qtd,
-      notes: manual.notes || `Movimentação manual de ${manual.item_type}: ${item.name}`,
-      created_by: profile.id,
-    });
-
-    if (error) {
-      setMsg(error.message);
-      return;
-    }
-
-    const { error: erroEstoque } = await supabase
-      .from(tabela)
-      .update({
-        quantity: novaQtd,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", manual.item_id);
-
-    if (erroEstoque) {
-      setMsg(erroEstoque.message);
-      return;
-    }
-
-    setMsg("Movimentação manual salva com sucesso.");
-    setManual(emptyManual);
-    carregar();
   }
   function pegarTextoDentroNo(no: Element, tag: string) {
     return no.getElementsByTagName(tag)[0]?.textContent?.trim() || "";
@@ -2437,7 +1894,7 @@ function Movimentações({ profile }: { profile: Profile }) {
             onChange={(v) => setManualField("type", v)}
           >
             <option value="entrada">Entrada</option>
-            <option value="saída">Saída</option>
+            <option value="saida">Saída</option>
           </SelectField>
 
           <SelectField
@@ -3047,11 +2504,17 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
   useEffect(() => { carregar(); }, []);
 
   async function carregar() {
-    const { data: tech } = await supabase.from("profiles").select("*").eq("role", "tecnico");
-    setTechnicians((tech || []) as Profile[]);
-
-    const { data: a } = await supabase.from("assemblies").select("*").order("created_at", { ascending: false });
-    setItems(a || []);
+    try {
+      const [profilesResponse, assembliesResponse] = await Promise.all([
+        fetch("/api/profiles", { cache: "no-store" }),
+        fetch("/api/assemblies", { cache: "no-store" }),
+      ]);
+      const [profilesData, assembliesData] = await Promise.all([profilesResponse.json(), assembliesResponse.json()]);
+      if (!profilesResponse.ok) throw new Error(profilesData.error || "Erro ao carregar técnicos.");
+      if (!assembliesResponse.ok || !assembliesData.sucesso) throw new Error(assembliesData.erro || "Erro ao carregar montagens.");
+      setTechnicians((profilesData || []).filter((item: Profile) => item.role === "tecnico") as Profile[]);
+      setItems(assembliesData.assemblies || []);
+    } catch (error: any) { setMsg(error.message || "Erro ao carregar montagens."); }
   }
 
   function set(c: string, v: string) {
@@ -3069,8 +2532,9 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
 
   async function excluir(id: string) {
     if (!confirm("Excluir esta montagem?")) return;
-    const { error } = await supabase.from("assemblies").delete().eq("id", id);
-    if (error) return setMsg(error.message);
+    const response = await fetch(`/api/assemblies?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const data = await response.json();
+    if (!response.ok || !data.sucesso) return setMsg(data.erro || "Erro ao excluir montagem.");
     setItems((a) => a.filter((x) => x.id !== id));
     setMsg("Montagem excluída com sucesso.");
   }
@@ -3079,49 +2543,17 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
     const quantidade = Number(form.quantity || 1);
     if (!form.equipment) return setMsg("Selecione o equipamento montado.");
     if (quantidade <= 0) return setMsg("Informe uma quantidade válida.");
-
-    const payloadCompleto: AnyRow = {
-      equipment: form.equipment,
-      equipment_name: form.equipment,
-      product_name: form.equipment,
-      name: form.equipment,
-      quantity: quantidade,
-      technician_id: form.technician_id || null,
-      created_by: profile.id,
-    };
-
-    let res = editing
-      ? await supabase.from("assemblies").update(payloadCompleto).eq("id", editing)
-      : await supabase.from("assemblies").insert(payloadCompleto);
-
-    if (res.error && /equipment_name|product_name|name|schema cache|column/i.test(res.error.message || "")) {
-      const payloadBasico = {
-        equipment: form.equipment,
-        quantity: quantidade,
-        technician_id: form.technician_id || null,
-        created_by: profile.id,
-      };
-      res = editing
-        ? await supabase.from("assemblies").update(payloadBasico).eq("id", editing)
-        : await supabase.from("assemblies").insert(payloadBasico);
-    }
-
-    if (res.error) return setMsg(res.error.message);
-
-    if (!editing) {
-      await baixarComponentesDaComposição(
-        form.equipment,
-        quantidade,
-        profile.id,
-        `montagem de ${form.equipment}`
-      );
-      await aumentarEquipamentoMontado(form.equipment, quantidade);
-    }
-
-    setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso. Componentes baixados e equipamento adicionado ao estoque de montados.");
-    setForm(empty);
-    setEditing(null);
-    carregar();
+    try {
+      const response = await fetch("/api/assemblies", {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editing || undefined, equipment: form.equipment, quantity: quantidade, technician_id: form.technician_id || null, created_by: profile.id }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao salvar montagem.");
+      setMsg(editing ? "Montagem atualizada com sucesso." : "Montagem registrada com sucesso. Componentes baixados e equipamento adicionado ao estoque de montados.");
+      setForm(empty); setEditing(null); await carregar();
+    } catch (error: any) { setMsg(error.message || "Erro ao salvar montagem."); }
   }
 
   const filtered = items.filter((i) => textMatch(i, search));
@@ -3179,17 +2611,12 @@ function EquipamentosMontados({ search }: SearchProps) {
   useEffect(() => { carregar(); }, []);
 
   async function carregar() {
-    const { data, error } = await supabase
-      .from("mounted_equipments")
-      .select("*")
-      .order("equipment_name");
-
-    if (error) {
-      setMsg(error.message);
-      return;
-    }
-
-    setItems(data || []);
+    try {
+      const response = await fetch("/api/mounted-equipments", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao carregar equipamentos montados.");
+      setItems(data.items || []);
+    } catch (error: any) { setMsg(error.message || "Erro ao carregar equipamentos montados."); }
   }
 
   function set(campo: string, valor: string) {
@@ -3208,31 +2635,21 @@ function EquipamentosMontados({ search }: SearchProps) {
 
   async function salvar() {
     setMsg("");
-
-    const payload = {
-      equipment_name: form.equipment_name,
-      quantity: Number(form.quantity || 0),
-      min_stock: Number(form.min_stock || 0),
-      notes: form.notes || "",
-      updated_at: new Date().toISOString(),
-    };
-
-    const res = editing
-      ? await supabase.from("mounted_equipments").update(payload).eq("id", editing)
-      : await supabase.from("mounted_equipments").insert({ ...payload, created_at: new Date().toISOString() });
-
-    if (res.error) return setMsg(res.error.message);
-
-    setMsg(editing ? "Equipamento montado atualizado com sucesso." : "Equipamento montado cadastrado com sucesso.");
-    setForm(empty);
-    setEditing(null);
-    carregar();
+    const payload = { id: editing || undefined, equipment_name: form.equipment_name, quantity: Number(form.quantity || 0), min_stock: Number(form.min_stock || 0), notes: form.notes || "" };
+    try {
+      const response = await fetch("/api/mounted-equipments", { method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao salvar equipamento montado.");
+      setMsg(editing ? "Equipamento montado atualizado com sucesso." : "Equipamento montado cadastrado com sucesso.");
+      setForm(empty); setEditing(null); await carregar();
+    } catch (error: any) { setMsg(error.message || "Erro ao salvar equipamento montado."); }
   }
 
   async function excluir(id: string) {
     if (!confirm("Excluir este controle de equipamento montado?")) return;
-    const { error } = await supabase.from("mounted_equipments").delete().eq("id", id);
-    if (error) return setMsg(error.message);
+    const response = await fetch(`/api/mounted-equipments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const data = await response.json();
+    if (!response.ok || !data.sucesso) return setMsg(data.erro || "Erro ao excluir equipamento montado.");
     setItems((atuais) => atuais.filter((item) => item.id !== id));
     setMsg("Equipamento montado excluído com sucesso.");
   }
@@ -3333,14 +2750,18 @@ function Relatorios({ profile }: { profile: Profile }) {
   useEffect(() => { carregar(); }, []);
 
   async function carregar() {
-    const { data: p } = await supabase.from("products").select("*");
-    const { data: m } = await supabase.from("movements").select("*");
-    const { data: c } = await supabase.from("components").select("*");
-    const { data: o } = await supabase.from("orders").select("*");
-    setProducts(p || []);
-    setMovements(m || []);
-    setComponents(c || []);
-    setOrders(o || []);
+    try {
+      const [pRes, mRes, cRes, oRes] = await Promise.all([
+        fetch("/api/products", { cache: "no-store" }), fetch("/api/movements", { cache: "no-store" }),
+        fetch("/api/components", { cache: "no-store" }), fetch("/api/orders", { cache: "no-store" }),
+      ]);
+      const [p, m, c, o] = await Promise.all([pRes.json(), mRes.json(), cRes.json(), oRes.json()]);
+      if (!pRes.ok || !p.sucesso) throw new Error(p.erro || "Erro ao carregar produtos.");
+      if (!mRes.ok || !m.sucesso) throw new Error(m.erro || "Erro ao carregar movimentações.");
+      if (!cRes.ok || !c.sucesso) throw new Error(c.erro || "Erro ao carregar componentes.");
+      if (!oRes.ok || !o.sucesso) throw new Error(o.erro || "Erro ao carregar pedidos.");
+      setProducts(p.products || []); setMovements(m.movements || []); setComponents(c.components || []); setOrders(o.orders || []);
+    } catch (error) { console.error("Erro ao carregar relatórios:", error); }
   }
 
   function inDateRange(row: AnyRow) {
@@ -3453,4 +2874,19 @@ function Relatorios({ profile }: { profile: Profile }) {
   </>;
 }
 
-function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => void }) { const [form, setForm] = useState({ name: profile.name || "", document: maskCpfCnpj(profile.document || ""), phone: maskPhone(profile.phone || ""), cep: maskCep(profile.cep || ""), city: profile.city || "", street: profile.street || "", number: profile.number || "", no_number: Boolean(profile.no_number), neighborhood: profile.neighborhood || "", proposal_status: "Lead Frio" }); const [msg, setMsg] = useState(""); function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); } async function buscarCepPerfil(v: string) { const end = await buscarCep(v); if (end) setForm((a) => ({ ...a, ...end })); } async function salvar() { const { error } = await supabase.from("profiles").update({ name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood, updated_at: new Date().toISOString() }).eq("id", profile.id); if (error) return setMsg(error.message); setMsg("Perfil atualizado com sucesso."); onUpdated(); } return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /><div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>; }
+function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => void }) {
+  const [form, setForm] = useState({ name: profile.name || "", document: maskCpfCnpj(profile.document || ""), phone: maskPhone(profile.phone || ""), cep: maskCep(profile.cep || ""), city: profile.city || "", street: profile.street || "", number: profile.number || "", no_number: Boolean(profile.no_number), neighborhood: profile.neighborhood || "", proposal_status: "Lead Frio" });
+  const [msg, setMsg] = useState("");
+  function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); }
+  async function buscarCepPerfil(v: string) { const end = await buscarCep(v); if (end) setForm((a) => ({ ...a, ...end })); }
+  async function salvar() {
+    try {
+      const response = await fetch("/api/profiles", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: profile.id, name: form.name, document: onlyNumbers(form.document), phone: onlyNumbers(form.phone), cep: onlyNumbers(form.cep), city: form.city, street: form.street, number: form.no_number ? "" : form.number, no_number: form.no_number, neighborhood: form.neighborhood }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erro ao atualizar perfil.");
+      setMsg("Perfil atualizado com sucesso."); onUpdated();
+    } catch (error: any) { setMsg(error.message || "Erro ao atualizar perfil."); }
+  }
+  return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>;
+}
+

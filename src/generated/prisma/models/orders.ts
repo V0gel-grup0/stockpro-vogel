@@ -325,6 +325,7 @@ export type ordersWhereInput = {
   created_at?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   conta_azul_logs?: Prisma.Conta_azul_logsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
   clients?: Prisma.XOR<Prisma.ClientsNullableScalarRelationFilter, Prisma.clientsWhereInput> | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
 }
@@ -348,6 +349,7 @@ export type ordersOrderByWithRelationInput = {
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   conta_azul_logs?: Prisma.conta_azul_logsOrderByRelationAggregateInput
+  movements?: Prisma.movementsOrderByRelationAggregateInput
   clients?: Prisma.clientsOrderByWithRelationInput
   profiles?: Prisma.profilesOrderByWithRelationInput
 }
@@ -374,6 +376,7 @@ export type ordersWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   updated_at?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   conta_azul_logs?: Prisma.Conta_azul_logsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
   clients?: Prisma.XOR<Prisma.ClientsNullableScalarRelationFilter, Prisma.clientsWhereInput> | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
 }, "id">
@@ -443,6 +446,7 @@ export type ordersCreateInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutOrdersInput
   clients?: Prisma.clientsCreateNestedOneWithoutOrdersInput
   profiles?: Prisma.profilesCreateNestedOneWithoutOrdersInput
 }
@@ -466,6 +470,7 @@ export type ordersUncheckedCreateInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutOrdersInput
 }
 
 export type ordersUpdateInput = {
@@ -485,6 +490,7 @@ export type ordersUpdateInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutOrdersNestedInput
   clients?: Prisma.clientsUpdateOneWithoutOrdersNestedInput
   profiles?: Prisma.profilesUpdateOneWithoutOrdersNestedInput
 }
@@ -508,6 +514,7 @@ export type ordersUncheckedUpdateInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutOrdersNestedInput
 }
 
 export type ordersCreateManyInput = {
@@ -715,20 +722,28 @@ export type ordersUpdateOneWithoutConta_azul_logsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ordersUpdateToOneWithWhereWithoutConta_azul_logsInput, Prisma.ordersUpdateWithoutConta_azul_logsInput>, Prisma.ordersUncheckedUpdateWithoutConta_azul_logsInput>
 }
 
+export type ordersCreateNestedOneWithoutMovementsInput = {
+  create?: Prisma.XOR<Prisma.ordersCreateWithoutMovementsInput, Prisma.ordersUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.ordersCreateOrConnectWithoutMovementsInput
+  connect?: Prisma.ordersWhereUniqueInput
+}
+
+export type ordersUpdateOneWithoutMovementsNestedInput = {
+  create?: Prisma.XOR<Prisma.ordersCreateWithoutMovementsInput, Prisma.ordersUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.ordersCreateOrConnectWithoutMovementsInput
+  upsert?: Prisma.ordersUpsertWithoutMovementsInput
+  disconnect?: Prisma.ordersWhereInput | boolean
+  delete?: Prisma.ordersWhereInput | boolean
+  connect?: Prisma.ordersWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ordersUpdateToOneWithWhereWithoutMovementsInput, Prisma.ordersUpdateWithoutMovementsInput>, Prisma.ordersUncheckedUpdateWithoutMovementsInput>
+}
+
 export type BigIntFieldUpdateOperationsInput = {
   set?: bigint | number
   increment?: bigint | number
   decrement?: bigint | number
   multiply?: bigint | number
   divide?: bigint | number
-}
-
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
 export type ordersCreateNestedManyWithoutProfilesInput = {
@@ -790,6 +805,7 @@ export type ordersCreateWithoutClientsInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutOrdersInput
   profiles?: Prisma.profilesCreateNestedOneWithoutOrdersInput
 }
 
@@ -811,6 +827,7 @@ export type ordersUncheckedCreateWithoutClientsInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutOrdersInput
 }
 
 export type ordersCreateOrConnectWithoutClientsInput = {
@@ -878,6 +895,7 @@ export type ordersCreateWithoutConta_azul_logsInput = {
   notes?: string
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  movements?: Prisma.movementsCreateNestedManyWithoutOrdersInput
   clients?: Prisma.clientsCreateNestedOneWithoutOrdersInput
   profiles?: Prisma.profilesCreateNestedOneWithoutOrdersInput
 }
@@ -900,6 +918,7 @@ export type ordersUncheckedCreateWithoutConta_azul_logsInput = {
   notes?: string
   created_at?: Date | string | null
   updated_at?: Date | string | null
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutOrdersInput
 }
 
 export type ordersCreateOrConnectWithoutConta_azul_logsInput = {
@@ -934,6 +953,7 @@ export type ordersUpdateWithoutConta_azul_logsInput = {
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  movements?: Prisma.movementsUpdateManyWithoutOrdersNestedInput
   clients?: Prisma.clientsUpdateOneWithoutOrdersNestedInput
   profiles?: Prisma.profilesUpdateOneWithoutOrdersNestedInput
 }
@@ -956,6 +976,107 @@ export type ordersUncheckedUpdateWithoutConta_azul_logsInput = {
   notes?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutOrdersNestedInput
+}
+
+export type ordersCreateWithoutMovementsInput = {
+  id?: string
+  order_number?: bigint | number
+  status?: string
+  item_type?: string
+  item_id?: string | null
+  equipment_name?: string
+  quantity?: number
+  total_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shipping_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  tracking_code?: string
+  tracking_location?: string
+  conta_azul_status?: string
+  notes?: string
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  conta_azul_logs?: Prisma.conta_azul_logsCreateNestedManyWithoutOrdersInput
+  clients?: Prisma.clientsCreateNestedOneWithoutOrdersInput
+  profiles?: Prisma.profilesCreateNestedOneWithoutOrdersInput
+}
+
+export type ordersUncheckedCreateWithoutMovementsInput = {
+  id?: string
+  order_number?: bigint | number
+  created_by?: string | null
+  client_id?: string | null
+  status?: string
+  item_type?: string
+  item_id?: string | null
+  equipment_name?: string
+  quantity?: number
+  total_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shipping_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  tracking_code?: string
+  tracking_location?: string
+  conta_azul_status?: string
+  notes?: string
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  conta_azul_logs?: Prisma.conta_azul_logsUncheckedCreateNestedManyWithoutOrdersInput
+}
+
+export type ordersCreateOrConnectWithoutMovementsInput = {
+  where: Prisma.ordersWhereUniqueInput
+  create: Prisma.XOR<Prisma.ordersCreateWithoutMovementsInput, Prisma.ordersUncheckedCreateWithoutMovementsInput>
+}
+
+export type ordersUpsertWithoutMovementsInput = {
+  update: Prisma.XOR<Prisma.ordersUpdateWithoutMovementsInput, Prisma.ordersUncheckedUpdateWithoutMovementsInput>
+  create: Prisma.XOR<Prisma.ordersCreateWithoutMovementsInput, Prisma.ordersUncheckedCreateWithoutMovementsInput>
+  where?: Prisma.ordersWhereInput
+}
+
+export type ordersUpdateToOneWithWhereWithoutMovementsInput = {
+  where?: Prisma.ordersWhereInput
+  data: Prisma.XOR<Prisma.ordersUpdateWithoutMovementsInput, Prisma.ordersUncheckedUpdateWithoutMovementsInput>
+}
+
+export type ordersUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  order_number?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  equipment_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  total_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shipping_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  tracking_code?: Prisma.StringFieldUpdateOperationsInput | string
+  tracking_location?: Prisma.StringFieldUpdateOperationsInput | string
+  conta_azul_status?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conta_azul_logs?: Prisma.conta_azul_logsUpdateManyWithoutOrdersNestedInput
+  clients?: Prisma.clientsUpdateOneWithoutOrdersNestedInput
+  profiles?: Prisma.profilesUpdateOneWithoutOrdersNestedInput
+}
+
+export type ordersUncheckedUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  order_number?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  client_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  item_type?: Prisma.StringFieldUpdateOperationsInput | string
+  item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  equipment_name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  total_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shipping_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  tracking_code?: Prisma.StringFieldUpdateOperationsInput | string
+  tracking_location?: Prisma.StringFieldUpdateOperationsInput | string
+  conta_azul_status?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conta_azul_logs?: Prisma.conta_azul_logsUncheckedUpdateManyWithoutOrdersNestedInput
 }
 
 export type ordersCreateWithoutProfilesInput = {
@@ -975,6 +1096,7 @@ export type ordersCreateWithoutProfilesInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutOrdersInput
   clients?: Prisma.clientsCreateNestedOneWithoutOrdersInput
 }
 
@@ -996,6 +1118,7 @@ export type ordersUncheckedCreateWithoutProfilesInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedCreateNestedManyWithoutOrdersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutOrdersInput
 }
 
 export type ordersCreateOrConnectWithoutProfilesInput = {
@@ -1060,6 +1183,7 @@ export type ordersUpdateWithoutClientsInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutOrdersNestedInput
   profiles?: Prisma.profilesUpdateOneWithoutOrdersNestedInput
 }
 
@@ -1081,6 +1205,7 @@ export type ordersUncheckedUpdateWithoutClientsInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutOrdersNestedInput
 }
 
 export type ordersUncheckedUpdateManyWithoutClientsInput = {
@@ -1138,6 +1263,7 @@ export type ordersUpdateWithoutProfilesInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutOrdersNestedInput
   clients?: Prisma.clientsUpdateOneWithoutOrdersNestedInput
 }
 
@@ -1159,6 +1285,7 @@ export type ordersUncheckedUpdateWithoutProfilesInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   conta_azul_logs?: Prisma.conta_azul_logsUncheckedUpdateManyWithoutOrdersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutOrdersNestedInput
 }
 
 export type ordersUncheckedUpdateManyWithoutProfilesInput = {
@@ -1187,10 +1314,12 @@ export type ordersUncheckedUpdateManyWithoutProfilesInput = {
 
 export type OrdersCountOutputType = {
   conta_azul_logs: number
+  movements: number
 }
 
 export type OrdersCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   conta_azul_logs?: boolean | OrdersCountOutputTypeCountConta_azul_logsArgs
+  movements?: boolean | OrdersCountOutputTypeCountMovementsArgs
 }
 
 /**
@@ -1208,6 +1337,13 @@ export type OrdersCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exten
  */
 export type OrdersCountOutputTypeCountConta_azul_logsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.conta_azul_logsWhereInput
+}
+
+/**
+ * OrdersCountOutputType without action
+ */
+export type OrdersCountOutputTypeCountMovementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.movementsWhereInput
 }
 
 
@@ -1230,6 +1366,7 @@ export type ordersSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   created_at?: boolean
   updated_at?: boolean
   conta_azul_logs?: boolean | Prisma.orders$conta_azul_logsArgs<ExtArgs>
+  movements?: boolean | Prisma.orders$movementsArgs<ExtArgs>
   clients?: boolean | Prisma.orders$clientsArgs<ExtArgs>
   profiles?: boolean | Prisma.orders$profilesArgs<ExtArgs>
   _count?: boolean | Prisma.OrdersCountOutputTypeDefaultArgs<ExtArgs>
@@ -1302,6 +1439,7 @@ export type ordersSelectScalar = {
 export type ordersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "order_number" | "created_by" | "client_id" | "status" | "item_type" | "item_id" | "equipment_name" | "quantity" | "total_value" | "shipping_value" | "tracking_code" | "tracking_location" | "conta_azul_status" | "notes" | "created_at" | "updated_at", ExtArgs["result"]["orders"]>
 export type ordersInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   conta_azul_logs?: boolean | Prisma.orders$conta_azul_logsArgs<ExtArgs>
+  movements?: boolean | Prisma.orders$movementsArgs<ExtArgs>
   clients?: boolean | Prisma.orders$clientsArgs<ExtArgs>
   profiles?: boolean | Prisma.orders$profilesArgs<ExtArgs>
   _count?: boolean | Prisma.OrdersCountOutputTypeDefaultArgs<ExtArgs>
@@ -1319,6 +1457,7 @@ export type $ordersPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name: "orders"
   objects: {
     conta_azul_logs: Prisma.$conta_azul_logsPayload<ExtArgs>[]
+    movements: Prisma.$movementsPayload<ExtArgs>[]
     clients: Prisma.$clientsPayload<ExtArgs> | null
     profiles: Prisma.$profilesPayload<ExtArgs> | null
   }
@@ -1735,6 +1874,7 @@ readonly fields: ordersFieldRefs;
 export interface Prisma__ordersClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   conta_azul_logs<T extends Prisma.orders$conta_azul_logsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.orders$conta_azul_logsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$conta_azul_logsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  movements<T extends Prisma.orders$movementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.orders$movementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$movementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   clients<T extends Prisma.orders$clientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.orders$clientsArgs<ExtArgs>>): Prisma.Prisma__clientsClient<runtime.Types.Result.GetResult<Prisma.$clientsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   profiles<T extends Prisma.orders$profilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.orders$profilesArgs<ExtArgs>>): Prisma.Prisma__profilesClient<runtime.Types.Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
@@ -2205,6 +2345,30 @@ export type orders$conta_azul_logsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.Conta_azul_logsScalarFieldEnum | Prisma.Conta_azul_logsScalarFieldEnum[]
+}
+
+/**
+ * orders.movements
+ */
+export type orders$movementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the movements
+   */
+  select?: Prisma.movementsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the movements
+   */
+  omit?: Prisma.movementsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.movementsInclude<ExtArgs> | null
+  where?: Prisma.movementsWhereInput
+  orderBy?: Prisma.movementsOrderByWithRelationInput | Prisma.movementsOrderByWithRelationInput[]
+  cursor?: Prisma.movementsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MovementsScalarFieldEnum | Prisma.MovementsScalarFieldEnum[]
 }
 
 /**

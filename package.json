@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "predev": "prisma generate",
+    "prebuild": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

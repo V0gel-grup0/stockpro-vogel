@@ -37,19 +37,25 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (status === undefined && permissions === undefined) {
+
+    const allowed = ["name", "document", "phone", "cep", "city", "street", "number", "no_number", "neighborhood"] as const;
+    const data: Record<string, any> = { updated_at: new Date() };
+    if (status !== undefined) data.status = status;
+    if (permissions !== undefined) data.permissions = permissions;
+    for (const field of allowed) {
+      if (field in body) data[field] = field === "no_number" ? Boolean(body[field]) : String(body[field] ?? "").trim();
+    }
+
+    if (Object.keys(data).length === 1) {
       return NextResponse.json(
-        { error: "Informe status ou permissions para atualizar." },
+        { error: "Nenhum campo válido foi informado para atualizar." },
         { status: 400 }
       );
     }
 
     const updatedProfile = await prisma.profiles.update({
       where: { id },
-      data: {
-        ...(status !== undefined ? { status } : {}),
-        ...(permissions !== undefined ? { permissions } : {}),
-      },
+      data,
     });
     const { password_hash, ...safeProfile } = updatedProfile;
 

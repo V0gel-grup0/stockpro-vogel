@@ -244,6 +244,7 @@ export type suppliersWhereInput = {
   created_at?: Prisma.DateTimeNullableFilter<"suppliers"> | Date | string | null
   components?: Prisma.ComponentsListRelationFilter
   supplier_products?: Prisma.ProductsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
 }
 
 export type suppliersOrderByWithRelationInput = {
@@ -262,6 +263,7 @@ export type suppliersOrderByWithRelationInput = {
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   components?: Prisma.componentsOrderByRelationAggregateInput
   supplier_products?: Prisma.productsOrderByRelationAggregateInput
+  movements?: Prisma.movementsOrderByRelationAggregateInput
 }
 
 export type suppliersWhereUniqueInput = Prisma.AtLeast<{
@@ -283,6 +285,7 @@ export type suppliersWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeNullableFilter<"suppliers"> | Date | string | null
   components?: Prisma.ComponentsListRelationFilter
   supplier_products?: Prisma.ProductsListRelationFilter
+  movements?: Prisma.MovementsListRelationFilter
 }, "id">
 
 export type suppliersOrderByWithAggregationInput = {
@@ -339,6 +342,7 @@ export type suppliersCreateInput = {
   created_at?: Date | string | null
   components?: Prisma.componentsCreateNestedManyWithoutSuppliersInput
   supplier_products?: Prisma.productsCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersUncheckedCreateInput = {
@@ -357,6 +361,7 @@ export type suppliersUncheckedCreateInput = {
   created_at?: Date | string | null
   components?: Prisma.componentsUncheckedCreateNestedManyWithoutSuppliersInput
   supplier_products?: Prisma.productsUncheckedCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersUpdateInput = {
@@ -375,6 +380,7 @@ export type suppliersUpdateInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   components?: Prisma.componentsUpdateManyWithoutSuppliersNestedInput
   supplier_products?: Prisma.productsUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutSuppliersNestedInput
 }
 
 export type suppliersUncheckedUpdateInput = {
@@ -393,6 +399,7 @@ export type suppliersUncheckedUpdateInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   components?: Prisma.componentsUncheckedUpdateManyWithoutSuppliersNestedInput
   supplier_products?: Prisma.productsUncheckedUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutSuppliersNestedInput
 }
 
 export type suppliersCreateManyInput = {
@@ -510,6 +517,22 @@ export type suppliersUpdateOneWithoutComponentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.suppliersUpdateToOneWithWhereWithoutComponentsInput, Prisma.suppliersUpdateWithoutComponentsInput>, Prisma.suppliersUncheckedUpdateWithoutComponentsInput>
 }
 
+export type suppliersCreateNestedOneWithoutMovementsInput = {
+  create?: Prisma.XOR<Prisma.suppliersCreateWithoutMovementsInput, Prisma.suppliersUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.suppliersCreateOrConnectWithoutMovementsInput
+  connect?: Prisma.suppliersWhereUniqueInput
+}
+
+export type suppliersUpdateOneWithoutMovementsNestedInput = {
+  create?: Prisma.XOR<Prisma.suppliersCreateWithoutMovementsInput, Prisma.suppliersUncheckedCreateWithoutMovementsInput>
+  connectOrCreate?: Prisma.suppliersCreateOrConnectWithoutMovementsInput
+  upsert?: Prisma.suppliersUpsertWithoutMovementsInput
+  disconnect?: Prisma.suppliersWhereInput | boolean
+  delete?: Prisma.suppliersWhereInput | boolean
+  connect?: Prisma.suppliersWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.suppliersUpdateToOneWithWhereWithoutMovementsInput, Prisma.suppliersUpdateWithoutMovementsInput>, Prisma.suppliersUncheckedUpdateWithoutMovementsInput>
+}
+
 export type suppliersCreateNestedOneWithoutSupplier_productsInput = {
   create?: Prisma.XOR<Prisma.suppliersCreateWithoutSupplier_productsInput, Prisma.suppliersUncheckedCreateWithoutSupplier_productsInput>
   connectOrCreate?: Prisma.suppliersCreateOrConnectWithoutSupplier_productsInput
@@ -550,6 +573,7 @@ export type suppliersCreateWithoutComponentsInput = {
   products?: Prisma.suppliersCreateproductsInput | string[]
   created_at?: Date | string | null
   supplier_products?: Prisma.productsCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersUncheckedCreateWithoutComponentsInput = {
@@ -567,6 +591,7 @@ export type suppliersUncheckedCreateWithoutComponentsInput = {
   products?: Prisma.suppliersCreateproductsInput | string[]
   created_at?: Date | string | null
   supplier_products?: Prisma.productsUncheckedCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersCreateOrConnectWithoutComponentsInput = {
@@ -600,6 +625,7 @@ export type suppliersUpdateWithoutComponentsInput = {
   products?: Prisma.suppliersUpdateproductsInput | string[]
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   supplier_products?: Prisma.productsUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutSuppliersNestedInput
 }
 
 export type suppliersUncheckedUpdateWithoutComponentsInput = {
@@ -616,6 +642,95 @@ export type suppliersUncheckedUpdateWithoutComponentsInput = {
   neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.suppliersUpdateproductsInput | string[]
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supplier_products?: Prisma.productsUncheckedUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutSuppliersNestedInput
+}
+
+export type suppliersCreateWithoutMovementsInput = {
+  id?: string
+  name: string
+  document?: string
+  phone?: string
+  email?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  products?: Prisma.suppliersCreateproductsInput | string[]
+  created_at?: Date | string | null
+  components?: Prisma.componentsCreateNestedManyWithoutSuppliersInput
+  supplier_products?: Prisma.productsCreateNestedManyWithoutSuppliersInput
+}
+
+export type suppliersUncheckedCreateWithoutMovementsInput = {
+  id?: string
+  name: string
+  document?: string
+  phone?: string
+  email?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  products?: Prisma.suppliersCreateproductsInput | string[]
+  created_at?: Date | string | null
+  components?: Prisma.componentsUncheckedCreateNestedManyWithoutSuppliersInput
+  supplier_products?: Prisma.productsUncheckedCreateNestedManyWithoutSuppliersInput
+}
+
+export type suppliersCreateOrConnectWithoutMovementsInput = {
+  where: Prisma.suppliersWhereUniqueInput
+  create: Prisma.XOR<Prisma.suppliersCreateWithoutMovementsInput, Prisma.suppliersUncheckedCreateWithoutMovementsInput>
+}
+
+export type suppliersUpsertWithoutMovementsInput = {
+  update: Prisma.XOR<Prisma.suppliersUpdateWithoutMovementsInput, Prisma.suppliersUncheckedUpdateWithoutMovementsInput>
+  create: Prisma.XOR<Prisma.suppliersCreateWithoutMovementsInput, Prisma.suppliersUncheckedCreateWithoutMovementsInput>
+  where?: Prisma.suppliersWhereInput
+}
+
+export type suppliersUpdateToOneWithWhereWithoutMovementsInput = {
+  where?: Prisma.suppliersWhereInput
+  data: Prisma.XOR<Prisma.suppliersUpdateWithoutMovementsInput, Prisma.suppliersUncheckedUpdateWithoutMovementsInput>
+}
+
+export type suppliersUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  products?: Prisma.suppliersUpdateproductsInput | string[]
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  components?: Prisma.componentsUpdateManyWithoutSuppliersNestedInput
+  supplier_products?: Prisma.productsUpdateManyWithoutSuppliersNestedInput
+}
+
+export type suppliersUncheckedUpdateWithoutMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  products?: Prisma.suppliersUpdateproductsInput | string[]
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  components?: Prisma.componentsUncheckedUpdateManyWithoutSuppliersNestedInput
   supplier_products?: Prisma.productsUncheckedUpdateManyWithoutSuppliersNestedInput
 }
 
@@ -634,6 +749,7 @@ export type suppliersCreateWithoutSupplier_productsInput = {
   products?: Prisma.suppliersCreateproductsInput | string[]
   created_at?: Date | string | null
   components?: Prisma.componentsCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersUncheckedCreateWithoutSupplier_productsInput = {
@@ -651,6 +767,7 @@ export type suppliersUncheckedCreateWithoutSupplier_productsInput = {
   products?: Prisma.suppliersCreateproductsInput | string[]
   created_at?: Date | string | null
   components?: Prisma.componentsUncheckedCreateNestedManyWithoutSuppliersInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutSuppliersInput
 }
 
 export type suppliersCreateOrConnectWithoutSupplier_productsInput = {
@@ -684,6 +801,7 @@ export type suppliersUpdateWithoutSupplier_productsInput = {
   products?: Prisma.suppliersUpdateproductsInput | string[]
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   components?: Prisma.componentsUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutSuppliersNestedInput
 }
 
 export type suppliersUncheckedUpdateWithoutSupplier_productsInput = {
@@ -701,6 +819,7 @@ export type suppliersUncheckedUpdateWithoutSupplier_productsInput = {
   products?: Prisma.suppliersUpdateproductsInput | string[]
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   components?: Prisma.componentsUncheckedUpdateManyWithoutSuppliersNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutSuppliersNestedInput
 }
 
 
@@ -711,11 +830,13 @@ export type suppliersUncheckedUpdateWithoutSupplier_productsInput = {
 export type SuppliersCountOutputType = {
   components: number
   supplier_products: number
+  movements: number
 }
 
 export type SuppliersCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   components?: boolean | SuppliersCountOutputTypeCountComponentsArgs
   supplier_products?: boolean | SuppliersCountOutputTypeCountSupplier_productsArgs
+  movements?: boolean | SuppliersCountOutputTypeCountMovementsArgs
 }
 
 /**
@@ -742,6 +863,13 @@ export type SuppliersCountOutputTypeCountSupplier_productsArgs<ExtArgs extends r
   where?: Prisma.productsWhereInput
 }
 
+/**
+ * SuppliersCountOutputType without action
+ */
+export type SuppliersCountOutputTypeCountMovementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.movementsWhereInput
+}
+
 
 export type suppliersSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -759,6 +887,7 @@ export type suppliersSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   created_at?: boolean
   components?: boolean | Prisma.suppliers$componentsArgs<ExtArgs>
   supplier_products?: boolean | Prisma.suppliers$supplier_productsArgs<ExtArgs>
+  movements?: boolean | Prisma.suppliers$movementsArgs<ExtArgs>
   _count?: boolean | Prisma.SuppliersCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["suppliers"]>
 
@@ -814,6 +943,7 @@ export type suppliersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type suppliersInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   components?: boolean | Prisma.suppliers$componentsArgs<ExtArgs>
   supplier_products?: boolean | Prisma.suppliers$supplier_productsArgs<ExtArgs>
+  movements?: boolean | Prisma.suppliers$movementsArgs<ExtArgs>
   _count?: boolean | Prisma.SuppliersCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type suppliersIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -824,6 +954,7 @@ export type $suppliersPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     components: Prisma.$componentsPayload<ExtArgs>[]
     supplier_products: Prisma.$productsPayload<ExtArgs>[]
+    movements: Prisma.$movementsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1235,6 +1366,7 @@ export interface Prisma__suppliersClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   components<T extends Prisma.suppliers$componentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.suppliers$componentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$componentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   supplier_products<T extends Prisma.suppliers$supplier_productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.suppliers$supplier_productsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$productsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  movements<T extends Prisma.suppliers$movementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.suppliers$movementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$movementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1715,6 +1847,30 @@ export type suppliers$supplier_productsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.ProductsScalarFieldEnum | Prisma.ProductsScalarFieldEnum[]
+}
+
+/**
+ * suppliers.movements
+ */
+export type suppliers$movementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the movements
+   */
+  select?: Prisma.movementsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the movements
+   */
+  omit?: Prisma.movementsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.movementsInclude<ExtArgs> | null
+  where?: Prisma.movementsWhereInput
+  orderBy?: Prisma.movementsOrderByWithRelationInput | Prisma.movementsOrderByWithRelationInput[]
+  cursor?: Prisma.movementsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MovementsScalarFieldEnum | Prisma.MovementsScalarFieldEnum[]
 }
 
 /**
