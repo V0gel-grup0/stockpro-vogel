@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createSession } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -34,6 +35,18 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    if (user.status !== "approved") {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "Seu cadastro não está aprovado para acessar o sistema.",
+        },
+        { status: 403 }
+      );
+    }
+
+    await createSession(user.id);
 
     return NextResponse.json({
       sucesso: true,
