@@ -20,21 +20,22 @@ model assemblies {
 }
 
 model clients {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  document     String    @default("")
-  phone        String    @default("")
-  cep          String    @default("")
-  city         String    @default("")
-  street       String    @default("")
-  number       String    @default("")
-  no_number    Boolean   @default(false)
-  neighborhood  String    @default("")
-  proposal_status String @default("Lead Frio")
-  created_by    String?   @db.Uuid
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-  profiles     profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  orders       orders[]
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  document          String              @default("")
+  phone             String              @default("")
+  cep               String              @default("")
+  city              String              @default("")
+  street            String              @default("")
+  number            String              @default("")
+  no_number         Boolean             @default(false)
+  neighborhood      String              @default("")
+  proposal_status   String              @default("Lead Frio")
+  created_by        String?             @db.Uuid
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  profiles          profiles?           @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders            orders[]
+  crm_opportunities crm_opportunities[]
 }
 
 model components {
@@ -66,55 +67,55 @@ model conta_azul_logs {
 }
 
 model movements {
-  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type                String
-  item_type           String
-  item_kind           String?     @default("")
-  nf_item_kind        String?     @default("")
-  item_id             String?     @db.Uuid
-  item_name           String      @default("")
-  product_id          String?     @db.Uuid
-  component_id        String?     @db.Uuid
-  supplier_id         String?     @db.Uuid
-  order_id            String?     @db.Uuid
-  quantity            Decimal     @default(0) @db.Decimal
-  unit_cost           Decimal     @default(0) @db.Decimal
-  total_cost          Decimal     @default(0) @db.Decimal
-  nf_key              String      @default("")
-  nf_number           String      @default("")
-  receita_federal_nf  String      @default("")
-  notes               String      @default("")
-  created_by          String?     @db.Uuid
-  created_at          DateTime?   @default(now()) @db.Timestamptz(6)
-  profiles            profiles?   @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  orders              orders?     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  products            products?   @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  components          components? @relation(fields: [component_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  suppliers           suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type               String
+  item_type          String
+  item_kind          String?     @default("")
+  nf_item_kind       String?     @default("")
+  item_id            String?     @db.Uuid
+  item_name          String      @default("")
+  product_id         String?     @db.Uuid
+  component_id       String?     @db.Uuid
+  supplier_id        String?     @db.Uuid
+  order_id           String?     @db.Uuid
+  quantity           Decimal     @default(0) @db.Decimal
+  unit_cost          Decimal     @default(0) @db.Decimal
+  total_cost         Decimal     @default(0) @db.Decimal
+  nf_key             String      @default("")
+  nf_number          String      @default("")
+  receita_federal_nf String      @default("")
+  notes              String      @default("")
+  created_by         String?     @db.Uuid
+  created_at         DateTime?   @default(now()) @db.Timestamptz(6)
+  profiles           profiles?   @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders             orders?     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products           products?   @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  components         components? @relation(fields: [component_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  suppliers          suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model orders {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_number       BigInt            @default(autoincrement())
-  created_by         String?           @db.Uuid
-  client_id          String?           @db.Uuid
-  status             String            @default("pendente")
-  item_type          String            @default("")
-  item_id            String?           @db.Uuid
-  equipment_name     String            @default("")
-  quantity           Int               @default(1)
-  total_value        Decimal           @default(0) @db.Decimal
-  shipping_value     Decimal           @default(0) @db.Decimal
-  tracking_code      String            @default("")
-  tracking_location  String            @default("")
-  conta_azul_status  String            @default("")
-  notes              String            @default("")
-  created_at         DateTime?         @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime?         @default(now()) @db.Timestamptz(6)
-  conta_azul_logs    conta_azul_logs[]
-  movements          movements[]
-  clients            clients?          @relation(fields: [client_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  profiles           profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number      BigInt            @default(autoincrement())
+  created_by        String?           @db.Uuid
+  client_id         String?           @db.Uuid
+  status            String            @default("pendente")
+  item_type         String            @default("")
+  item_id           String?           @db.Uuid
+  equipment_name    String            @default("")
+  quantity          Int               @default(1)
+  total_value       Decimal           @default(0) @db.Decimal
+  shipping_value    Decimal           @default(0) @db.Decimal
+  tracking_code     String            @default("")
+  tracking_location String            @default("")
+  conta_azul_status String            @default("")
+  notes             String            @default("")
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  conta_azul_logs   conta_azul_logs[]
+  movements         movements[]
+  clients           clients?          @relation(fields: [client_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  profiles          profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model playing_with_neon {
@@ -124,76 +125,78 @@ model playing_with_neon {
 }
 
 model products {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  sku         String     @unique(map: "products_sku_unique", where: raw("(sku <> ''::text)")) @default("")
-  category    String     @default("")
-  subcategory String     @default("")
-  cost_price  Decimal    @default(0) @db.Decimal
-  sale_price  Decimal    @default(0) @db.Decimal
-  quantity    Int        @default(0)
-  min_stock   Int        @default(0)
-  supplier_id String?    @db.Uuid
-  description String     @default("")
-  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?  @default(now()) @db.Timestamptz(6)
-  suppliers   suppliers? @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sku         String      @unique(map: "products_sku_unique", where: raw("(sku <> ''::text)")) @default("")
+  category    String      @default("")
+  subcategory String      @default("")
+  cost_price  Decimal     @default(0) @db.Decimal
+  sale_price  Decimal     @default(0) @db.Decimal
+  quantity    Int         @default(0)
+  min_stock   Int         @default(0)
+  supplier_id String?     @db.Uuid
+  description String      @default("")
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  suppliers   suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   movements   movements[]
 }
 
 model profiles {
-  id                                                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                                                    String         @unique
-  role                                                     app_role       @default(representante)
-  status                                                   account_status @default(pending)
-  name                                                     String         @default("")
-  document                                                 String         @default("")
-  phone                                                    String         @default("")
-  cep                                                      String         @default("")
-  city                                                     String         @default("")
-  street                                                   String         @default("")
-  number                                                   String         @default("")
-  no_number                                                Boolean        @default(false)
-  neighborhood                                             String         @default("")
+  id                                                       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                    String              @unique
+  role                                                     app_role            @default(representante)
+  status                                                   account_status      @default(pending)
+  name                                                     String              @default("")
+  document                                                 String              @default("")
+  phone                                                    String              @default("")
+  cep                                                      String              @default("")
+  city                                                     String              @default("")
+  street                                                   String              @default("")
+  number                                                   String              @default("")
+  no_number                                                Boolean             @default(false)
+  neighborhood                                             String              @default("")
   access_code                                              String?
   seller_code                                              String?
   manager_code                                             String?
-  responsible_seller_id                                    String?        @db.Uuid
-  responsible_manager_id                                   String?        @db.Uuid
-  created_by                                               String?        @db.Uuid
-  permissions                                              Json           @default("{}")
+  responsible_seller_id                                    String?             @db.Uuid
+  responsible_manager_id                                   String?             @db.Uuid
+  created_by                                               String?             @db.Uuid
+  permissions                                              Json                @default("{}")
   approval_notes                                           String?
-password_hash                                            String?  
-created_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at                                               DateTime?      @default(now()) @db.Timestamptz(6)
-  assemblies_assemblies_created_byToprofiles               assemblies[]   @relation("assemblies_created_byToprofiles")
-  assemblies_assemblies_technician_idToprofiles            assemblies[]   @relation("assemblies_technician_idToprofiles")
+  password_hash                                            String?
+  created_at                                               DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at                                               DateTime?           @default(now()) @db.Timestamptz(6)
+  assemblies_assemblies_created_byToprofiles               assemblies[]        @relation("assemblies_created_byToprofiles")
+  assemblies_assemblies_technician_idToprofiles            assemblies[]        @relation("assemblies_technician_idToprofiles")
   clients                                                  clients[]
   movements                                                movements[]
   orders                                                   orders[]
-  profiles_profiles_created_byToprofiles                   profiles?      @relation("profiles_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  other_profiles_profiles_created_byToprofiles             profiles[]     @relation("profiles_created_byToprofiles")
-  profiles_profiles_responsible_manager_idToprofiles       profiles?      @relation("profiles_responsible_manager_idToprofiles", fields: [responsible_manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  other_profiles_profiles_responsible_manager_idToprofiles profiles[]     @relation("profiles_responsible_manager_idToprofiles")
-  profiles_profiles_responsible_seller_idToprofiles        profiles?      @relation("profiles_responsible_seller_idToprofiles", fields: [responsible_seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  other_profiles_profiles_responsible_seller_idToprofiles  profiles[]     @relation("profiles_responsible_seller_idToprofiles")
+  crm_opportunities_created_by                             crm_opportunities[] @relation("crm_opportunities_created_byToprofiles")
+  crm_opportunities_responsible                            crm_opportunities[] @relation("crm_opportunities_responsible_idToprofiles")
+  profiles_profiles_created_byToprofiles                   profiles?           @relation("profiles_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_created_byToprofiles             profiles[]          @relation("profiles_created_byToprofiles")
+  profiles_profiles_responsible_manager_idToprofiles       profiles?           @relation("profiles_responsible_manager_idToprofiles", fields: [responsible_manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_responsible_manager_idToprofiles profiles[]          @relation("profiles_responsible_manager_idToprofiles")
+  profiles_profiles_responsible_seller_idToprofiles        profiles?           @relation("profiles_responsible_seller_idToprofiles", fields: [responsible_seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_profiles_profiles_responsible_seller_idToprofiles  profiles[]          @relation("profiles_responsible_seller_idToprofiles")
 }
 
 model suppliers {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  document     String       @default("")
-  phone        String       @default("")
-  email        String       @default("")
-  cep          String       @default("")
-  city         String       @default("")
-  street       String       @default("")
-  number       String       @default("")
-  no_number    Boolean      @default(false)
-  neighborhood String       @default("")
-  products     String[]     @default([])
-  created_at   DateTime?    @default(now()) @db.Timestamptz(6)
-  components   components[]
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  document          String       @default("")
+  phone             String       @default("")
+  email             String       @default("")
+  cep               String       @default("")
+  city              String       @default("")
+  street            String       @default("")
+  number            String       @default("")
+  no_number         Boolean      @default(false)
+  neighborhood      String       @default("")
+  products          String[]     @default([])
+  created_at        DateTime?    @default(now()) @db.Timestamptz(6)
+  components        components[]
   supplier_products products[]
   movements         movements[]
 }
@@ -233,4 +236,25 @@ model mounted_equipments {
   notes          String   @default("")
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model crm_opportunities {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id            String    @db.Uuid
+  created_by           String?   @db.Uuid
+  responsible_id       String?   @db.Uuid
+  title                String    @default("")
+  stage                String    @default("lead")
+  status               String    @default("open")
+  estimated_value      Decimal   @default(0) @db.Decimal
+  probability          Int       @default(0)
+  next_action          String    @default("")
+  next_action_at       DateTime? @db.Timestamptz(6)
+  lost_reason          String    @default("")
+  notes                String    @default("")
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @db.Timestamptz(6)
+  clients              clients   @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_created_by  profiles? @relation("crm_opportunities_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_responsible profiles? @relation("crm_opportunities_responsible_idToprofiles", fields: [responsible_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
