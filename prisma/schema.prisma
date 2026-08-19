@@ -37,6 +37,7 @@ model clients {
   orders            orders[]
   crm_opportunities crm_opportunities[]
   crm_activities    crm_activities[]
+  crm_tasks         crm_tasks[]
 }
 
 model components {
@@ -174,6 +175,8 @@ model profiles {
   movements                                                movements[]
   orders                                                   orders[]
   crm_activities                                           crm_activities[]
+  crm_tasks_assigned_to                                    crm_tasks[]         @relation("crm_tasks_assigned_toToprofiles")
+  crm_tasks_created_by                                     crm_tasks[]         @relation("crm_tasks_created_byToprofiles")
   crm_opportunities_created_by                             crm_opportunities[] @relation("crm_opportunities_created_byToprofiles")
   crm_opportunities_responsible                            crm_opportunities[] @relation("crm_opportunities_responsible_idToprofiles")
   profiles_profiles_created_byToprofiles                   profiles?           @relation("profiles_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -260,6 +263,7 @@ model crm_opportunities {
   profiles_created_by  profiles?        @relation("crm_opportunities_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   profiles_responsible profiles?        @relation("crm_opportunities_responsible_idToprofiles", fields: [responsible_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   crm_activities       crm_activities[]
+  crm_tasks            crm_tasks[]
 }
 
 model crm_activities {
@@ -274,4 +278,23 @@ model crm_activities {
   clients           clients            @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   crm_opportunities crm_opportunities? @relation(fields: [opportunity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   profiles          profiles?          @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model crm_tasks {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id            String             @db.Uuid
+  opportunity_id       String?            @db.Uuid
+  assigned_to          String?            @db.Uuid
+  created_by           String?            @db.Uuid
+  title                String
+  description          String             @default("")
+  due_at               DateTime?          @db.Timestamptz(6)
+  status               String             @default("pending")
+  completed_at         DateTime?          @db.Timestamptz(6)
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime           @default(now()) @db.Timestamptz(6)
+  clients              clients            @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  crm_opportunities    crm_opportunities? @relation(fields: [opportunity_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_assigned_to profiles?          @relation("crm_tasks_assigned_toToprofiles", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_created_by  profiles?          @relation("crm_tasks_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
