@@ -62,7 +62,10 @@ export const ModelName = {
   profiles: 'profiles',
   suppliers: 'suppliers',
   equipment_components: 'equipment_components',
-  mounted_equipments: 'mounted_equipments'
+  mounted_equipments: 'mounted_equipments',
+  crm_opportunities: 'crm_opportunities',
+  crm_activities: 'crm_activities',
+  crm_tasks: 'crm_tasks'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -290,6 +293,59 @@ export const Mounted_equipmentsScalarFieldEnum = {
 } as const
 
 export type Mounted_equipmentsScalarFieldEnum = (typeof Mounted_equipmentsScalarFieldEnum)[keyof typeof Mounted_equipmentsScalarFieldEnum]
+
+
+export const Crm_opportunitiesScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  created_by: 'created_by',
+  responsible_id: 'responsible_id',
+  title: 'title',
+  stage: 'stage',
+  status: 'status',
+  estimated_value: 'estimated_value',
+  probability: 'probability',
+  next_action: 'next_action',
+  next_action_at: 'next_action_at',
+  lost_reason: 'lost_reason',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Crm_opportunitiesScalarFieldEnum = (typeof Crm_opportunitiesScalarFieldEnum)[keyof typeof Crm_opportunitiesScalarFieldEnum]
+
+
+export const Crm_activitiesScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  opportunity_id: 'opportunity_id',
+  created_by: 'created_by',
+  type: 'type',
+  description: 'description',
+  happened_at: 'happened_at',
+  created_at: 'created_at'
+} as const
+
+export type Crm_activitiesScalarFieldEnum = (typeof Crm_activitiesScalarFieldEnum)[keyof typeof Crm_activitiesScalarFieldEnum]
+
+
+export const Crm_tasksScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  opportunity_id: 'opportunity_id',
+  assigned_to: 'assigned_to',
+  created_by: 'created_by',
+  title: 'title',
+  description: 'description',
+  due_at: 'due_at',
+  status: 'status',
+  completed_at: 'completed_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Crm_tasksScalarFieldEnum = (typeof Crm_tasksScalarFieldEnum)[keyof typeof Crm_tasksScalarFieldEnum]
 
 
 export const SortOrder = {

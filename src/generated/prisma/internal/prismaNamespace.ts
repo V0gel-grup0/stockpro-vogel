@@ -408,7 +408,10 @@ export const ModelName = {
   profiles: 'profiles',
   suppliers: 'suppliers',
   equipment_components: 'equipment_components',
-  mounted_equipments: 'mounted_equipments'
+  mounted_equipments: 'mounted_equipments',
+  crm_opportunities: 'crm_opportunities',
+  crm_activities: 'crm_activities',
+  crm_tasks: 'crm_tasks'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -424,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers" | "equipment_components" | "mounted_equipments"
+    modelProps: "assemblies" | "clients" | "components" | "conta_azul_logs" | "movements" | "orders" | "playing_with_neon" | "products" | "profiles" | "suppliers" | "equipment_components" | "mounted_equipments" | "crm_opportunities" | "crm_activities" | "crm_tasks"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1316,6 +1319,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    crm_opportunities: {
+      payload: Prisma.$crm_opportunitiesPayload<ExtArgs>
+      fields: Prisma.crm_opportunitiesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.crm_opportunitiesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.crm_opportunitiesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        findFirst: {
+          args: Prisma.crm_opportunitiesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.crm_opportunitiesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        findMany: {
+          args: Prisma.crm_opportunitiesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>[]
+        }
+        create: {
+          args: Prisma.crm_opportunitiesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        createMany: {
+          args: Prisma.crm_opportunitiesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.crm_opportunitiesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>[]
+        }
+        delete: {
+          args: Prisma.crm_opportunitiesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        update: {
+          args: Prisma.crm_opportunitiesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        deleteMany: {
+          args: Prisma.crm_opportunitiesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.crm_opportunitiesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.crm_opportunitiesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>[]
+        }
+        upsert: {
+          args: Prisma.crm_opportunitiesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_opportunitiesPayload>
+        }
+        aggregate: {
+          args: Prisma.Crm_opportunitiesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCrm_opportunities>
+        }
+        groupBy: {
+          args: Prisma.crm_opportunitiesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_opportunitiesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.crm_opportunitiesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_opportunitiesCountAggregateOutputType> | number
+        }
+      }
+    }
+    crm_activities: {
+      payload: Prisma.$crm_activitiesPayload<ExtArgs>
+      fields: Prisma.crm_activitiesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.crm_activitiesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.crm_activitiesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        findFirst: {
+          args: Prisma.crm_activitiesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.crm_activitiesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        findMany: {
+          args: Prisma.crm_activitiesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>[]
+        }
+        create: {
+          args: Prisma.crm_activitiesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        createMany: {
+          args: Prisma.crm_activitiesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.crm_activitiesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>[]
+        }
+        delete: {
+          args: Prisma.crm_activitiesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        update: {
+          args: Prisma.crm_activitiesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        deleteMany: {
+          args: Prisma.crm_activitiesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.crm_activitiesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.crm_activitiesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>[]
+        }
+        upsert: {
+          args: Prisma.crm_activitiesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_activitiesPayload>
+        }
+        aggregate: {
+          args: Prisma.Crm_activitiesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCrm_activities>
+        }
+        groupBy: {
+          args: Prisma.crm_activitiesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_activitiesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.crm_activitiesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_activitiesCountAggregateOutputType> | number
+        }
+      }
+    }
+    crm_tasks: {
+      payload: Prisma.$crm_tasksPayload<ExtArgs>
+      fields: Prisma.crm_tasksFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.crm_tasksFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.crm_tasksFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        findFirst: {
+          args: Prisma.crm_tasksFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.crm_tasksFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        findMany: {
+          args: Prisma.crm_tasksFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>[]
+        }
+        create: {
+          args: Prisma.crm_tasksCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        createMany: {
+          args: Prisma.crm_tasksCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.crm_tasksCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>[]
+        }
+        delete: {
+          args: Prisma.crm_tasksDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        update: {
+          args: Prisma.crm_tasksUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        deleteMany: {
+          args: Prisma.crm_tasksDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.crm_tasksUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.crm_tasksUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>[]
+        }
+        upsert: {
+          args: Prisma.crm_tasksUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$crm_tasksPayload>
+        }
+        aggregate: {
+          args: Prisma.Crm_tasksAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCrm_tasks>
+        }
+        groupBy: {
+          args: Prisma.crm_tasksGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_tasksGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.crm_tasksCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Crm_tasksCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1564,6 +1789,59 @@ export const Mounted_equipmentsScalarFieldEnum = {
 } as const
 
 export type Mounted_equipmentsScalarFieldEnum = (typeof Mounted_equipmentsScalarFieldEnum)[keyof typeof Mounted_equipmentsScalarFieldEnum]
+
+
+export const Crm_opportunitiesScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  created_by: 'created_by',
+  responsible_id: 'responsible_id',
+  title: 'title',
+  stage: 'stage',
+  status: 'status',
+  estimated_value: 'estimated_value',
+  probability: 'probability',
+  next_action: 'next_action',
+  next_action_at: 'next_action_at',
+  lost_reason: 'lost_reason',
+  notes: 'notes',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Crm_opportunitiesScalarFieldEnum = (typeof Crm_opportunitiesScalarFieldEnum)[keyof typeof Crm_opportunitiesScalarFieldEnum]
+
+
+export const Crm_activitiesScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  opportunity_id: 'opportunity_id',
+  created_by: 'created_by',
+  type: 'type',
+  description: 'description',
+  happened_at: 'happened_at',
+  created_at: 'created_at'
+} as const
+
+export type Crm_activitiesScalarFieldEnum = (typeof Crm_activitiesScalarFieldEnum)[keyof typeof Crm_activitiesScalarFieldEnum]
+
+
+export const Crm_tasksScalarFieldEnum = {
+  id: 'id',
+  client_id: 'client_id',
+  opportunity_id: 'opportunity_id',
+  assigned_to: 'assigned_to',
+  created_by: 'created_by',
+  title: 'title',
+  description: 'description',
+  due_at: 'due_at',
+  status: 'status',
+  completed_at: 'completed_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Crm_tasksScalarFieldEnum = (typeof Crm_tasksScalarFieldEnum)[keyof typeof Crm_tasksScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1907,6 +2185,9 @@ export type GlobalOmitConfig = {
   suppliers?: Prisma.suppliersOmit
   equipment_components?: Prisma.equipment_componentsOmit
   mounted_equipments?: Prisma.mounted_equipmentsOmit
+  crm_opportunities?: Prisma.crm_opportunitiesOmit
+  crm_activities?: Prisma.crm_activitiesOmit
+  crm_tasks?: Prisma.crm_tasksOmit
 }
 
 /* Types for Logging */

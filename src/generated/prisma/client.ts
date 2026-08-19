@@ -101,3 +101,18 @@ export type equipment_components = Prisma.equipment_componentsModel
  * 
  */
 export type mounted_equipments = Prisma.mounted_equipmentsModel
+/**
+ * Model crm_opportunities
+ * 
+ */
+export type crm_opportunities = Prisma.crm_opportunitiesModel
+/**
+ * Model crm_activities
+ * 
+ */
+export type crm_activities = Prisma.crm_activitiesModel
+/**
+ * Model crm_tasks
+ * 
+ */
+export type crm_tasks = Prisma.crm_tasksModel
