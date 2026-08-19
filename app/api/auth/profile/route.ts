@@ -1,35 +1,21 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getAuthenticatedProfile } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "ID obrigatório" },
-        { status: 400 }
-      );
-    }
-
-    const profile = await prisma.profiles.findUnique({
-      where: { id },
-    });
+    const profile = await getAuthenticatedProfile();
 
     if (!profile) {
       return NextResponse.json(
-        { error: "Perfil não encontrado" },
-        { status: 404 }
+        { error: "Não autenticado" },
+        { status: 401 }
       );
     }
 
-    const { password_hash: _passwordHash, ...safeProfile } = profile;
-
-    return NextResponse.json(safeProfile);
+    return NextResponse.json(profile);
   } catch (error) {
     console.error("Erro ao carregar perfil:", error);
     return NextResponse.json(
