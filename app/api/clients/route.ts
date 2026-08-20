@@ -1,17 +1,40 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
+import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  somenteDigitos,
+  existeCpfDuplicado,
   validarCadastroPessoa,
 } from "@/lib/validacao-cadastro";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function normalizeProposalStatus(value: unknown) {
   const status = String(value ?? "").trim();
 
   return status || "Lead Frio";
+}
+
+async function cpfJaCadastrado(
+  document: string,
+  currentClientId?: string
+) {
+  const clients = await prisma.clients.findMany({
+    select: {
+      id: true,
+      document: true,
+    },
+  });
+
+  return existeCpfDuplicado(
+    document,
+    clients,
+    currentClientId
+  );
 }
 
 export async function GET() {
@@ -76,22 +99,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingClient =
-      await prisma.clients.findFirst({
-        where: {
-          document: validation.dados.document,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const isCpf = validation.dados.document.length === 11;
+    const existingClient = isCpf
+      ? await cpfJaCadastrado(validation.dados.document)
+      : Boolean(
+          await prisma.clients.findFirst({
+            where: {
+              document: validation.dados.document,
+            },
+            select: {
+              id: true,
+            },
+          })
+        );
 
     if (existingClient) {
       return NextResponse.json(
         {
           sucesso: false,
-          erro:
-            "Já existe um cliente com este CPF ou CNPJ.",
+          erro: isCpf
+            ? "Já existe um cliente cadastrado com este CPF."
+            : "Já existe um cliente com este CPF ou CNPJ.",
         },
         {
           status: 409,
@@ -182,25 +210,33 @@ export async function PUT(request: Request) {
       );
     }
 
-    const duplicateClient =
-      await prisma.clients.findFirst({
-        where: {
-          document: validation.dados.document,
-          NOT: {
-            id,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
+    const isCpf = validation.dados.document.length === 11;
+    const duplicateClient = isCpf
+      ? await cpfJaCadastrado(
+          validation.dados.document,
+          id
+        )
+      : Boolean(
+          await prisma.clients.findFirst({
+            where: {
+              document: validation.dados.document,
+              NOT: {
+                id,
+              },
+            },
+            select: {
+              id: true,
+            },
+          })
+        );
 
     if (duplicateClient) {
       return NextResponse.json(
         {
           sucesso: false,
-          erro:
-            "Já existe outro cliente com este CPF ou CNPJ.",
+          erro: isCpf
+            ? "Já existe um cliente cadastrado com este CPF."
+            : "Já existe outro cliente com este CPF ou CNPJ.",
         },
         {
           status: 409,
@@ -248,10 +284,36 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const authenticatedProfile = await getAuthenticatedProfile();
+
+    if (!authenticatedProfile) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "Não autenticado.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    if (authenticatedProfile.role !== "administrador") {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "Seu perfil não tem permissão para excluir clientes.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     const { searchParams } =
       new URL(request.url);
 
-    const id = searchParams.get("id");
+    const id = searchParams.get("id")?.trim();
 
     if (!id) {
       return NextResponse.json(
@@ -265,17 +327,64 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.$transaction(async (tx) => {
-      // client_id e opcional em orders. Preservamos o pedido e removemos
-      // apenas o vinculo antes de excluir o cadastro do cliente.
-      await tx.orders.updateMany({
-        where: { client_id: id },
-        data: { client_id: null },
-      });
+    if (!uuidPattern.test(id)) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "ID do cliente deve ser um UUID válido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-      await tx.clients.delete({
-        where: { id },
-      });
+    const [client, pedidos, oportunidades, atividades, tarefas] =
+      await Promise.all([
+        prisma.clients.findUnique({
+          where: { id },
+          select: { id: true },
+        }),
+        prisma.orders.count({ where: { client_id: id } }),
+        prisma.crm_opportunities.count({ where: { client_id: id } }),
+        prisma.crm_activities.count({ where: { client_id: id } }),
+        prisma.crm_tasks.count({ where: { client_id: id } }),
+      ]);
+
+    if (!client) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "Cliente não encontrado.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const vinculos = {
+      pedidos,
+      oportunidades,
+      atividades,
+      tarefas,
+    };
+
+    if (Object.values(vinculos).some((count) => count > 0)) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro: "Este cliente possui histórico vinculado e não pode ser excluído.",
+          vinculos,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    await prisma.clients.delete({
+      where: { id },
     });
 
     return NextResponse.json({
@@ -284,13 +393,36 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("Erro ao excluir cliente:", error);
 
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro: "Cliente não encontrado.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      if (error.code === "P2003") {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro: "Este cliente possui histórico vinculado e não pode ser excluído.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+    }
+
     return NextResponse.json(
       {
         sucesso: false,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Erro ao excluir cliente.",
+        erro: "Erro ao excluir cliente.",
       },
       {
         status: 500,
