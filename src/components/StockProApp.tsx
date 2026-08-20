@@ -567,9 +567,24 @@ export default function StockProApp() {
   }
 
   async function logout() {
-    localStorage.removeItem("stockpro_usuario");
-    router.replace("/login");
-    router.refresh();
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel encerrar a sessao.");
+      }
+
+      localStorage.removeItem("stockpro_usuario");
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Erro ao sair:", error);
+      alert("Nao foi possivel encerrar sua sessao. Tente novamente.");
+    }
   }
 
   if (sessionLoading) return <FullScreenMessage title="Carregando..." desc="Abrindo o sistema StockPro." />;
