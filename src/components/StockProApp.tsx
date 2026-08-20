@@ -10,7 +10,7 @@ function getSaleCode(order: any) {
 }
 
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 type Role = "administrador" | "gerente" | "vendedor" | "funcionario" | "tecnico" | "representante";
@@ -35,6 +35,38 @@ type Profile = {
   permissions?: Record<string, boolean>;
 };
 type AnyRow = Record<string, any>;
+type CrmNotificationItem = {
+  opportunity_id: string;
+  title: string;
+  stage: string;
+  next_action: string;
+  next_action_at: string;
+  estimated_value: number | string;
+  client: {
+    id: string;
+    name: string;
+  };
+  responsible: {
+    id: string;
+    name: string;
+  } | null;
+};
+type CrmNotifications = {
+  resumo: {
+    atrasadas: number;
+    hoje: number;
+    proximas: number;
+    total_atencao: number;
+  };
+  atrasadas: CrmNotificationItem[];
+  hoje: CrmNotificationItem[];
+  proximas: CrmNotificationItem[];
+};
+type CrmNavigationTarget = {
+  clientId: string;
+  opportunityId: string;
+  requestId: number;
+};
 
 type SearchProps = { search: string };
 
@@ -46,6 +78,135 @@ function money(value: number | string | null | undefined) {
 }
 const PROPOSTA_STATUS = ["Lead Frio", "Lead Morno", "Venda", "Pós-Venda"];
 const COLABORADOR_ROLES: Role[] = ["gerente", "vendedor", "tecnico", "funcionario"];
+const CRM_CREATOR_ROLES: Role[] = ["administrador", "gerente", "vendedor", "representante"];
+const CRM_STAGES = [
+  { value: "lead", label: "Lead", color: "#60a5fa" },
+  { value: "proposal", label: "Proposta", color: "#a78bfa" },
+  { value: "negotiation", label: "Negociação", color: "#f59e0b" },
+  { value: "order_created", label: "Pedido feito", color: "#22d3ee" },
+  { value: "billing", label: "Cobrança", color: "#f97316" },
+  { value: "completed", label: "Finalizado", color: "#4ade80" },
+  { value: "post_sale", label: "Pós-venda", color: "#f472b6" },
+] as const;
+const CRM_ACTIVITY_TYPES = [
+  { value: "call", label: "Ligação" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "E-mail" },
+  { value: "visit", label: "Visita" },
+  { value: "meeting", label: "Reunião" },
+  { value: "proposal_sent", label: "Proposta enviada" },
+  { value: "billing", label: "Cobrança" },
+  { value: "follow_up", label: "Retorno" },
+  { value: "other", label: "Outro" },
+] as const;
+const CRM_NEXT_ACTION_TYPES = [
+  { value: "call", label: "Ligação" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "E-mail" },
+  { value: "visit", label: "Visita" },
+  { value: "meeting", label: "Reunião" },
+  { value: "proposal_sent", label: "Enviar proposta" },
+  { value: "billing", label: "Cobrança" },
+  { value: "follow_up", label: "Retorno" },
+  { value: "other", label: "Outro" },
+] as const;
+const EMPTY_CRM_NOTIFICATIONS: CrmNotifications = {
+  resumo: {
+    atrasadas: 0,
+    hoje: 0,
+    proximas: 0,
+    total_atencao: 0,
+  },
+  atrasadas: [],
+  hoje: [],
+  proximas: [],
+};
+
+function crmStageLabel(stage: string) {
+  return CRM_STAGES.find((item) => item.value === stage)?.label || stage;
+}
+
+function crmActivityTypeLabel(type: string) {
+  return CRM_ACTIVITY_TYPES.find((item) => item.value === type)?.label || type;
+}
+
+function crmNextActionLabel(action: string) {
+  return CRM_NEXT_ACTION_TYPES.find((item) => item.value === action)?.label || action;
+}
+
+function currentActivityDateTime() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return {
+    type: "call",
+    description: "",
+    date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+    time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+  };
+}
+
+function formatCrmNotificationDate(value: string) {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("pt-BR");
+}
+
+function formatCrmActivityDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return `${date.toLocaleDateString("pt-BR")} às ${date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
+function CrmNotificationSection({
+  title,
+  items,
+  tone,
+  onView,
+}: {
+  title: string;
+  items: CrmNotificationItem[];
+  tone: "overdue" | "today" | "upcoming";
+  onView: (item: CrmNotificationItem) => void;
+}) {
+  const colors = {
+    overdue: {
+      border: "rgba(248,113,113,.55)",
+      background: "rgba(127,29,29,.3)",
+      title: "#fca5a5",
+    },
+    today: {
+      border: "rgba(250,204,21,.45)",
+      background: "rgba(113,63,18,.25)",
+      title: "#fde047",
+    },
+    upcoming: {
+      border: "rgba(96,165,250,.32)",
+      background: "rgba(15,23,42,.72)",
+      title: "#93c5fd",
+    },
+  }[tone];
+
+  return <section style={{ marginTop: 16 }}>
+    <strong style={{ color: colors.title, fontSize: 12, letterSpacing: ".08em" }}>{title}</strong>
+    {items.length === 0 ? <p style={{ color: "#64748b", margin: "8px 0 0" }}>Nenhuma atividade.</p> : <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+      {items.map((item) => <div key={item.opportunity_id} style={{ border: `1px solid ${colors.border}`, borderRadius: 12, background: colors.background, padding: 12 }}>
+        <strong style={{ marginBottom: 4 }}>{item.client.name}</strong>
+        <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 700 }}>{item.title || "Sem título"}</div>
+        <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 5 }}>{crmNextActionLabel(item.next_action)}</div>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>{formatCrmNotificationDate(item.next_action_at)}</div>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 3 }}>Responsável: {item.responsible?.name || "Não definido"}</div>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 3 }}>Etapa: {crmStageLabel(item.stage)}</div>
+        <button type="button" className="btn btn-blue" style={{ marginTop: 10, minHeight: 34, padding: "7px 11px" }} onClick={() => onView(item)}>Ver no CRM</button>
+      </div>)}
+    </div>}
+  </section>;
+}
 
 function maskCpfCnpj(value: string) {
   const n = onlyNumbers(value).slice(0, 14);
@@ -280,12 +441,12 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
-  vendedor: ["Dashboard", "Produtos", "Clientes", "Representantes", "Pedidos", "Meu Perfil"],
-  funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "Pedidos", "Meu Perfil"],
-  tecnico: ["Dashboard", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "Pedidos", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
+  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Representantes", "Pedidos", "Meu Perfil"],
+  funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
+  tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -296,7 +457,8 @@ export default function StockProApp() {
   const [menuOpen, setMenuOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notificationItems, setNotificationItems] = useState<string[]>([]);
+  const [crmNotifications, setCrmNotifications] = useState<CrmNotifications>(EMPTY_CRM_NOTIFICATIONS);
+  const [crmNavigationTarget, setCrmNavigationTarget] = useState<CrmNavigationTarget | null>(null);
 
   useEffect(() => {
     carregarSessao();
@@ -376,17 +538,32 @@ export default function StockProApp() {
 
   async function carregarNotificacoes() {
     try {
-      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      const response = await fetch("/api/crm/notifications", { cache: "no-store" });
       const data = await response.json();
-      if (!response.ok || !data.sucesso) return;
-      const items: string[] = [];
-      if (data.counts.pending) items.push(`${data.counts.pending} cadastro(s) aguardando análise`);
-      if (data.counts.low) items.push(`${data.counts.low} produto(s) abaixo do estoque mínimo`);
-      if (data.counts.pendingNf) items.push(`${data.counts.pendingNf} pedido(s) com NF pendente ou não emitida`);
-      setNotificationItems(items);
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao carregar notificações do CRM.");
+      }
+
+      setCrmNotifications({
+        resumo: data.resumo,
+        atrasadas: data.atrasadas || [],
+        hoje: data.hoje || [],
+        proximas: data.proximas || [],
+      });
     } catch (error) {
-      console.error("Erro ao carregar notificações:", error);
+      console.error("Erro ao carregar notificações do CRM:", error);
     }
+  }
+
+  function viewCrmNotification(item: CrmNotificationItem) {
+    setCrmNavigationTarget({
+      clientId: item.client.id,
+      opportunityId: item.opportunity_id,
+      requestId: Date.now(),
+    });
+    setPage("CRM");
+    setNotificationsOpen(false);
   }
 
   async function logout() {
@@ -409,8 +586,14 @@ export default function StockProApp() {
             <input className="input search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar no módulo atual..." />
           </div>
           <div style={{ position: "relative" }}>
-            <button className="icon-button" onClick={() => setNotificationsOpen((v) => !v)}>🔔{notificationItems.length > 0 ? ` ${notificationItems.length}` : ""}</button>
-            {notificationsOpen && <div className="notifications-panel"><strong>Notificações</strong>{notificationItems.length === 0 ? <p>Nenhuma notificação.</p> : notificationItems.map((n) => <p key={n}>{n}</p>)}<button className="btn btn-gray" onClick={carregarNotificacoes}>Atualizar</button></div>}
+            <button className="icon-button" style={{ width: "auto", minWidth: 52, padding: "0 13px" }} aria-label="Abrir atividades do CRM" onClick={() => setNotificationsOpen((v) => !v)}>🔔{crmNotifications.resumo.total_atencao > 0 ? ` ${crmNotifications.resumo.total_atencao}` : ""}</button>
+            {notificationsOpen && <div className="notifications-panel" style={{ width: "min(430px, 92vw)", maxHeight: "min(680px, calc(100vh - 90px))", overflowY: "auto" }}>
+              <strong style={{ fontSize: 17 }}>CRM — Atividades</strong>
+              <CrmNotificationSection title="ATRASADAS" items={crmNotifications.atrasadas} tone="overdue" onView={viewCrmNotification} />
+              <CrmNotificationSection title="HOJE" items={crmNotifications.hoje} tone="today" onView={viewCrmNotification} />
+              <CrmNotificationSection title="PRÓXIMOS 7 DIAS" items={crmNotifications.proximas} tone="upcoming" onView={viewCrmNotification} />
+              <button className="btn btn-gray" style={{ marginTop: 16 }} onClick={carregarNotificacoes}>Atualizar</button>
+            </div>}
           </div>
         </div>
       </header>
@@ -425,6 +608,7 @@ export default function StockProApp() {
           {page === "Produtos" && <Produtos search={search} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
+          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
           {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
@@ -462,6 +646,1187 @@ function Dashboard({ profile }: { profile: Profile }) {
     }
   })(); }, []);
   return <><Title title="Dashboard" desc={`Resumo geral do sistema. Bem-vindo, ${profile.name || "usuário"}.`} /><div className="reports-grid"><StatCard label="Produtos" value={String(counts.products)} /><StatCard label="Clientes" value={String(counts.clients)} /><StatCard label="Pedidos" value={String(counts.orders)} /><StatCard label="Cadastros pendentes" value={String(counts.pending)} color="#facc15" /><StatCard label="Estoque baixo" value={String(counts.low)} color="#f87171" /><StatCard label="Acesso" value={formatRole(profile.role)} /></div></>;
+}
+
+function CRM({
+  profile,
+  search,
+  notifications,
+  onRefreshNotifications,
+  navigationTarget,
+}: {
+  profile: Profile;
+  notifications: CrmNotifications;
+  onRefreshNotifications: () => Promise<void>;
+  navigationTarget: CrmNavigationTarget | null;
+} & SearchProps) {
+  const empty = {
+    client_id: "",
+    stage: "lead",
+    title: "",
+    estimated_value: "",
+    probability: "",
+    responsible_id: "",
+    next_action: "",
+    next_action_at: "",
+    notes: "",
+  };
+  const [opportunities, setOpportunities] = useState<AnyRow[]>([]);
+  const [clients, setClients] = useState<AnyRow[]>([]);
+  const [responsibleProfiles, setResponsibleProfiles] = useState<Profile[]>([]);
+  const [form, setForm] = useState(empty);
+  const [showForm, setShowForm] = useState(false);
+  const [editingOpportunity, setEditingOpportunity] = useState<AnyRow | null>(null);
+  const [deletingOpportunityId, setDeletingOpportunityId] = useState<string | null>(null);
+  const [updatingStageId, setUpdatingStageId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [clientListOpen, setClientListOpen] = useState(false);
+  const [clientSummary, setClientSummary] = useState<AnyRow | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+  const [highlightedOpportunityId, setHighlightedOpportunityId] = useState("");
+  const [activitiesByOpportunity, setActivitiesByOpportunity] = useState<Record<string, AnyRow[]>>({});
+  const [expandedActivityIds, setExpandedActivityIds] = useState<string[]>([]);
+  const [activityFormOpportunityId, setActivityFormOpportunityId] = useState<string | null>(null);
+  const [activityForm, setActivityForm] = useState(currentActivityDateTime);
+  const [activitySaving, setActivitySaving] = useState(false);
+  const [activityLoadingId, setActivityLoadingId] = useState<string | null>(null);
+  const [activityErrors, setActivityErrors] = useState<Record<string, string>>({});
+  const [draggedOpportunityId, setDraggedOpportunityId] = useState<string | null>(null);
+  const [dragOriginStage, setDragOriginStage] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const dragStartBlockedRef = useRef(false);
+  const canCreate = CRM_CREATOR_ROLES.includes(profile.role);
+
+  useEffect(() => {
+    carregar();
+    onRefreshNotifications();
+  }, []);
+
+  useEffect(() => {
+    if (!navigationTarget || clients.length === 0 || opportunities.length === 0) {
+      return;
+    }
+
+    const client = clients.find((item) => item.id === navigationTarget.clientId);
+
+    if (client) {
+      setSelectedClientId(client.id);
+      setClientQuery(client.name || "");
+      setClientListOpen(false);
+    }
+
+    setHighlightedOpportunityId(navigationTarget.opportunityId);
+
+    const scrollTimer = window.setTimeout(() => {
+      document
+        .getElementById(`crm-opportunity-${navigationTarget.opportunityId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }, 100);
+    const highlightTimer = window.setTimeout(() => {
+      setHighlightedOpportunityId("");
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(highlightTimer);
+    };
+  }, [navigationTarget?.requestId, clients.length, opportunities.length]);
+
+  useEffect(() => {
+    if (!selectedClientId) {
+      setClientSummary(null);
+      setSummaryError("");
+      setSummaryLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function carregarResumo() {
+      setClientSummary(null);
+      setSummaryError("");
+      setSummaryLoading(true);
+
+      try {
+        const response = await fetch(
+          `/api/crm/clients/${encodeURIComponent(selectedClientId)}/summary`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        );
+        const data = await response.json();
+
+        if (!response.ok || !data.sucesso) {
+          throw new Error(
+            data.erro || "Erro ao carregar o resumo do cliente."
+          );
+        }
+
+        setClientSummary(data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+
+        setSummaryError(
+          error instanceof Error
+            ? error.message
+            : "Erro ao carregar o resumo do cliente."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setSummaryLoading(false);
+        }
+      }
+    }
+
+    carregarResumo();
+
+    return () => controller.abort();
+  }, [selectedClientId]);
+
+  function set(field: string, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function resetOpportunityForm() {
+    setForm(empty);
+    setEditingOpportunity(null);
+    setShowForm(false);
+  }
+
+  function openNewOpportunityForm() {
+    setMsg("");
+    setEditingOpportunity(null);
+    setForm({
+      ...empty,
+      client_id: selectedClientId,
+    });
+    setShowForm(true);
+  }
+
+  function toDateTimeLocal(value: unknown) {
+    if (!value) return "";
+
+    const date = new Date(String(value));
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
+  function openEditOpportunityForm(opportunity: AnyRow) {
+    setMsg("");
+    setEditingOpportunity(opportunity);
+    setForm({
+      client_id: String(opportunity.client_id || ""),
+      stage: String(opportunity.stage || "lead"),
+      title: String(opportunity.title || ""),
+      estimated_value: String(opportunity.estimated_value ?? ""),
+      probability: String(opportunity.probability ?? ""),
+      responsible_id: String(opportunity.responsible_id || ""),
+      next_action: String(opportunity.next_action || ""),
+      next_action_at: toDateTimeLocal(opportunity.next_action_at),
+      notes: String(opportunity.notes || ""),
+    });
+    setShowForm(true);
+
+    window.setTimeout(() => {
+      document
+        .getElementById("crm-opportunity-form")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
+
+  function canManageOpportunity(opportunity: AnyRow) {
+    if (profile.role === "administrador" || profile.role === "gerente") {
+      return true;
+    }
+
+    return (
+      (profile.role === "vendedor" || profile.role === "representante") &&
+      (opportunity.created_by === profile.id ||
+        opportunity.responsible_id === profile.id)
+    );
+  }
+
+  async function loadOpportunityActivities(opportunityId: string, force = false) {
+    if (!force && activitiesByOpportunity[opportunityId] !== undefined) {
+      return;
+    }
+
+    setActivityLoadingId(opportunityId);
+    setActivityErrors((current) => ({ ...current, [opportunityId]: "" }));
+
+    try {
+      const response = await fetch(
+        `/api/crm/activities?opportunity_id=${encodeURIComponent(opportunityId)}`,
+        { cache: "no-store" }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao carregar o histórico de atividades.");
+      }
+
+      setActivitiesByOpportunity((current) => ({
+        ...current,
+        [opportunityId]: data.activities || [],
+      }));
+    } catch (error) {
+      setActivityErrors((current) => ({
+        ...current,
+        [opportunityId]:
+          error instanceof Error
+            ? error.message
+            : "Erro ao carregar o histórico de atividades.",
+      }));
+    } finally {
+      setActivityLoadingId((current) =>
+        current === opportunityId ? null : current
+      );
+    }
+  }
+
+  async function toggleOpportunityHistory(opportunityId: string) {
+    const isExpanded = expandedActivityIds.includes(opportunityId);
+
+    setExpandedActivityIds((current) =>
+      isExpanded
+        ? current.filter((id) => id !== opportunityId)
+        : [...current, opportunityId]
+    );
+
+    if (!isExpanded) {
+      await loadOpportunityActivities(opportunityId);
+    }
+  }
+
+  async function openActivityForm(opportunity: AnyRow) {
+    setActivityFormOpportunityId(opportunity.id);
+    setActivityForm(currentActivityDateTime());
+    setActivityErrors((current) => ({ ...current, [opportunity.id]: "" }));
+    setExpandedActivityIds((current) =>
+      current.includes(opportunity.id) ? current : [...current, opportunity.id]
+    );
+    await loadOpportunityActivities(opportunity.id);
+  }
+
+  function closeActivityForm() {
+    setActivityFormOpportunityId(null);
+    setActivityForm(currentActivityDateTime());
+  }
+
+  async function saveActivity(opportunity: AnyRow) {
+    const description = activityForm.description.trim();
+
+    if (!description) {
+      setActivityErrors((current) => ({
+        ...current,
+        [opportunity.id]: "Informe a observação da atividade.",
+      }));
+      return;
+    }
+
+    const happenedAt = new Date(`${activityForm.date}T${activityForm.time}`);
+
+    if (Number.isNaN(happenedAt.getTime())) {
+      setActivityErrors((current) => ({
+        ...current,
+        [opportunity.id]: "Informe uma data e hora válidas.",
+      }));
+      return;
+    }
+
+    setActivitySaving(true);
+    setActivityErrors((current) => ({ ...current, [opportunity.id]: "" }));
+
+    try {
+      const response = await fetch("/api/crm/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: opportunity.client_id,
+          opportunity_id: opportunity.id,
+          type: activityForm.type,
+          description,
+          happened_at: happenedAt.toISOString(),
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao registrar atividade.");
+      }
+
+      setActivitiesByOpportunity((current) => ({
+        ...current,
+        [opportunity.id]: [
+          data.activity,
+          ...(current[opportunity.id] || []),
+        ],
+      }));
+      closeActivityForm();
+      setMsg("Atividade registrada com sucesso.");
+    } catch (error) {
+      setActivityErrors((current) => ({
+        ...current,
+        [opportunity.id]:
+          error instanceof Error
+            ? error.message
+            : "Erro ao registrar atividade.",
+      }));
+    } finally {
+      setActivitySaving(false);
+    }
+  }
+
+  async function carregar() {
+    setLoading(true);
+
+    try {
+      const [opportunitiesResponse, clientsResponse, profilesResponse] =
+        await Promise.all([
+          fetch("/api/crm/opportunities", { cache: "no-store" }),
+          fetch("/api/clients", { cache: "no-store" }),
+          fetch("/api/profiles", { cache: "no-store" }),
+        ]);
+      const [opportunitiesData, clientsData, profilesData] =
+        await Promise.all([
+          opportunitiesResponse.json(),
+          clientsResponse.json(),
+          profilesResponse.json(),
+        ]);
+
+      if (!opportunitiesResponse.ok || !opportunitiesData.sucesso) {
+        throw new Error(
+          opportunitiesData.erro || "Erro ao carregar oportunidades."
+        );
+      }
+
+      if (!clientsResponse.ok || !clientsData.sucesso) {
+        throw new Error(clientsData.erro || "Erro ao carregar clientes.");
+      }
+
+      if (!profilesResponse.ok || !Array.isArray(profilesData)) {
+        throw new Error(
+          profilesData.error || "Erro ao carregar responsáveis."
+        );
+      }
+
+      setOpportunities(opportunitiesData.opportunities || []);
+      setClients(
+        (clientsData.clients || []).sort((a: AnyRow, b: AnyRow) =>
+          String(a.name).localeCompare(String(b.name))
+        )
+      );
+      setResponsibleProfiles(
+        profilesData
+          .filter(
+            (item: Profile) =>
+              item.status === "approved" &&
+              CRM_CREATOR_ROLES.includes(item.role)
+          )
+          .sort((a: Profile, b: Profile) =>
+            String(a.name).localeCompare(String(b.name))
+          )
+      );
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar o CRM."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function salvar() {
+    setMsg("");
+
+    if (!form.client_id) {
+      return setMsg("Selecione um cliente.");
+    }
+
+    setSaving(true);
+
+    try {
+      const payload: AnyRow = editingOpportunity
+        ? {
+            stage: form.stage,
+            title: form.title.trim(),
+            estimated_value: form.estimated_value,
+            probability: form.probability,
+            responsible_id: form.responsible_id || null,
+            next_action: form.next_action.trim(),
+            next_action_at: form.next_action_at
+              ? new Date(form.next_action_at).toISOString()
+              : null,
+            notes: form.notes.trim(),
+          }
+        : {
+            client_id: form.client_id,
+            stage: form.stage,
+          };
+
+      if (!editingOpportunity) {
+        if (form.title.trim()) payload.title = form.title.trim();
+        if (form.estimated_value !== "") {
+          payload.estimated_value = form.estimated_value;
+        }
+        if (form.probability !== "") payload.probability = form.probability;
+        if (form.responsible_id) {
+          payload.responsible_id = form.responsible_id;
+        }
+        if (form.next_action.trim()) {
+          payload.next_action = form.next_action.trim();
+        }
+        if (form.next_action_at) {
+          payload.next_action_at = new Date(form.next_action_at).toISOString();
+        }
+        if (form.notes.trim()) payload.notes = form.notes.trim();
+      }
+
+      const response = await fetch(
+        editingOpportunity
+          ? `/api/crm/opportunities/${encodeURIComponent(editingOpportunity.id)}`
+          : "/api/crm/opportunities",
+        {
+        method: editingOpportunity ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(
+          data.erro ||
+            (editingOpportunity
+              ? "Erro ao editar oportunidade."
+              : "Erro ao criar oportunidade.")
+        );
+      }
+
+      setOpportunities((current) =>
+        editingOpportunity
+          ? current.map((opportunity) =>
+              opportunity.id === data.opportunity.id
+                ? data.opportunity
+                : opportunity
+            )
+          : [data.opportunity, ...current]
+      );
+      const successMessage = editingOpportunity
+        ? "Oportunidade atualizada com sucesso."
+        : "Oportunidade criada com sucesso.";
+      await onRefreshNotifications();
+      resetOpportunityForm();
+      setMsg(successMessage);
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : editingOpportunity
+            ? "Erro ao editar oportunidade."
+            : "Erro ao criar oportunidade."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteOpportunity(opportunity: AnyRow) {
+    const title = opportunity.title || "Sem título";
+    const clientName = opportunity.clients?.name || "Cliente não informado";
+    const confirmed = window.confirm(
+      `Excluir a oportunidade "${title}" do cliente "${clientName}"?\n\nEsta ação excluirá somente a oportunidade e não poderá ser desfeita.`
+    );
+
+    if (!confirmed) return;
+
+    setMsg("");
+    setDeletingOpportunityId(opportunity.id);
+
+    try {
+      const response = await fetch(
+        `/api/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao excluir oportunidade.");
+      }
+
+      setOpportunities((current) =>
+        current.filter((item) => item.id !== opportunity.id)
+      );
+
+      if (editingOpportunity?.id === opportunity.id) {
+        resetOpportunityForm();
+      }
+
+      await onRefreshNotifications();
+      setMsg("Oportunidade excluída com sucesso.");
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao excluir oportunidade."
+      );
+    } finally {
+      setDeletingOpportunityId(null);
+    }
+  }
+
+  async function updateOpportunityStage(
+    opportunity: AnyRow,
+    stage: string,
+    optimistic = false,
+    previousStageOverride?: string
+  ) {
+    if (updatingStageId || stage === opportunity.stage) return;
+
+    const previousStage = previousStageOverride || opportunity.stage;
+    setMsg("");
+    setUpdatingStageId(opportunity.id);
+
+    if (optimistic) {
+      setOpportunities((current) =>
+        current.map((item) =>
+          item.id === opportunity.id ? { ...item, stage } : item
+        )
+      );
+    }
+
+    try {
+      const response = await fetch(
+        `/api/crm/opportunities/${encodeURIComponent(opportunity.id)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage }),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao alterar etapa da oportunidade.");
+      }
+
+      setOpportunities((current) =>
+        current.map((item) =>
+          item.id === data.opportunity.id ? data.opportunity : item
+        )
+      );
+
+      if (editingOpportunity?.id === data.opportunity.id) {
+        setEditingOpportunity(data.opportunity);
+        setForm((current) => ({
+          ...current,
+          stage: data.opportunity.stage,
+        }));
+      }
+
+      await onRefreshNotifications();
+      const stageLabel = CRM_STAGES.find((item) => item.value === stage)?.label;
+      setMsg(`Etapa alterada para ${stageLabel || stage}.`);
+    } catch (error) {
+      if (optimistic) {
+        setOpportunities((current) =>
+          current.map((item) =>
+            item.id === opportunity.id
+              ? { ...item, stage: previousStage }
+              : item
+          )
+        );
+      }
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro ao alterar etapa da oportunidade.";
+
+      setMsg(
+        optimistic
+          ? `Não foi possível mover a oportunidade: ${errorMessage} A etapa anterior foi restaurada.`
+          : errorMessage
+      );
+    } finally {
+      setUpdatingStageId(null);
+    }
+  }
+
+  function handleOpportunityDragStart(
+    event: DragEvent<HTMLDivElement>,
+    opportunity: AnyRow
+  ) {
+    if (
+      updatingStageId ||
+      !canManageOpportunity(opportunity) ||
+      dragStartBlockedRef.current
+    ) {
+      event.preventDefault();
+      return;
+    }
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", opportunity.id);
+    setDraggedOpportunityId(opportunity.id);
+    setDragOriginStage(opportunity.stage);
+    setDragOverStage(null);
+  }
+
+  function clearOpportunityDrag() {
+    setDraggedOpportunityId(null);
+    setDragOriginStage(null);
+    setDragOverStage(null);
+    dragStartBlockedRef.current = false;
+  }
+
+  function handleStageDragOver(event: DragEvent<HTMLElement>, stage: string) {
+    if (!draggedOpportunityId) return;
+
+    if (dragOriginStage === stage) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+
+    if (dragOverStage !== stage) {
+      setDragOverStage(stage);
+    }
+  }
+
+  function handleStageDrop(event: DragEvent<HTMLElement>, stage: string) {
+    event.preventDefault();
+
+    const opportunityId =
+      draggedOpportunityId || event.dataTransfer.getData("text/plain");
+    const opportunity = opportunities.find((item) => item.id === opportunityId);
+    const previousStage = dragOriginStage || opportunity?.stage;
+
+    clearOpportunityDrag();
+
+    if (
+      !opportunity ||
+      previousStage === stage ||
+      updatingStageId ||
+      !canManageOpportunity(opportunity)
+    ) {
+      return;
+    }
+
+    void updateOpportunityStage(opportunity, stage, true, previousStage);
+  }
+
+  const filtered = opportunities.filter((opportunity) =>
+    (!selectedClientId || opportunity.client_id === selectedClientId) &&
+    textMatch(
+        {
+          ...opportunity,
+          client: opportunity.clients?.name,
+          responsible: opportunity.profiles_responsible?.name,
+        },
+        search
+      )
+  );
+
+  const normalizedClientQuery = clientQuery
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+  const filteredClients = clients.filter((client) =>
+    [client.name, client.document, client.city]
+      .filter(Boolean)
+      .join(" ")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .includes(normalizedClientQuery)
+  );
+
+  function selectClient(client: AnyRow) {
+    setSelectedClientId(client.id);
+    setClientQuery(client.name || "");
+    setClientListOpen(false);
+  }
+
+  function clearSelectedClient() {
+    setSelectedClientId("");
+    setClientQuery("");
+    setClientListOpen(true);
+  }
+
+  function focusNotificationInCrm(item: CrmNotificationItem) {
+    const client = clients.find((current) => current.id === item.client.id);
+
+    if (client) {
+      selectClient(client);
+    }
+
+    setHighlightedOpportunityId(item.opportunity_id);
+    window.setTimeout(() => {
+      document
+        .getElementById(`crm-opportunity-${item.opportunity_id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }, 100);
+  }
+
+  function formatCrmDate(value: unknown) {
+    if (!value) return "-";
+
+    const date = new Date(String(value));
+
+    return Number.isNaN(date.getTime())
+      ? "-"
+      : date.toLocaleString("pt-BR");
+  }
+
+  return <>
+    <Title title="CRM" desc="Oportunidades comerciais do StockPro." />
+
+    <section className="card" style={{ marginBottom: 24 }}>
+      <h2 className="card-title">Agenda CRM</h2>
+      <p style={{ color: "#94a3b8", margin: "-4px 0 20px" }}>Retornos e atividades comerciais. Esta agenda não representa vencimentos ou pagamentos financeiros.</p>
+      <div className="reports-grid">
+        <StatCard label="Atrasadas" value={String(notifications.resumo.atrasadas)} color="#f87171" />
+        <StatCard label="Hoje" value={String(notifications.resumo.hoje)} color="#facc15" />
+        <StatCard label="Próximos 7 dias" value={String(notifications.resumo.proximas)} color="#60a5fa" />
+      </div>
+      <div style={{ marginTop: 22 }}>
+        <strong style={{ color: "#fde047", fontSize: 13, letterSpacing: ".06em" }}>ATIVIDADES DE HOJE</strong>
+        {notifications.hoje.length === 0 ? <p style={{ color: "#94a3b8", marginTop: 12 }}>Você não possui atividades programadas para hoje.</p> : <div className="product-list-grid" style={{ marginTop: 12 }}>
+          {notifications.hoje.map((item) => <div key={item.opportunity_id} className="stat-card user-card" style={{ border: "1px solid rgba(250,204,21,.38)", background: "rgba(113,63,18,.18)" }}>
+            <strong>{item.client.name}</strong>
+            <small>Oportunidade: {item.title || "Sem título"}</small>
+            <small>Próxima ação: {crmNextActionLabel(item.next_action)}</small>
+            <small>Data: {formatCrmNotificationDate(item.next_action_at)}</small>
+            <small>Responsável: {item.responsible?.name || "Não definido"}</small>
+            <small>Etapa: {crmStageLabel(item.stage)}</small>
+            <button type="button" className="btn btn-blue" onClick={() => focusNotificationInCrm(item)}>Ver no funil</button>
+          </div>)}
+        </div>}
+      </div>
+    </section>
+
+    <section className="card">
+      <div
+        className="field"
+        style={{ position: "relative", maxWidth: 680 }}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setClientListOpen(false);
+          }
+        }}
+      >
+        <label htmlFor="crm-client-search">Selecionar cliente</label>
+        <div style={{ position: "relative" }}>
+          <input
+            id="crm-client-search"
+            className="input"
+            type="text"
+            value={clientQuery}
+            placeholder="Digite o nome do cliente..."
+            autoComplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={clientListOpen}
+            aria-controls="crm-client-results"
+            style={{ height: 52, paddingRight: selectedClientId ? 100 : 15 }}
+            onFocus={() => setClientListOpen(true)}
+            onChange={(event) => {
+              setClientQuery(event.target.value);
+              setSelectedClientId("");
+              setClientListOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setClientListOpen(false);
+            }}
+          />
+          {selectedClientId && (
+            <button
+              type="button"
+              onClick={clearSelectedClient}
+              aria-label="Limpar cliente selecionado"
+              style={{
+                position: "absolute",
+                top: "50%",
+                right: 8,
+                transform: "translateY(-50%)",
+                border: "1px solid rgba(148,163,184,.25)",
+                borderRadius: 9,
+                background: "#334155",
+                color: "#e2e8f0",
+                padding: "6px 10px",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+
+        {clientListOpen && (
+          <div
+            id="crm-client-results"
+            role="listbox"
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              left: 0,
+              right: 0,
+              zIndex: 30,
+              maxHeight: 280,
+              overflowY: "auto",
+              border: "1px solid rgba(148,163,184,.3)",
+              borderRadius: 14,
+              background: "#0f172a",
+              boxShadow: "0 18px 40px rgba(0,0,0,.38)",
+              padding: 6,
+            }}
+          >
+            {filteredClients.length === 0 ? (
+              <div style={{ padding: "14px 12px", color: "#94a3b8" }}>
+                Nenhum cliente encontrado
+              </div>
+            ) : (
+              filteredClients.map((client) => (
+                <button
+                  key={client.id}
+                  type="button"
+                  role="option"
+                  aria-selected={client.id === selectedClientId}
+                  onClick={() => selectClient(client)}
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 4,
+                    border: 0,
+                    borderRadius: 10,
+                    background:
+                      client.id === selectedClientId ? "#1e3a8a" : "transparent",
+                    color: "#f8fafc",
+                    padding: "11px 12px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  <strong>{client.name}</strong>
+                  {(client.document || client.city) && (
+                    <small style={{ color: "#94a3b8" }}>
+                      {[client.document ? maskCpfCnpj(client.document) : "", client.city]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </small>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+
+    {!selectedClientId && <section className="card" style={{ marginTop: 24 }}><p style={{ color: "#94a3b8" }}>Selecione um cliente para visualizar o resumo e os pedidos. A listagem geral de oportunidades continua disponível abaixo.</p></section>}
+
+    {summaryLoading && <section className="card" style={{ marginTop: 24 }}><p style={{ color: "#94a3b8" }}>Carregando resumo do cliente...</p></section>}
+
+    {summaryError && <Message text={summaryError} />}
+
+    {clientSummary && <>
+      <div className="reports-grid" style={{ marginTop: 24 }}>
+        <StatCard label="Quantidade de pedidos" value={String(clientSummary.resumo.quantidade_pedidos || 0)} />
+        <StatCard label="Valor dos pedidos" value={money(clientSummary.resumo.valor_pedidos)} />
+        <StatCard label="Frete" value={money(clientSummary.resumo.valor_frete)} />
+        <StatCard label="Total nominal com frete" value={money(clientSummary.resumo.total_nominal)} />
+        <StatCard label="Ticket médio" value={money(clientSummary.resumo.ticket_medio)} />
+        <StatCard label="Último pedido" value={formatCrmDate(clientSummary.resumo.ultimo_pedido)} />
+        <StatCard label="Pedidos em andamento" value={String(clientSummary.resumo.pedidos_em_andamento || 0)} />
+        <StatCard label="Valor nominal em andamento" value={money(clientSummary.resumo.valor_nominal_em_andamento)} />
+      </div>
+
+      <p style={{ color: "#94a3b8", marginTop: 16 }}>O valor nominal dos pedidos em andamento é apenas a soma dos pedidos ainda não marcados como recebidos no fluxo operacional. Ele não representa valor a receber.</p>
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Resumo do cliente</h2>
+        <div className="product-list-grid">
+          <div className="stat-card user-card">
+            <strong>{clientSummary.cliente.name}</strong>
+            <small>Documento: {maskCpfCnpj(clientSummary.cliente.document || "")}</small>
+            <small>Telefone: {maskPhone(clientSummary.cliente.phone || "")}</small>
+            <small>Cidade: {clientSummary.cliente.city || "-"}</small>
+            <small>Status comercial atual: {clientSummary.cliente.proposal_status || "-"}</small>
+          </div>
+        </div>
+      </section>
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Pedidos</h2>
+        {clientSummary.pedidos.length === 0 ? <p style={{ color: "#94a3b8" }}>Este cliente ainda não possui pedidos.</p> : <div className="product-list-grid">{clientSummary.pedidos.map((order: AnyRow) => {
+          const totalNominal = Number(order.total_value || 0) + Number(order.shipping_value || 0);
+          const tracking = [order.tracking_code, order.tracking_location].filter(Boolean).join(" — ");
+
+          return <div key={order.id} className="stat-card user-card order-list-card">
+            <strong>{getSaleCode(order)}</strong>
+            <small>Data: {formatCrmDate(order.created_at)}</small>
+            <small>Equipamento/item: {order.equipment_name || order.item_type || "-"}</small>
+            <small>Quantidade: {order.quantity}</small>
+            <small>Status operacional do pedido: {String(order.status || "-").toUpperCase()}</small>
+            <small>Valor: {money(order.total_value)}</small>
+            <small>Frete: {money(order.shipping_value)}</small>
+            <small>Total nominal: {money(totalNominal)}</small>
+            {tracking && <small>Rastreio: {tracking}</small>}
+            {order.conta_azul_status && <small>Status de solicitação de NF: {String(order.conta_azul_status).replaceAll("_", " ")}</small>}
+          </div>;
+        })}</div>}
+      </section>
+    </>}
+
+    {canCreate && <section id="crm-opportunity-form" className="card" style={{ marginTop: 24 }}>
+      <div className="form-actions" style={{ marginTop: 0 }}>
+        <button className="btn btn-blue" onClick={() => showForm ? resetOpportunityForm() : openNewOpportunityForm()}>{showForm ? (editingOpportunity ? "Cancelar edição" : "Fechar formulário") : "Nova oportunidade"}</button>
+      </div>
+
+      {showForm && <>
+        <h2 className="card-title" style={{ marginTop: 26 }}>{editingOpportunity ? "Editar oportunidade" : "Nova oportunidade"}</h2>
+        {editingOpportunity && <p style={{ color: "#94a3b8", margin: "-4px 0 22px" }}>O cliente desta oportunidade é mantido somente para visualização e não pode ser alterado nesta edição.</p>}
+        <div className="form-grid">
+          {editingOpportunity
+            ? <Field label="Cliente" value={editingOpportunity.clients?.name || "Cliente não informado"} disabled onChange={() => {}} />
+            : <SelectField label="Cliente" value={form.client_id} onChange={(value) => set("client_id", value)}><option value="">Selecione</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</SelectField>}
+          <SelectField label={editingOpportunity ? "Etapa" : "Etapa inicial"} value={form.stage} onChange={(value) => set("stage", value)}>{CRM_STAGES.map((stage) => <option key={stage.value} value={stage.value}>{stage.label}</option>)}</SelectField>
+          <Field label="Título" value={form.title} onChange={(value) => set("title", value)} />
+          <div className="field"><label>Valor estimado (R$)</label><input className="input" type="number" min="0" step="0.01" value={form.estimated_value} onChange={(event) => set("estimated_value", event.target.value)} /></div>
+          <div className="field"><label>Probabilidade (%)</label><input className="input" type="number" min="0" max="100" step="1" value={form.probability} onChange={(event) => set("probability", event.target.value)} /></div>
+          <SelectField label="Responsável (opcional)" value={form.responsible_id} onChange={(value) => set("responsible_id", value)}><option value="">Sem responsável</option>{responsibleProfiles.map((responsible) => <option key={responsible.id} value={responsible.id}>{responsible.name} — {formatRole(responsible.role)}</option>)}</SelectField>
+          <SelectField label="Próxima ação" value={form.next_action} onChange={(value) => set("next_action", value)}>
+            <option value="">Sem próxima ação</option>
+            {form.next_action && !CRM_NEXT_ACTION_TYPES.some((action) => action.value === form.next_action) && <option value={form.next_action}>{form.next_action}</option>}
+            {CRM_NEXT_ACTION_TYPES.map((action) => <option key={action.value} value={action.value}>{action.label}</option>)}
+          </SelectField>
+          <Field label="Data da próxima ação" type="datetime-local" value={form.next_action_at} onChange={(value) => set("next_action_at", value)} />
+          <TextArea label="Observações" value={form.notes} onChange={(value) => set("notes", value)} />
+        </div>
+        <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={saving}>{saving ? "Salvando..." : editingOpportunity ? "Salvar alterações" : "Salvar oportunidade"}</button><button className="btn btn-gray" onClick={resetOpportunityForm}>{editingOpportunity ? "Cancelar edição" : "Cancelar"}</button></div>
+      </>}
+    </section>}
+
+    {msg && <Message text={msg} />}
+
+    <section className="card" style={{ marginTop: 24 }}>
+      <h2 className="card-title">Funil comercial</h2>
+      <p style={{ color: "#94a3b8", margin: "-4px 0 22px" }}>
+        Cobrança é somente acompanhamento manual. Finalizado não significa pagamento confirmado, e Pós-venda mantém o acompanhamento do cliente após a conclusão comercial.
+      </p>
+      {loading ? <p style={{ color: "#94a3b8" }}>Carregando oportunidades...</p> : <div style={{ overflowX: "auto", paddingBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(270px, 1fr))", gap: 16, minWidth: 1980, alignItems: "start" }}>
+          {CRM_STAGES.map((stage) => {
+            const stageOpportunities = filtered.filter(
+              (opportunity) => opportunity.stage === stage.value
+            );
+            const stageTotal = stageOpportunities.reduce(
+              (total, opportunity) => total + Number(opportunity.estimated_value || 0),
+              0
+            );
+            const isBillingStage = stage.value === "billing";
+            const isPostSaleStage = stage.value === "post_sale";
+            const validDropColumn = Boolean(
+              draggedOpportunityId &&
+                dragOriginStage &&
+                dragOriginStage !== stage.value
+            );
+            const activeDropColumn =
+              validDropColumn && dragOverStage === stage.value;
+            const sideBorderWidth = activeDropColumn ? 2 : 1;
+            const sideBorderStyle = validDropColumn ? "dashed" : "solid";
+            const sideBorderColor = activeDropColumn
+              ? stage.color
+              : validDropColumn
+                ? `${stage.color}aa`
+                : `${stage.color}55`;
+
+            return <section
+              key={stage.value}
+              onDragOver={(event) => handleStageDragOver(event, stage.value)}
+              onDrop={(event) => handleStageDrop(event, stage.value)}
+              style={{
+                minHeight: 260,
+                borderTopWidth: activeDropColumn ? 5 : 3,
+                borderTopStyle: "solid",
+                borderTopColor: stage.color,
+                borderRightWidth: sideBorderWidth,
+                borderRightStyle: sideBorderStyle,
+                borderRightColor: sideBorderColor,
+                borderBottomWidth: sideBorderWidth,
+                borderBottomStyle: sideBorderStyle,
+                borderBottomColor: sideBorderColor,
+                borderLeftWidth: sideBorderWidth,
+                borderLeftStyle: sideBorderStyle,
+                borderLeftColor: sideBorderColor,
+                borderRadius: 18,
+                background: activeDropColumn
+                  ? `${stage.color}20`
+                  : validDropColumn
+                    ? `${stage.color}0c`
+                    : "rgba(2,6,23,.48)",
+                padding: activeDropColumn ? 13 : 14,
+                transition: "border-color .16s ease, background .16s ease, box-shadow .16s ease",
+                boxShadow: activeDropColumn
+                  ? `0 0 0 4px ${stage.color}18`
+                  : undefined,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+                <strong style={{ color: stage.color, fontSize: 17 }}>{stage.label}</strong>
+                <span style={{ minWidth: 28, borderRadius: 999, background: `${stage.color}22`, color: stage.color, padding: "4px 8px", textAlign: "center", fontSize: 12, fontWeight: 800 }}>{stageOpportunities.length}</span>
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 14 }}>Total estimado: {money(stageTotal)}</div>
+              {activeDropColumn && <div style={{ marginBottom: 12, borderRadius: 10, background: `${stage.color}22`, color: stage.color, padding: "8px 10px", textAlign: "center", fontSize: 13, fontWeight: 900 }}>Solte aqui</div>}
+
+              {stageOpportunities.length === 0 ? <p style={{ color: "#64748b", fontSize: 13 }}>Nenhuma oportunidade nesta etapa.</p> : <div style={{ display: "grid", gap: 12 }}>
+                {stageOpportunities.map((opportunity) => {
+                  const nextActionAt = opportunity.next_action_at
+                    ? new Date(opportunity.next_action_at)
+                    : null;
+                  const formattedNextActionAt =
+                    nextActionAt && !Number.isNaN(nextActionAt.getTime())
+                      ? nextActionAt.toLocaleString("pt-BR")
+                      : "";
+                  const nextActionOverdue = Boolean(
+                    isBillingStage &&
+                      nextActionAt &&
+                      !Number.isNaN(nextActionAt.getTime()) &&
+                      nextActionAt.getTime() < Date.now()
+                  );
+                  const canManage = canManageOpportunity(opportunity);
+                  const changingStage = updatingStageId === opportunity.id;
+                  const highlighted = highlightedOpportunityId === opportunity.id;
+                  const historyExpanded = expandedActivityIds.includes(opportunity.id);
+                  const activityFormOpen = activityFormOpportunityId === opportunity.id;
+                  const activities = activitiesByOpportunity[opportunity.id] || [];
+                  const activityLoading = activityLoadingId === opportunity.id;
+                  const isDragging = draggedOpportunityId === opportunity.id;
+
+                  return <div
+                    id={`crm-opportunity-${opportunity.id}`}
+                    key={opportunity.id}
+                    className="stat-card user-card"
+                    draggable={canManage && updatingStageId === null}
+                    aria-grabbed={isDragging}
+                    onPointerDownCapture={(event) => {
+                      dragStartBlockedRef.current = Boolean(
+                        (event.target as HTMLElement).closest(
+                          "button, input, select, textarea, a"
+                        )
+                      );
+                    }}
+                    onPointerUpCapture={() => {
+                      dragStartBlockedRef.current = false;
+                    }}
+                    onPointerCancelCapture={() => {
+                      dragStartBlockedRef.current = false;
+                    }}
+                    onDragStart={(event) => handleOpportunityDragStart(event, opportunity)}
+                    onDragEnd={clearOpportunityDrag}
+                    style={{
+                      minHeight: 0,
+                      padding: 16,
+                      borderRadius: 15,
+                      border: highlighted ? "2px solid #facc15" : undefined,
+                      boxShadow: highlighted ? "0 0 0 4px rgba(250,204,21,.16)" : undefined,
+                      cursor: canManage
+                        ? isDragging
+                          ? "grabbing"
+                          : updatingStageId
+                            ? "wait"
+                            : "grab"
+                        : "default",
+                      opacity: isDragging ? 0.58 : 1,
+                      transform: isDragging ? "scale(.985)" : undefined,
+                      transition: "opacity .16s ease, transform .16s ease, box-shadow .16s ease",
+                    }}
+                  >
+                    <strong>{opportunity.title || "Sem título"}</strong>
+                    <small>Cliente: {opportunity.clients?.name || "-"}</small>
+                    <small>Valor estimado: {money(opportunity.estimated_value)}</small>
+                    <small>Probabilidade: {Number(opportunity.probability || 0)}%</small>
+                    <small style={isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>Responsável: {opportunity.profiles_responsible?.name || "-"}</small>
+                    <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
+                    {(formattedNextActionAt || isBillingStage) && <small style={nextActionOverdue ? { width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(248,113,113,.55)", background: "rgba(127,29,29,.28)", color: "#fca5a5", fontWeight: 900 } : isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>{nextActionOverdue ? "Retorno atrasado" : "Data da próxima ação"}: {formattedNextActionAt || "Não informada"}</small>}
+
+                    {canManage && <div className="field" style={{ width: "100%", marginTop: 8 }}>
+                      <label>Mudar etapa</label>
+                      <select className="input" value={opportunity.stage} disabled={updatingStageId !== null} onChange={(event) => updateOpportunityStage(opportunity, event.target.value)}>
+                        {CRM_STAGES.map((stageOption) => <option key={stageOption.value} value={stageOption.value}>{stageOption.label}</option>)}
+                      </select>
+                      {changingStage && <small style={{ color: "#60a5fa", marginTop: 6 }}>Salvando etapa...</small>}
+                    </div>}
+
+                    {canManage && <div className="form-actions" style={{ marginTop: 12, gap: 8 }}>
+                      <button className="btn btn-green" type="button" disabled={activitySaving} onClick={() => activityFormOpen ? closeActivityForm() : openActivityForm(opportunity)}>{activityFormOpen ? "Fechar atividade" : "Registrar atividade"}</button>
+                      <button className="btn btn-blue" type="button" disabled={updatingStageId !== null} onClick={() => openEditOpportunityForm(opportunity)}>Editar</button>
+                      <button className="btn btn-red" type="button" disabled={deletingOpportunityId === opportunity.id || updatingStageId !== null} onClick={() => deleteOpportunity(opportunity)}>{deletingOpportunityId === opportunity.id ? "Excluindo..." : "Excluir"}</button>
+                    </div>}
+
+                    {activityFormOpen && <div style={{ width: "100%", marginTop: 12, padding: 12, borderRadius: 12, border: "1px solid rgba(74,222,128,.3)", background: "rgba(20,83,45,.16)" }}>
+                      <strong style={{ color: "#86efac", fontSize: 14 }}>Registrar atividade realizada</strong>
+                      <div className="field" style={{ marginTop: 12 }}>
+                        <label>Ação</label>
+                        <select className="input" value={activityForm.type} onChange={(event) => setActivityForm((current) => ({ ...current, type: event.target.value }))}>
+                          {CRM_ACTIVITY_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="field" style={{ marginTop: 10 }}>
+                        <label>Observação</label>
+                        <textarea className="input" placeholder="Digite o assunto ou detalhes da atividade..." value={activityForm.description} onChange={(event) => setActivityForm((current) => ({ ...current, description: event.target.value }))} />
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginTop: 10 }}>
+                        <div className="field"><label>Data</label><input className="input" type="date" value={activityForm.date} onChange={(event) => setActivityForm((current) => ({ ...current, date: event.target.value }))} /></div>
+                        <div className="field"><label>Hora</label><input className="input" type="time" value={activityForm.time} onChange={(event) => setActivityForm((current) => ({ ...current, time: event.target.value }))} /></div>
+                      </div>
+                      <div className="form-actions" style={{ marginTop: 12, gap: 8 }}>
+                        <button type="button" className="btn btn-green" disabled={activitySaving} onClick={() => saveActivity(opportunity)}>{activitySaving ? "Salvando..." : "Salvar atividade"}</button>
+                        <button type="button" className="btn btn-gray" disabled={activitySaving} onClick={closeActivityForm}>Cancelar</button>
+                      </div>
+                    </div>}
+
+                    {activityErrors[opportunity.id] && <div style={{ width: "100%", marginTop: 10, color: "#fca5a5", fontSize: 13, fontWeight: 700 }}>{activityErrors[opportunity.id]}</div>}
+
+                    <button type="button" className="btn btn-gray" style={{ width: "100%", marginTop: 10 }} onClick={() => toggleOpportunityHistory(opportunity.id)}>{historyExpanded ? "Ocultar histórico de atividades" : "Histórico de atividades"}</button>
+
+                    {historyExpanded && <div style={{ width: "100%", marginTop: 10 }}>
+                      <strong style={{ color: "#cbd5e1", fontSize: 14 }}>Histórico de atividades</strong>
+                      {activityLoading ? <p style={{ color: "#94a3b8", fontSize: 13 }}>Carregando histórico...</p> : activities.length === 0 ? <p style={{ color: "#94a3b8", fontSize: 13 }}>Nenhuma atividade registrada ainda.</p> : <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+                        {activities.map((activity) => <div key={activity.id} style={{ borderLeft: "3px solid #60a5fa", borderRadius: "0 10px 10px 0", background: "rgba(15,23,42,.68)", padding: "9px 10px" }}>
+                          <strong style={{ marginBottom: 3, color: "#f8fafc", fontSize: 14 }}>{crmActivityTypeLabel(activity.type)}</strong>
+                          <div style={{ color: "#cbd5e1", fontSize: 13, whiteSpace: "pre-wrap" }}>{activity.description}</div>
+                          <div style={{ color: "#93c5fd", fontSize: 12, fontWeight: 800, marginTop: 6 }}>{formatCrmActivityDate(activity.happened_at)}</div>
+                          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>Registrado por: {activity.profiles?.name || "Usuário não identificado"}</div>
+                        </div>)}
+                      </div>}
+                    </div>}
+                  </div>;
+                })}
+              </div>}
+            </section>;
+          })}
+        </div>
+      </div>}
+    </section>
+  </>;
 }
 
 function Produtos({ search }: SearchProps) {
@@ -2907,4 +4272,3 @@ function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => 
   }
   return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>;
 }
-
