@@ -310,31 +310,25 @@ export default function StockProApp() {
     setSessionLoading(true);
 
     try {
-      const usuarioSalvo = localStorage.getItem("stockpro_usuario");
+      const respostaPerfil = await fetch("/api/auth/profile", {
+        cache: "no-store",
+      });
 
-      if (!usuarioSalvo) {
-        setProfile(null);
-        router.replace("/login");
-        return;
-      }
-
-      const usuarioLocal = JSON.parse(usuarioSalvo);
-
-      if (!usuarioLocal?.id) {
+      if (respostaPerfil.status === 401) {
         localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
       }
 
-      const respostaPerfil = await fetch(
-        `/api/auth/profile?id=${encodeURIComponent(usuarioLocal.id)}`,
-        { cache: "no-store" }
-      );
+      if (!respostaPerfil.ok) {
+        localStorage.removeItem("stockpro_usuario");
+        setProfile(null);
+        router.replace("/login");
+        return;
+      }
 
-      const perfilCompleto = respostaPerfil.ok
-        ? await respostaPerfil.json()
-        : usuarioLocal;
+      const perfilCompleto = await respostaPerfil.json();
 
       const roleNormalizada = String(perfilCompleto.role || "")
         .normalize("NFD")
@@ -353,12 +347,13 @@ export default function StockProApp() {
 
       if (!rolesPermitidas.includes(roleNormalizada as Role)) {
         console.error("Perfil com função inválida:", perfilCompleto.role);
+        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
+        router.replace("/login");
         return;
       }
 
       const perfilFinal = {
-        ...usuarioLocal,
         ...perfilCompleto,
         role: roleNormalizada as Role,
       } as Profile;
