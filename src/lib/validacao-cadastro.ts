@@ -48,6 +48,16 @@ function todosCaracteresIguais(value: string): boolean {
   );
 }
 
+const INVALID_TEXT_VALUES = new Set([
+  "teste",
+  "nao informado",
+  "nao possui",
+  "sem informacao",
+  "desconhecido",
+  "xxx",
+  "aaaa",
+]);
+
 function textoValido(
   value: string,
   minimumLength: number
@@ -67,17 +77,7 @@ function textoValido(
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  const invalidValues = new Set([
-    "teste",
-    "nao informado",
-    "nao possui",
-    "sem informacao",
-    "desconhecido",
-    "xxx",
-    "aaaa",
-  ]);
-
-  return !invalidValues.has(normalized);
+  return !INVALID_TEXT_VALUES.has(normalized);
 }
 
 export function validarNomeCompleto(
@@ -142,10 +142,26 @@ export function validarNomeCompleto(
       return false;
     }
 
-    const lettersOnly = part.replace(
+    if (INVALID_TEXT_VALUES.has(normalizedPart)) {
+      return false;
+    }
+
+    const lettersOnly = normalizedPart.replace(
       /['’\-]/g,
       ""
     );
+
+    const obviousKeyboardSequence =
+      /^(?:asdf(?:gh)?|qwer(?:ty)?|zxcv(?:bn)?|hjkl)$/.test(
+        lettersOnly
+      );
+
+    if (
+      obviousKeyboardSequence ||
+      /([a-z])\1{3,}/.test(lettersOnly)
+    ) {
+      return false;
+    }
 
     /*
      * Impede iniciais isoladas, como:
@@ -159,6 +175,20 @@ function digitosRepetidos(value: string): boolean {
   return /^(\d)\1+$/.test(value);
 }
 
+function calcularDigitoCpf(base: string): number {
+  const initialWeight = base.length + 1;
+  const sum = base
+    .split("")
+    .reduce(
+      (total, digit, index) =>
+        total + Number(digit) * (initialWeight - index),
+      0
+    );
+  const remainder = sum % 11;
+
+  return remainder < 2 ? 0 : 11 - remainder;
+}
+
 export function validarCpf(value: unknown): boolean {
   const cpf = somenteDigitos(value);
 
@@ -166,31 +196,33 @@ export function validarCpf(value: unknown): boolean {
     return false;
   }
 
-  let sum = 0;
+  const firstDigit = calcularDigitoCpf(cpf.slice(0, 9));
 
-  for (let index = 0; index < 9; index += 1) {
-    sum += Number(cpf[index]) * (10 - index);
-  }
-
-  let digit = (sum * 10) % 11;
-
-  if (digit === 10) digit = 0;
-
-  if (digit !== Number(cpf[9])) {
+  if (firstDigit !== Number(cpf[9])) {
     return false;
   }
 
-  sum = 0;
+  const secondDigit = calcularDigitoCpf(cpf.slice(0, 10));
 
-  for (let index = 0; index < 10; index += 1) {
-    sum += Number(cpf[index]) * (11 - index);
+  return secondDigit === Number(cpf[10]);
+}
+
+export function existeCpfDuplicado(
+  value: unknown,
+  clients: Array<{ id: string; document: unknown }>,
+  currentClientId?: string
+): boolean {
+  const cpf = somenteDigitos(value);
+
+  if (cpf.length !== 11) {
+    return false;
   }
 
-  digit = (sum * 10) % 11;
-
-  if (digit === 10) digit = 0;
-
-  return digit === Number(cpf[10]);
+  return clients.some(
+    (client) =>
+      client.id !== currentClientId &&
+      somenteDigitos(client.document) === cpf
+  );
 }
 
 export function validarCnpj(value: unknown): boolean {
