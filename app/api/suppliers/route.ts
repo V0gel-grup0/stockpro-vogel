@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
+import {
+  SUPPLIER_READ_ROLES,
+  SUPPLIER_WRITE_ROLES,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -70,11 +74,7 @@ function normalizeSupplierData(
 
 export async function GET(request: Request) {
   try {
-    const authorization = await authorizeApi([
-      "administrador",
-      "gerente",
-      "funcionario",
-    ]);
+    const authorization = await authorizeApi(SUPPLIER_READ_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const { searchParams } = new URL(request.url);
@@ -128,7 +128,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente"]);
+    const authorization = await authorizeApi(SUPPLIER_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body =
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente"]);
+    const authorization = await authorizeApi(SUPPLIER_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body =
@@ -329,7 +329,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente"]);
+    const authorization = await authorizeApi(SUPPLIER_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const { searchParams } = new URL(request.url);

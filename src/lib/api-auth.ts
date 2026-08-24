@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedProfile } from "@/lib/auth";
+import type { AppRole } from "@/lib/permissions";
 
-export type AppRole =
-  | "administrador"
-  | "gerente"
-  | "vendedor"
-  | "funcionario"
-  | "tecnico"
-  | "representante";
+export type { AppRole } from "@/lib/permissions";
 
 type AuthenticatedProfile = NonNullable<
   Awaited<ReturnType<typeof getAuthenticatedProfile>>

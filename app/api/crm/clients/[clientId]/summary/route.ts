@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
+import { buildAccessibleClientWhere } from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -43,30 +44,14 @@ export async function GET(_request: Request, context: RouteContext) {
       return errorResponse("clientId deve ser um UUID válido.", 400);
     }
 
-    if (["vendedor", "representante"].includes(authenticatedProfile.role)) {
-      const ownedOpportunity = await prisma.crm_opportunities.findFirst({
-        where: {
-          client_id: clientId,
-          OR: [
-            { created_by: authenticatedProfile.id },
-            { responsible_id: authenticatedProfile.id },
-          ],
+    const client = await prisma.clients.findFirst({
+      where: buildAccessibleClientWhere(
+        {
+          id: authenticatedProfile.id,
+          role: authenticatedProfile.role,
         },
-        select: { id: true },
-      });
-
-      if (!ownedOpportunity) {
-        return errorResponse(
-          "Você não tem permissão para consultar o resumo deste cliente.",
-          403
-        );
-      }
-    }
-
-    const client = await prisma.clients.findUnique({
-      where: {
-        id: clientId,
-      },
+        clientId
+      ),
       select: {
         id: true,
         name: true,
@@ -99,7 +84,7 @@ export async function GET(_request: Request, context: RouteContext) {
     });
 
     if (!client) {
-      return errorResponse("Cliente não encontrado.", 404);
+      return errorResponse("Cliente não encontrado ou sem permissão.", 404);
     }
 
     const { orders, ...clientData } = client;

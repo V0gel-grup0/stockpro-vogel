@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
+import {
+  buildAccessibleClientWhere,
+  buildOpportunityVisibilityWhere,
+} from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -104,18 +108,12 @@ export async function GET() {
       return errorResponse("Não autenticado.", 401);
     }
 
-    const requiresOwnership = ["vendedor", "representante"].includes(
-      authenticatedProfile.role
-    );
+    const visibilityWhere = buildOpportunityVisibilityWhere({
+      id: authenticatedProfile.id,
+      role: authenticatedProfile.role,
+    });
     const opportunities = await prisma.crm_opportunities.findMany({
-      where: requiresOwnership
-        ? {
-            OR: [
-              { created_by: authenticatedProfile.id },
-              { responsible_id: authenticatedProfile.id },
-            ],
-          }
-        : undefined,
+      where: visibilityWhere,
       orderBy: {
         created_at: "desc",
       },
@@ -306,10 +304,14 @@ export async function POST(request: Request) {
     }
 
     const [client, responsibleProfile] = await Promise.all([
-      prisma.clients.findUnique({
-        where: {
-          id: clientId,
-        },
+      prisma.clients.findFirst({
+        where: buildAccessibleClientWhere(
+          {
+            id: authenticatedProfile.id,
+            role: authenticatedProfile.role,
+          },
+          clientId
+        ),
         select: {
           id: true,
         },
@@ -330,7 +332,7 @@ export async function POST(request: Request) {
     ]);
 
     if (!client) {
-      return errorResponse("Cliente não encontrado.", 404);
+      return errorResponse("Cliente não encontrado ou sem permissão.", 404);
     }
 
     if (responsibleId.valor && !responsibleProfile) {

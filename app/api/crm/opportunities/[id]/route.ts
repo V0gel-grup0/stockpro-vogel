@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
+import { buildOpportunityManagementWhere } from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -67,11 +68,6 @@ type RouteContext = {
   }>;
 };
 
-type OpportunityOwner = {
-  created_by: string | null;
-  responsible_id: string | null;
-};
-
 function errorResponse(erro: string, status: number) {
   return NextResponse.json(
     {
@@ -81,20 +77,6 @@ function errorResponse(erro: string, status: number) {
     {
       status,
     }
-  );
-}
-
-function canManageOpportunity(
-  profile: { id: string; role: string },
-  opportunity: OpportunityOwner
-) {
-  if (profile.role === "administrador" || profile.role === "gerente") {
-    return true;
-  }
-
-  return (
-    opportunity.created_by === profile.id ||
-    opportunity.responsible_id === profile.id
   );
 }
 
@@ -124,10 +106,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       return errorResponse("id deve ser um UUID válido.", 400);
     }
 
-    const existingOpportunity = await prisma.crm_opportunities.findUnique({
-      where: {
-        id: opportunityId,
-      },
+    const visibilityWhere = buildOpportunityManagementWhere({
+      id: authenticatedProfile.id,
+      role: authenticatedProfile.role,
+    });
+    const existingOpportunity = await prisma.crm_opportunities.findFirst({
+      where: visibilityWhere
+        ? { AND: [{ id: opportunityId }, visibilityWhere] }
+        : { id: opportunityId },
       select: {
         id: true,
         created_by: true,
@@ -136,14 +122,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     });
 
     if (!existingOpportunity) {
-      return errorResponse("Oportunidade não encontrada.", 404);
-    }
-
-    if (!canManageOpportunity(authenticatedProfile, existingOpportunity)) {
-      return errorResponse(
-        "Você não tem permissão para editar esta oportunidade.",
-        403
-      );
+      return errorResponse("Oportunidade não encontrada ou sem permissão.", 404);
     }
 
     const parsedBody = await request.json();
@@ -389,10 +368,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return errorResponse("id deve ser um UUID válido.", 400);
     }
 
-    const opportunity = await prisma.crm_opportunities.findUnique({
-      where: {
-        id: opportunityId,
-      },
+    const visibilityWhere = buildOpportunityManagementWhere({
+      id: authenticatedProfile.id,
+      role: authenticatedProfile.role,
+    });
+    const opportunity = await prisma.crm_opportunities.findFirst({
+      where: visibilityWhere
+        ? { AND: [{ id: opportunityId }, visibilityWhere] }
+        : { id: opportunityId },
       select: {
         id: true,
         created_by: true,
@@ -407,14 +390,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     });
 
     if (!opportunity) {
-      return errorResponse("Oportunidade não encontrada.", 404);
-    }
-
-    if (!canManageOpportunity(authenticatedProfile, opportunity)) {
-      return errorResponse(
-        "Você não tem permissão para excluir esta oportunidade.",
-        403
-      );
+      return errorResponse("Oportunidade não encontrada ou sem permissão.", 404);
     }
 
     if (

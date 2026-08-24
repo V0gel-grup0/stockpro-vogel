@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
+import {
+  PRODUCT_DELETE_ROLES,
+  PRODUCT_READ_ROLES,
+  PRODUCT_WRITE_ROLES,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-const productReadRoles = [
-  "administrador",
-  "gerente",
-  "vendedor",
-  "funcionario",
-] as const;
-const productWriteRoles = ["administrador", "gerente", "funcionario"] as const;
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -91,7 +89,7 @@ function normalizeProductData(
 
 export async function GET() {
   try {
-    const authorization = await authorizeApi(productReadRoles);
+    const authorization = await authorizeApi(PRODUCT_READ_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const products = await prisma.products.findMany({
@@ -119,7 +117,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const authorization = await authorizeApi(productWriteRoles);
+    const authorization = await authorizeApi(PRODUCT_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body = (await req.json()) as Record<string, unknown>;
@@ -160,7 +158,7 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const authorization = await authorizeApi(productWriteRoles);
+    const authorization = await authorizeApi(PRODUCT_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body = (await req.json()) as Record<string, unknown>;
@@ -205,7 +203,7 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente"]);
+    const authorization = await authorizeApi(PRODUCT_DELETE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const { searchParams } = new URL(req.url);

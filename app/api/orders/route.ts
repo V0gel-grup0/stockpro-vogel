@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
-import type { AppRole } from "@/lib/api-auth";
 import { authorizeApi } from "@/lib/api-auth";
+import {
+  buildAccessibleClientWhere,
+  buildClientVisibilityWhere,
+} from "@/lib/client-visibility";
+import {
+  ORDER_DELETE_ROLES,
+  ORDER_ROLES,
+  canUpdateOrderStatus,
+  type AppRole,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 
@@ -10,14 +19,6 @@ export const dynamic = "force-dynamic";
 
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function number(value: unknown, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
-
-const orderRoles = [
-  "administrador",
-  "gerente",
-  "vendedor",
-  "funcionario",
-  "representante",
-] as const;
 
 function orderScope(profile: { id: string; role: AppRole }): Prisma.ordersWhereInput {
   if (profile.role === "representante") {
@@ -38,6 +39,23 @@ function orderScope(profile: { id: string; role: AppRole }): Prisma.ordersWhereI
   }
 
   return {};
+}
+
+async function canAccessEveryClient(
+  profile: { id: string; role: AppRole },
+  clientIds: string[]
+) {
+  const uniqueClientIds = [...new Set(clientIds.filter(Boolean))];
+  if (!uniqueClientIds.length) return true;
+
+  const visibilityWhere = buildClientVisibilityWhere(profile);
+  const accessibleClients = await prisma.clients.count({
+    where: visibilityWhere
+      ? { AND: [{ id: { in: uniqueClientIds } }, visibilityWhere] }
+      : { id: { in: uniqueClientIds } },
+  });
+
+  return accessibleClients === uniqueClientIds.length;
 }
 
 function dataFrom(
@@ -66,7 +84,7 @@ function dataFrom(
 
 export async function GET() {
   try {
-    const authorization = await authorizeApi(orderRoles);
+    const authorization = await authorizeApi(ORDER_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const orders = await prisma.orders.findMany({
@@ -84,12 +102,21 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const authorization = await authorizeApi(orderRoles);
+    const authorization = await authorizeApi(ORDER_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body = await request.json();
     const rawOrders = Array.isArray(body?.orders) ? body.orders : [body];
     if (!rawOrders.length) return NextResponse.json({ sucesso: false, erro: "Nenhum pedido informado." }, { status: 400 });
+    const profile = {
+      id: authorization.profile.id,
+      role: authorization.profile.role as AppRole,
+    };
+    const canAccessClients = await canAccessEveryClient(
+      profile,
+      rawOrders.map((raw: Record<string, any>) => text(raw.client_id))
+    );
+    if (!canAccessClients) return NextResponse.json({ sucesso: false, erro: "Cliente não encontrado ou sem permissão." }, { status: 404 });
     const created = await prisma.$transaction(rawOrders.map((raw: Record<string, any>) => prisma.orders.create({ data: dataFrom(raw, true, authorization.profile.id) })));
     return NextResponse.json({ sucesso: true, orders: toJsonSafe(created) }, { status: 201 });
   } catch (error) {
@@ -99,12 +126,28 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authorization = await authorizeApi(orderRoles);
+    const authorization = await authorizeApi(ORDER_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body = await request.json();
     const id = text(body.id);
     if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 });
+    const requestedClientId = text(body.client_id);
+    if (
+      requestedClientId &&
+      !(await prisma.clients.findFirst({
+        where: buildAccessibleClientWhere(
+          {
+            id: authorization.profile.id,
+            role: authorization.profile.role as AppRole,
+          },
+          requestedClientId
+        ),
+        select: { id: true },
+      }))
+    ) {
+      return NextResponse.json({ sucesso: false, erro: "Cliente não encontrado ou sem permissão." }, { status: 404 });
+    }
     const accessibleOrder = await prisma.orders.findFirst({
       where: {
         id,
@@ -125,7 +168,7 @@ export async function PUT(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const authorization = await authorizeApi(orderRoles);
+    const authorization = await authorizeApi(ORDER_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const body = await request.json();
@@ -144,6 +187,12 @@ export async function PATCH(request: Request) {
     if (!accessibleOrder) return NextResponse.json({ sucesso: false, erro: "Pedido não encontrado ou sem permissão." }, { status: 404 });
     const data: Record<string, any> = { updated_at: new Date() };
     if (body.status !== undefined) {
+      if (!canUpdateOrderStatus(authorization.profile.role)) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Seu perfil não pode alterar o status do pedido." },
+          { status: 403 }
+        );
+      }
       const status = text(body.status);
       const allowedStatuses = ["pendente", "confirmado", "processando", "enviado", "recebido"];
       if (!allowedStatuses.includes(status)) {
@@ -172,7 +221,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authorization = await authorizeApi(["administrador"]);
+    const authorization = await authorizeApi(ORDER_DELETE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const id = new URL(request.url).searchParams.get("id");

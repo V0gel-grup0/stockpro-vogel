@@ -1,6 +1,18 @@
 "use client";
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
+import {
+  canDeleteAssembly,
+  canDeleteComponent,
+  canDeleteOrder,
+  canDeleteProducts,
+  canManageOpportunityRecord,
+  canReviewRepresentative,
+  canUnifyComponents,
+  canUpdateOrderStatus,
+  canWriteProducts,
+  type AppRole,
+} from "@/lib/permissions";
 
 function getSaleCode(order: any) {
   if (order?.order_number !== undefined && order?.order_number !== null) {
@@ -13,7 +25,7 @@ function getSaleCode(order: any) {
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-type Role = "administrador" | "gerente" | "vendedor" | "funcionario" | "tecnico" | "representante";
+type Role = AppRole;
 type Profile = {
   id: string;
   email: string;
@@ -621,7 +633,7 @@ export default function StockProApp() {
           {page === "Representantes" && <Colaboradores role="representante" title="Representantes" currentUser={profile} search={search} />}
           {page === "Análise de Cadastros" && <AnáliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
-          {page === "Componentes" && <Componentes search={search} />}
+          {page === "Componentes" && <Componentes search={search} profile={profile} />}
           {page === "Conta Azul" && <ContaAzul />}
           {page === "Relatórios" && <Relatorios profile={profile} />}
           {page === "Meu Perfil" && <MeuPerfil profile={profile} onUpdated={carregarSessao} />}
@@ -849,15 +861,10 @@ function CRM({
   }
 
   function canManageOpportunity(opportunity: AnyRow) {
-    if (profile.role === "administrador" || profile.role === "gerente") {
-      return true;
-    }
-
-    return (
-      (profile.role === "vendedor" || profile.role === "representante") &&
-      (opportunity.created_by === profile.id ||
-        opportunity.responsible_id === profile.id)
-    );
+    return canManageOpportunityRecord(profile, {
+      created_by: opportunity.created_by || null,
+      responsible_id: opportunity.responsible_id || null,
+    });
   }
 
   async function loadOpportunityActivities(opportunityId: string, force = false) {
@@ -1841,8 +1848,8 @@ function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
-  const canWrite = ["administrador", "gerente", "funcionario"].includes(profile.role);
-  const canDelete = ["administrador", "gerente"].includes(profile.role);
+  const canWrite = canWriteProducts(profile.role);
+  const canDelete = canDeleteProducts(profile.role);
 
   useEffect(() => {
     carregar();
@@ -2291,13 +2298,13 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
       setLoadingId(id);
       setMsg("");
 
-      const response = await fetch("/api/profiles", {
-        method: "PUT",
+      const response = await fetch("/api/admin/aprovar-representante", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id,
+          representante_id: id,
           status,
         }),
       });
@@ -2374,7 +2381,15 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
     }
   }
 
-  const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
+  const podeAvaliar = (item: Profile) =>
+    Boolean(
+      isRepresentante &&
+        currentUser &&
+        canReviewRepresentative(currentUser, {
+          role: item.role,
+          responsible_seller_id: item.responsible_seller_id || null,
+        })
+    );
   const filtered = items.filter((i) => textMatch(i, search));
   const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
   const cadastroUrl = role === "representante" ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
@@ -2401,8 +2416,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           {item.seller_code && <small>Código vendedor: {item.seller_code}</small>}
           {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
           <div className="form-actions">
-            {podeAvaliar && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
-            {podeAvaliar && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
+            {podeAvaliar(item) && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
+            {podeAvaliar(item) && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
             {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}
           </div>
         </div>)}
@@ -2643,7 +2658,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     carregar();
   }
 
-  const canManage = ["administrador", "gerente", "vendedor"].includes(profile.role);
+  const canManage = canUpdateOrderStatus(profile.role);
+  const canDelete = canDeleteOrder(profile.role);
   const canEmitNf = ["administrador", "gerente"].includes(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
   const countByStatus = useMemo(() => {
@@ -2699,7 +2715,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
             <small>NF/Conta Azul: {o.conta_azul_status ? String(o.conta_azul_status).replaceAll("_", " ") : "Não solicitada"}</small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canManage && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
         })}
       </div>
@@ -3351,7 +3367,7 @@ function Movimentações({ profile }: { profile: Profile }) {
   );
 }
 
-function Componentes({ search }: SearchProps) {
+function Componentes({ search, profile }: SearchProps & { profile: Profile }) {
   const empty = {
     name: "",
     category: "",
@@ -3665,9 +3681,9 @@ function Componentes({ search }: SearchProps) {
           <button className="btn btn-gray" onClick={() => cadastrarPadrao()} disabled={loadingPadrao}>
             Cadastrar todos os componentes únicos no estoque geral
           </button>
-          <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
+          {canUnifyComponents(profile.role) && <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
             {loadingUnificar ? "Unificando..." : "Unificar duplicados"}
-          </button>
+          </button>}
         </div>
 
         <div className="notice" style={{ marginTop: 16 }}>
@@ -3866,7 +3882,7 @@ function Componentes({ search }: SearchProps) {
               </div>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
-                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+                {canDeleteComponent(profile.role) && <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>}
               </div>
             </div>
           ))}
@@ -3972,7 +3988,7 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
               <small>Qtd: {i.quantity}</small>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
-                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+                {canDeleteAssembly(profile.role) && <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>}
               </div>
             </div>
           ))}

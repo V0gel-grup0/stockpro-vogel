@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
+import { ASSEMBLY_DELETE_ROLES } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 
@@ -45,6 +46,6 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  try { const authorization = await authorizeApi(["administrador", "gerente"]); if ("response" in authorization) return authorization.response; const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 }); await prisma.assemblies.delete({ where: { id } }); return NextResponse.json({ sucesso: true }); }
+  try { const authorization = await authorizeApi(ASSEMBLY_DELETE_ROLES); if ("response" in authorization) return authorization.response; const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 }); await prisma.assemblies.delete({ where: { id } }); return NextResponse.json({ sucesso: true }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao excluir montagem." }, { status: 500 }); }
 }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
+import {
+  buildAccessibleClientWhere,
+  buildActivityVisibilityWhere,
+  buildOpportunityManagementWhere,
+} from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -76,31 +81,16 @@ export async function GET(request: Request) {
       return errorResponse("client_id deve ser um UUID válido.", 400);
     }
 
-    const requiresOwnership = ["vendedor", "representante"].includes(
-      authenticatedProfile.role
-    );
+    const activityVisibility = buildActivityVisibilityWhere({
+      id: authenticatedProfile.id,
+      role: authenticatedProfile.role,
+    });
 
     const activities = await prisma.crm_activities.findMany({
       where: {
         ...(opportunityId ? { opportunity_id: opportunityId } : {}),
         ...(clientId ? { client_id: clientId } : {}),
-        ...(requiresOwnership
-          ? {
-              OR: [
-                { created_by: authenticatedProfile.id },
-                {
-                  crm_opportunities: {
-                    is: {
-                      OR: [
-                        { created_by: authenticatedProfile.id },
-                        { responsible_id: authenticatedProfile.id },
-                      ],
-                    },
-                  },
-                },
-              ],
-            }
-          : {}),
+        ...(activityVisibility || {}),
       },
       orderBy: {
         happened_at: "desc",
@@ -212,13 +202,27 @@ export async function POST(request: Request) {
     }
 
     const [client, opportunity] = await Promise.all([
-      prisma.clients.findUnique({
-        where: { id: clientId },
+      prisma.clients.findFirst({
+        where: buildAccessibleClientWhere(
+          {
+            id: authenticatedProfile.id,
+            role: authenticatedProfile.role,
+          },
+          clientId
+        ),
         select: { id: true },
       }),
       opportunityId
-        ? prisma.crm_opportunities.findUnique({
-            where: { id: opportunityId },
+        ? prisma.crm_opportunities.findFirst({
+            where: (() => {
+              const visibility = buildOpportunityManagementWhere({
+                id: authenticatedProfile.id,
+                role: authenticatedProfile.role,
+              });
+              return visibility
+                ? { AND: [{ id: opportunityId }, visibility] }
+                : { id: opportunityId };
+            })(),
             select: {
               id: true,
               client_id: true,
@@ -230,7 +234,7 @@ export async function POST(request: Request) {
     ]);
 
     if (!client) {
-      return errorResponse("Cliente não encontrado.", 404);
+      return errorResponse("Cliente não encontrado ou sem permissão.", 404);
     }
 
     if (opportunityId && !opportunity) {
@@ -248,27 +252,16 @@ export async function POST(request: Request) {
       authenticatedProfile.role === "administrador" ||
       authenticatedProfile.role === "gerente";
 
-    if (!hasFullAccess) {
-      if (opportunity) {
-        const canRegister =
-          opportunity.created_by === authenticatedProfile.id ||
-          opportunity.responsible_id === authenticatedProfile.id;
-
-        if (!canRegister) {
-          return errorResponse(
-            "Você não tem permissão para registrar atividades nesta oportunidade.",
-            403
-          );
-        }
-      } else {
+    if (!hasFullAccess && !opportunity) {
+      const visibility = buildOpportunityManagementWhere({
+        id: authenticatedProfile.id,
+        role: authenticatedProfile.role,
+      });
         const activeOpportunity = await prisma.crm_opportunities.findFirst({
           where: {
             client_id: clientId,
             status: "open",
-            OR: [
-              { created_by: authenticatedProfile.id },
-              { responsible_id: authenticatedProfile.id },
-            ],
+            ...(visibility || {}),
           },
           select: { id: true },
         });
@@ -279,7 +272,6 @@ export async function POST(request: Request) {
             403
           );
         }
-      }
     }
 
     const data: Prisma.crm_activitiesUncheckedCreateInput = {

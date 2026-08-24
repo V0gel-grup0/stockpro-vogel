@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { authorizeApi } from "@/lib/api-auth";
+import {
+  COMPONENT_DELETE_ROLES,
+  canUnifyComponents,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -622,7 +626,7 @@ export async function DELETE(
   request: Request
 ) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente"]);
+    const authorization = await authorizeApi(COMPONENT_DELETE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const { searchParams } = new URL(
@@ -695,7 +699,7 @@ export async function PATCH(request: Request) {
 
     if (
       action === "unify_duplicates" &&
-      authorization.profile.role !== "administrador"
+      !canUnifyComponents(authorization.profile.role)
     ) {
       return NextResponse.json(
         { sucesso: false, erro: "Somente administradores podem unificar duplicados." },

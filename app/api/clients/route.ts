@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authorizeApi } from "@/lib/api-auth";
+import {
+  buildAccessibleClientWhere,
+  buildClientVisibilityWhere,
+} from "@/lib/client-visibility";
 import { prisma } from "@/lib/prisma";
 import {
   somenteDigitos,
@@ -44,27 +48,12 @@ export async function GET() {
     const authorization = await authorizeApi();
     if ("response" in authorization) return authorization.response;
 
-    const requiresOwnership = ["vendedor", "representante"].includes(
-      authorization.profile.role
-    );
+    const visibilityWhere = buildClientVisibilityWhere({
+      id: authorization.profile.id,
+      role: authorization.profile.role,
+    });
     const clients = await prisma.clients.findMany({
-      where: requiresOwnership
-        ? {
-            OR: [
-              { created_by: authorization.profile.id },
-              {
-                crm_opportunities: {
-                  some: {
-                    OR: [
-                      { created_by: authorization.profile.id },
-                      { responsible_id: authorization.profile.id },
-                    ],
-                  },
-                },
-              },
-            ],
-          }
-        : undefined,
+      where: visibilityWhere,
       orderBy: {
         created_at: "desc",
       },
@@ -223,22 +212,13 @@ export async function PUT(request: Request) {
 
     if (["vendedor", "representante"].includes(authorization.profile.role)) {
       const ownedClient = await prisma.clients.findFirst({
-        where: {
-          id,
-          OR: [
-            { created_by: authorization.profile.id },
-            {
-              crm_opportunities: {
-                some: {
-                  OR: [
-                    { created_by: authorization.profile.id },
-                    { responsible_id: authorization.profile.id },
-                  ],
-                },
-              },
-            },
-          ],
-        },
+        where: buildAccessibleClientWhere(
+          {
+            id: authorization.profile.id,
+            role: authorization.profile.role,
+          },
+          id
+        ),
         select: { id: true },
       });
 
