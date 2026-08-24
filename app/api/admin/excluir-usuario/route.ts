@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -6,6 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi(["administrador"]);
+    if ("response" in authorization) return authorization.response;
+
     const body = await request.json();
     const id = typeof body?.id === "string" ? body.id.trim() : "";
 
@@ -13,6 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "ID do usuário é obrigatório." },
         { status: 400 }
+      );
+    }
+
+    if (id === authorization.profile.id) {
+      return NextResponse.json(
+        { error: "Não é permitido excluir o próprio usuário autenticado." },
+        { status: 409 }
       );
     }
 

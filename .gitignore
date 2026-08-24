@@ -19,3 +19,6 @@ yarn-error.log*
 *.backup*
 
 *.bak*
+.env*
+*.tsbuildinfo
+build-error.txt

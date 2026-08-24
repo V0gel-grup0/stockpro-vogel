@@ -3,11 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const email =
+      typeof body?.email === "string"
+        ? body.email.toLowerCase().trim()
+        : "";
+    const password =
+      typeof body?.password === "string" ? body.password : "";
 
-    if (!email || !password) {
+    if (
+      !email ||
+      email.length > 254 ||
+      !password ||
+      password.length > 1024
+    ) {
       return NextResponse.json(
         { sucesso: false, erro: "E-mail e senha são obrigatórios." },
         { status: 400 }
@@ -16,7 +29,15 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.profiles.findUnique({
       where: {
-        email: email.toLowerCase().trim(),
+        email,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        password_hash: true,
       },
     });
 
@@ -58,6 +79,13 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { sucesso: false, erro: "JSON inválido." },
+        { status: 400 }
+      );
+    }
+
     console.error(error);
 
     return NextResponse.json(

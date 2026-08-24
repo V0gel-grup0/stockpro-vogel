@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -296,6 +297,14 @@ function serializeComponent(component: any) {
 
 export async function GET() {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "funcionario",
+      "tecnico",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const components =
       await prisma.components.findMany({
         include: {
@@ -339,6 +348,13 @@ export async function POST(
   request: Request
 ) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "tecnico",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -469,6 +485,13 @@ export async function PUT(
   request: Request
 ) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "tecnico",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -599,6 +622,9 @@ export async function DELETE(
   request: Request
 ) {
   try {
+    const authorization = await authorizeApi(["administrador", "gerente"]);
+    if ("response" in authorization) return authorization.response;
+
     const { searchParams } = new URL(
       request.url
     );
@@ -657,8 +683,25 @@ function normalizeName(value: unknown) {
 
 export async function PATCH(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "tecnico",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body = (await request.json()) as Record<string, any>;
     const action = normalizeString(body.action);
+
+    if (
+      action === "unify_duplicates" &&
+      authorization.profile.role !== "administrador"
+    ) {
+      return NextResponse.json(
+        { sucesso: false, erro: "Somente administradores podem unificar duplicados." },
+        { status: 403 }
+      );
+    }
 
     if (action === "upsert_defaults") {
       const items = Array.isArray(body.items) ? body.items : [];

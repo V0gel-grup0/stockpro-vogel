@@ -104,7 +104,18 @@ export async function GET() {
       return errorResponse("Não autenticado.", 401);
     }
 
+    const requiresOwnership = ["vendedor", "representante"].includes(
+      authenticatedProfile.role
+    );
     const opportunities = await prisma.crm_opportunities.findMany({
+      where: requiresOwnership
+        ? {
+            OR: [
+              { created_by: authenticatedProfile.id },
+              { responsible_id: authenticatedProfile.id },
+            ],
+          }
+        : undefined,
       orderBy: {
         created_at: "desc",
       },
@@ -184,6 +195,12 @@ export async function POST(request: Request) {
       "lost_reason",
       "notes",
     ] as const;
+    const textLimits = {
+      title: 200,
+      next_action: 100,
+      lost_reason: 1000,
+      notes: 5000,
+    } as const;
 
     for (const field of textFields) {
       if (!(field in body)) {
@@ -194,7 +211,15 @@ export async function POST(request: Request) {
         return errorResponse(`${field} deve ser uma string.`, 400);
       }
 
-      (data as Record<string, unknown>)[field] = body[field].trim();
+      const value = body[field].trim();
+      if (value.length > textLimits[field]) {
+        return errorResponse(
+          `${field} excede o limite de ${textLimits[field]} caracteres.`,
+          400
+        );
+      }
+
+      (data as Record<string, unknown>)[field] = value;
     }
 
     if ("stage" in body) {
@@ -298,6 +323,7 @@ export async function POST(request: Request) {
               id: true,
               role: true,
               status: true,
+              responsible_seller_id: true,
             },
           })
         : Promise.resolve(null),
@@ -325,6 +351,21 @@ export async function POST(request: Request) {
       return errorResponse(
         "O perfil responsável não possui uma role permitida.",
         400
+      );
+    }
+
+    const canAssignResponsible =
+      !responsibleId.valor ||
+      ["administrador", "gerente"].includes(authenticatedProfile.role) ||
+      responsibleId.valor === authenticatedProfile.id ||
+      (authenticatedProfile.role === "vendedor" &&
+        responsibleProfile?.role === "representante" &&
+        responsibleProfile.responsible_seller_id === authenticatedProfile.id);
+
+    if (!canAssignResponsible) {
+      return errorResponse(
+        "Você só pode atribuir a oportunidade a si mesmo ou a um representante vinculado.",
+        403
       );
     }
 

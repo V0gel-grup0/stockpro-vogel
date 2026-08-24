@@ -1,17 +1,29 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   try {
-    const { representante_id, aprovador_id } = await request.json();
-    if (!representante_id) return NextResponse.json({ error: "ID do representante é obrigatório." }, { status: 400 });
-    if (!aprovador_id) return NextResponse.json({ error: "ID do aprovador é obrigatório." }, { status: 401 });
+    const authorization = await authorizeApi(["administrador", "vendedor"]);
+    if ("response" in authorization) return authorization.response;
 
-    const aprovador = await prisma.profiles.findUnique({ where: { id: String(aprovador_id) }, select: { id: true, role: true, name: true } });
-    if (!aprovador) return NextResponse.json({ error: "Perfil do aprovador não encontrado." }, { status: 403 });
-    if (!["administrador", "vendedor"].includes(aprovador.role)) return NextResponse.json({ error: "Você não tem permissão para aprovar representantes." }, { status: 403 });
+    const { representante_id } = await request.json();
+    const representanteId =
+      typeof representante_id === "string" ? representante_id.trim() : "";
 
-    const representante = await prisma.profiles.findUnique({ where: { id: String(representante_id) }, select: { id: true, role: true, status: true, responsible_seller_id: true } });
+    if (!uuidPattern.test(representanteId)) {
+      return NextResponse.json(
+        { error: "ID do representante deve ser um UUID válido." },
+        { status: 400 }
+      );
+    }
+
+    const aprovador = authorization.profile;
+
+    const representante = await prisma.profiles.findUnique({ where: { id: representanteId }, select: { id: true, role: true, status: true, responsible_seller_id: true } });
     if (!representante) return NextResponse.json({ error: "Representante não encontrado." }, { status: 404 });
     if (representante.role !== "representante") return NextResponse.json({ error: "Este usuário não é um representante." }, { status: 400 });
     if (aprovador.role === "vendedor" && representante.responsible_seller_id !== aprovador.id) return NextResponse.json({ error: "Este representante não está vinculado a você." }, { status: 403 });

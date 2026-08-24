@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
-import { getAuthenticatedProfile } from "@/lib/auth";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import {
-  existeCpfDuplicado,
+  somenteDigitos,
   validarCadastroPessoa,
 } from "@/lib/validacao-cadastro";
 
@@ -19,7 +19,7 @@ function normalizeProposalStatus(value: unknown) {
   return status || "Lead Frio";
 }
 
-async function cpfJaCadastrado(
+async function documentoJaCadastrado(
   document: string,
   currentClientId?: string
 ) {
@@ -30,16 +30,41 @@ async function cpfJaCadastrado(
     },
   });
 
-  return existeCpfDuplicado(
-    document,
-    clients,
-    currentClientId
+  const normalizedDocument = somenteDigitos(document);
+
+  return clients.some(
+    (client) =>
+      client.id !== currentClientId &&
+      somenteDigitos(client.document) === normalizedDocument
   );
 }
 
 export async function GET() {
   try {
+    const authorization = await authorizeApi();
+    if ("response" in authorization) return authorization.response;
+
+    const requiresOwnership = ["vendedor", "representante"].includes(
+      authorization.profile.role
+    );
     const clients = await prisma.clients.findMany({
+      where: requiresOwnership
+        ? {
+            OR: [
+              { created_by: authorization.profile.id },
+              {
+                crm_opportunities: {
+                  some: {
+                    OR: [
+                      { created_by: authorization.profile.id },
+                      { responsible_id: authorization.profile.id },
+                    ],
+                  },
+                },
+              },
+            ],
+          }
+        : undefined,
       orderBy: {
         created_at: "desc",
       },
@@ -69,6 +94,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "vendedor",
+      "funcionario",
+      "representante",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -100,18 +134,9 @@ export async function POST(request: Request) {
     }
 
     const isCpf = validation.dados.document.length === 11;
-    const existingClient = isCpf
-      ? await cpfJaCadastrado(validation.dados.document)
-      : Boolean(
-          await prisma.clients.findFirst({
-            where: {
-              document: validation.dados.document,
-            },
-            select: {
-              id: true,
-            },
-          })
-        );
+    const existingClient = await documentoJaCadastrado(
+      validation.dados.document
+    );
 
     if (existingClient) {
       return NextResponse.json(
@@ -134,6 +159,7 @@ export async function POST(request: Request) {
           normalizeProposalStatus(
             body.proposal_status
           ),
+        created_by: authorization.profile.id,
       },
     });
 
@@ -166,6 +192,15 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "vendedor",
+      "funcionario",
+      "representante",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -174,16 +209,45 @@ export async function PUT(request: Request) {
 
     const id = String(body.id ?? "").trim();
 
-    if (!id) {
+    if (!id || !uuidPattern.test(id)) {
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "ID é obrigatório.",
+          erro: "ID deve ser um UUID válido.",
         },
         {
           status: 400,
         }
       );
+    }
+
+    if (["vendedor", "representante"].includes(authorization.profile.role)) {
+      const ownedClient = await prisma.clients.findFirst({
+        where: {
+          id,
+          OR: [
+            { created_by: authorization.profile.id },
+            {
+              crm_opportunities: {
+                some: {
+                  OR: [
+                    { created_by: authorization.profile.id },
+                    { responsible_id: authorization.profile.id },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (!ownedClient) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Cliente não encontrado ou sem permissão." },
+          { status: 404 }
+        );
+      }
     }
 
     const validation = validarCadastroPessoa({
@@ -211,24 +275,10 @@ export async function PUT(request: Request) {
     }
 
     const isCpf = validation.dados.document.length === 11;
-    const duplicateClient = isCpf
-      ? await cpfJaCadastrado(
-          validation.dados.document,
-          id
-        )
-      : Boolean(
-          await prisma.clients.findFirst({
-            where: {
-              document: validation.dados.document,
-              NOT: {
-                id,
-              },
-            },
-            select: {
-              id: true,
-            },
-          })
-        );
+    const duplicateClient = await documentoJaCadastrado(
+      validation.dados.document,
+      id
+    );
 
     if (duplicateClient) {
       return NextResponse.json(
@@ -284,31 +334,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authenticatedProfile = await getAuthenticatedProfile();
-
-    if (!authenticatedProfile) {
-      return NextResponse.json(
-        {
-          sucesso: false,
-          erro: "Não autenticado.",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
-
-    if (authenticatedProfile.role !== "administrador") {
-      return NextResponse.json(
-        {
-          sucesso: false,
-          erro: "Seu perfil não tem permissão para excluir clientes.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
+    const authorization = await authorizeApi(["administrador"]);
+    if ("response" in authorization) return authorization.response;
 
     const { searchParams } =
       new URL(request.url);

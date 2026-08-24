@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 
@@ -10,6 +11,13 @@ const num = (value: unknown) => { const n = Number(value ?? 0); return Number.is
 
 export async function GET() {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "funcionario",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const movements = await prisma.movements.findMany({ orderBy: { created_at: "desc" } });
     return NextResponse.json({ sucesso: true, movements: toJsonSafe(movements) });
   } catch (error) {
@@ -17,8 +25,8 @@ export async function GET() {
   }
 }
 
-async function manual(body: Record<string, any>) {
-  const type = text(body.type); const itemType = text(body.item_type); const itemId = text(body.item_id); const quantity = num(body.quantity); const profileId = text(body.created_by);
+async function manual(body: Record<string, any>, profileId: string) {
+  const type = text(body.type); const itemType = text(body.item_type); const itemId = text(body.item_id); const quantity = num(body.quantity);
   if (!itemId || !["entrada", "saida"].includes(type) || !["produto", "componente"].includes(itemType) || !Number.isFinite(quantity) || quantity <= 0) throw new Error("Dados da movimentação manual são inválidos.");
 
   return prisma.$transaction(async (tx) => {
@@ -37,8 +45,8 @@ async function manual(body: Record<string, any>) {
   });
 }
 
-async function nfEntry(body: Record<string, any>) {
-  const nf = body.nf || {}; const quantity = num(nf.quantity); const unitCost = num(nf.unit_cost); const kind = text(nf.item_kind) || "produto"; const profileId = text(body.created_by);
+async function nfEntry(body: Record<string, any>, profileId: string) {
+  const nf = body.nf || {}; const quantity = num(nf.quantity); const unitCost = num(nf.unit_cost); const kind = text(nf.item_kind) || "produto";
   if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitCost) || unitCost < 0) throw new Error("Quantidade ou custo da NF inválido.");
   const supplierName = text(nf.fornecedor_nome); if (!supplierName) throw new Error("Informe o fornecedor da NF.");
   const document = text(nf.fornecedor_document).replace(/\D/g, "");
@@ -73,8 +81,8 @@ async function nfEntry(body: Record<string, any>) {
   });
 }
 
-async function orderExit(body: Record<string, any>) {
-  const orderId = text(body.order_id); const profileId = text(body.created_by); if (!orderId) throw new Error("Selecione o pedido para gerar a saída.");
+async function orderExit(body: Record<string, any>, profileId: string) {
+  const orderId = text(body.order_id); if (!orderId) throw new Error("Selecione o pedido para gerar a saída.");
   return prisma.$transaction(async (tx) => {
     const order = await tx.orders.findUnique({ where: { id: orderId } }); if (!order) throw new Error("Pedido não encontrado.");
     const quantity = Number(order.quantity); const itemType = order.item_type || "produto"; let itemName = order.equipment_name || "Equipamento";
@@ -96,8 +104,16 @@ async function orderExit(body: Record<string, any>) {
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "funcionario",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const body = await request.json(); const action = text(body.action) || "manual";
-    const result = action === "manual" ? await manual(body) : action === "nf_entry" ? await nfEntry(body) : action === "order_exit" ? await orderExit(body) : null;
+    const profileId = authorization.profile.id;
+    const result = action === "manual" ? await manual(body, profileId) : action === "nf_entry" ? await nfEntry(body, profileId) : action === "order_exit" ? await orderExit(body, profileId) : null;
     if (!result) return NextResponse.json({ sucesso: false, erro: "Ação de movimentação não reconhecida." }, { status: 400 });
     return NextResponse.json({ sucesso: true, result: toJsonSafe(result) }, { status: 201 });
   } catch (error) {

@@ -76,10 +76,31 @@ export async function GET(request: Request) {
       return errorResponse("client_id deve ser um UUID válido.", 400);
     }
 
+    const requiresOwnership = ["vendedor", "representante"].includes(
+      authenticatedProfile.role
+    );
+
     const activities = await prisma.crm_activities.findMany({
       where: {
         ...(opportunityId ? { opportunity_id: opportunityId } : {}),
         ...(clientId ? { client_id: clientId } : {}),
+        ...(requiresOwnership
+          ? {
+              OR: [
+                { created_by: authenticatedProfile.id },
+                {
+                  crm_opportunities: {
+                    is: {
+                      OR: [
+                        { created_by: authenticatedProfile.id },
+                        { responsible_id: authenticatedProfile.id },
+                      ],
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
       },
       orderBy: {
         happened_at: "desc",
@@ -167,6 +188,13 @@ export async function POST(request: Request) {
 
     if (!description) {
       return errorResponse("description é obrigatória.", 400);
+    }
+
+    if (description.length > 5000) {
+      return errorResponse(
+        "description excede o limite de 5000 caracteres.",
+        400
+      );
     }
 
     let happenedAt: Date | undefined;

@@ -51,20 +51,49 @@ export default function CadastrarUsuárioPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [canCreateInternalRoles, setCanCreateInternalRoles] = useState(false);
+  const [canCreateManagers, setCanCreateManagers] = useState(false);
 
 useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const tipo = urlParams.get("tipo");
+  let active = true;
 
-  if (
-    tipo === "representante" ||
-    tipo === "funcionario" ||
-    tipo === "tecnico" ||
-    tipo === "vendedor" ||
-    tipo === "gerente"
-  ) {
-    setForm((a) => ({ ...a, tipo }));
+  async function initializeRegistrationRole() {
+    let canCreateInternal = false;
+    let canCreateManager = false;
+
+    try {
+      const response = await fetch("/api/auth/profile", { cache: "no-store" });
+      if (response.ok) {
+        const profile = await response.json();
+        canCreateInternal = ["administrador", "gerente"].includes(profile.role);
+        canCreateManager = profile.role === "administrador";
+      }
+    } catch {
+      canCreateInternal = false;
+    }
+
+    if (!active) return;
+
+    setCanCreateInternalRoles(canCreateInternal);
+    setCanCreateManagers(canCreateManager);
+    const tipo = new URLSearchParams(window.location.search).get("tipo");
+    const internalRoles = ["funcionario", "tecnico", "vendedor", "gerente"];
+    const requestedRole =
+      tipo === "representante" ||
+      (canCreateInternal &&
+        tipo &&
+        internalRoles.includes(tipo) &&
+        (tipo !== "gerente" || canCreateManager))
+        ? tipo
+        : "representante";
+
+    setForm((current) => ({ ...current, tipo: requestedRole }));
   }
+
+  initializeRegistrationRole();
+  return () => {
+    active = false;
+  };
 }, []);
 
   function set(campo: keyof FormState, valor: string | boolean) { setForm((a) => ({ ...a, [campo]: valor })); }
@@ -97,12 +126,12 @@ useEffect(() => {
     <main style={{ minHeight: "100vh", background: "#020617", color: "white", padding: "40px" }}>
       <section className="card">
         <h1 style={{ fontSize: 34, margin: "0 0 8px", fontWeight: 900 }}>Cadastrar usuário</h1>
-        <p style={{ color: "#94a3b8", marginBottom: 30 }}>Solicite ou crie acesso como representante, vendedor, gerente, técnico/montador ou funcionário.</p>
+        <p style={{ color: "#94a3b8", marginBottom: 30 }}>{canCreateInternalRoles ? "Crie um acesso interno ou cadastre um representante." : "Solicite acesso como representante."}</p>
         <div className="form-grid">
           <Campo label="Nome" value={form.nome} onChange={(v) => set("nome", v)} />
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} />
           <Campo label="Senha" type="password" value={form.senha} onChange={(v) => set("senha", v)} />
-          <div className="field"><label>Tipo de cadastro</label><select className="input" value={form.tipo} onChange={(e) => set("tipo", e.target.value)}><option value="representante">Representante</option><option value="gerente">Colaborador - Gerente</option><option value="vendedor">Colaborador - Vendedor</option><option value="tecnico">Colaborador - Técnico/Montador</option><option value="funcionario">Colaborador - Funcionário</option></select></div>
+          <div className="field"><label>Tipo de cadastro</label><select className="input" value={form.tipo} onChange={(e) => set("tipo", e.target.value)}><option value="representante">Representante</option>{canCreateInternalRoles && <>{canCreateManagers && <option value="gerente">Colaborador - Gerente</option>}<option value="vendedor">Colaborador - Vendedor</option><option value="tecnico">Colaborador - Técnico/Montador</option><option value="funcionario">Colaborador - Funcionário</option></>}</select></div>
           {form.tipo === "representante" && <Campo label="Código do vendedor responsável" value={form.seller_code} onChange={(v) => set("seller_code", v.toUpperCase().trim())} />}
           <Campo label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} />
           <Campo label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />

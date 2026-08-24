@@ -43,6 +43,26 @@ export async function GET(_request: Request, context: RouteContext) {
       return errorResponse("clientId deve ser um UUID válido.", 400);
     }
 
+    if (["vendedor", "representante"].includes(authenticatedProfile.role)) {
+      const ownedOpportunity = await prisma.crm_opportunities.findFirst({
+        where: {
+          client_id: clientId,
+          OR: [
+            { created_by: authenticatedProfile.id },
+            { responsible_id: authenticatedProfile.id },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (!ownedOpportunity) {
+        return errorResponse(
+          "Você não tem permissão para consultar o resumo deste cliente.",
+          403
+        );
+      }
+    }
+
     const client = await prisma.clients.findUnique({
       where: {
         id: clientId,

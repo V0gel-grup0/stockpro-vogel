@@ -195,13 +195,36 @@ export async function getAuthenticatedProfile() {
     where: {
       id: session.sub,
     },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      status: true,
+      name: true,
+      document: true,
+      phone: true,
+      cep: true,
+      city: true,
+      street: true,
+      number: true,
+      no_number: true,
+      neighborhood: true,
+      access_code: true,
+      seller_code: true,
+      manager_code: true,
+      responsible_seller_id: true,
+      responsible_manager_id: true,
+      created_by: true,
+      permissions: true,
+      approval_notes: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
 
   if (!profile || profile.status !== "approved") {
     return null;
   }
 
-  const { password_hash: _passwordHash, ...safeProfile } = profile;
-
-  return safeProfile;
+  return profile;
 }

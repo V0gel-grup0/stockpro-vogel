@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi(["administrador", "gerente"]);
+    if ("response" in authorization) return authorization.response;
+
     const { order_id } = await request.json();
     if (!order_id) return NextResponse.json({ error: "ID do pedido é obrigatório." }, { status: 400 });
     const order = await prisma.orders.findUnique({ where: { id: String(order_id) } });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -69,6 +70,13 @@ function normalizeSupplierData(
 
 export async function GET(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "funcionario",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const { searchParams } = new URL(request.url);
     const document = searchParams.get("document");
 
@@ -120,6 +128,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi(["administrador", "gerente"]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -215,6 +226,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const authorization = await authorizeApi(["administrador", "gerente"]);
+    if ("response" in authorization) return authorization.response;
+
     const body =
       (await request.json()) as Record<
         string,
@@ -315,6 +329,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const authorization = await authorizeApi(["administrador", "gerente"]);
+    if ("response" in authorization) return authorization.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

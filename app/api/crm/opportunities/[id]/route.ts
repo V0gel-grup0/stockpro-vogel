@@ -179,6 +179,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       "lost_reason",
       "notes",
     ] as const;
+    const textLimits = {
+      title: 200,
+      next_action: 100,
+      lost_reason: 1000,
+      notes: 5000,
+    } as const;
 
     for (const field of textFields) {
       if (!(field in body)) {
@@ -189,7 +195,15 @@ export async function PATCH(request: Request, context: RouteContext) {
         return errorResponse(`${field} deve ser uma string.`, 400);
       }
 
-      data[field] = body[field].trim();
+      const value = body[field].trim();
+      if (value.length > textLimits[field]) {
+        return errorResponse(
+          `${field} excede o limite de ${textLimits[field]} caracteres.`,
+          400
+        );
+      }
+
+      data[field] = value;
     }
 
     if ("stage" in body) {
@@ -287,6 +301,7 @@ export async function PATCH(request: Request, context: RouteContext) {
             id: true,
             role: true,
             status: true,
+            responsible_seller_id: true,
           },
         });
 
@@ -302,6 +317,20 @@ export async function PATCH(request: Request, context: RouteContext) {
           return errorResponse(
             "O perfil responsável não possui uma role permitida.",
             400
+          );
+        }
+
+        const canAssignResponsible =
+          ["administrador", "gerente"].includes(authenticatedProfile.role) ||
+          responsibleId === authenticatedProfile.id ||
+          (authenticatedProfile.role === "vendedor" &&
+            responsibleProfile.role === "representante" &&
+            responsibleProfile.responsible_seller_id === authenticatedProfile.id);
+
+        if (!canAssignResponsible) {
+          return errorResponse(
+            "Você só pode atribuir a oportunidade a si mesmo ou a um representante vinculado.",
+            403
           );
         }
       }

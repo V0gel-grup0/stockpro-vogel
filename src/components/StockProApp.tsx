@@ -477,14 +477,12 @@ export default function StockProApp() {
       });
 
       if (respostaPerfil.status === 401) {
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
       }
 
       if (!respostaPerfil.ok) {
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
@@ -509,7 +507,6 @@ export default function StockProApp() {
 
       if (!rolesPermitidas.includes(roleNormalizada as Role)) {
         console.error("Perfil com função inválida:", perfilCompleto.role);
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
@@ -520,15 +517,9 @@ export default function StockProApp() {
         role: roleNormalizada as Role,
       } as Profile;
 
-      localStorage.setItem(
-        "stockpro_usuario",
-        JSON.stringify(perfilFinal)
-      );
-
       setProfile(perfilFinal);
     } catch (error) {
       console.error("Erro ao carregar usuário:", error);
-      localStorage.removeItem("stockpro_usuario");
       setProfile(null);
       router.replace("/login");
     } finally {
@@ -578,7 +569,6 @@ export default function StockProApp() {
         throw new Error("Nao foi possivel encerrar a sessao.");
       }
 
-      localStorage.removeItem("stockpro_usuario");
       router.replace("/login");
       router.refresh();
     } catch (error) {
@@ -620,7 +610,7 @@ export default function StockProApp() {
         </aside>}
         <main className="main-content">
           {page === "Dashboard" && <Dashboard profile={profile} />}
-          {page === "Produtos" && <Produtos search={search} />}
+          {page === "Produtos" && <Produtos search={search} profile={profile} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} />}
@@ -1844,13 +1834,15 @@ function CRM({
   </>;
 }
 
-function Produtos({ search }: SearchProps) {
+function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
   const empty = { name: "", sku: "", category: "Lâmpadas dimerizáveis", subcategory: "E27", cost_price: "", sale_price: "", quantity: "", min_stock: "", supplier_id: "", description: "" };
   const [form, setForm] = useState(empty);
   const [items, setItems] = useState<AnyRow[]>([]);
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const canWrite = ["administrador", "gerente", "funcionario"].includes(profile.role);
+  const canDelete = ["administrador", "gerente"].includes(profile.role);
 
   useEffect(() => {
     carregar();
@@ -1860,21 +1852,13 @@ function Produtos({ search }: SearchProps) {
     try {
       setMsg("");
 
-      const [productsResponse, suppliersResponse] =
-        await Promise.all([
-          fetch("/api/products", {
-            cache: "no-store",
-          }),
-          fetch("/api/suppliers", {
-            cache: "no-store",
-          }),
-        ]);
-
-      const [productsResult, suppliersResult] =
-        await Promise.all([
-          productsResponse.json(),
-          suppliersResponse.json(),
-        ]);
+      const [productsResponse, suppliersResponse] = await Promise.all([
+        fetch("/api/products", { cache: "no-store" }),
+        canWrite
+          ? fetch("/api/suppliers", { cache: "no-store" })
+          : Promise.resolve(null),
+      ]);
+      const productsResult = await productsResponse.json();
 
       if (!productsResponse.ok) {
         throw new Error(
@@ -1883,15 +1867,16 @@ function Produtos({ search }: SearchProps) {
         );
       }
 
-      if (!suppliersResponse.ok) {
-        throw new Error(
-          suppliersResult.erro ||
-            "Erro ao carregar fornecedores."
-        );
-      }
-
       setItems(productsResult.products || []);
-      setSuppliers(suppliersResult.suppliers || []);
+      if (suppliersResponse) {
+        const suppliersResult = await suppliersResponse.json();
+        if (!suppliersResponse.ok) {
+          throw new Error(
+            suppliersResult.erro || "Erro ao carregar fornecedores."
+          );
+        }
+        setSuppliers(suppliersResult.suppliers || []);
+      }
     } catch (error) {
       console.error(
         "Erro ao carregar produtos e fornecedores:",
@@ -1968,7 +1953,7 @@ function Produtos({ search }: SearchProps) {
   const subcats = CATEGORIAS_REVENDA.find((c) => c.category === form.category)?.subcategories || [];
   const filtered = items.filter((i) => textMatch(i, search));
  
- return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." /><section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}><button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button></div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button><button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button></div></div>)}</div></section></>;
+ return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
 }
 
 function Pessoas({ title, table, kind, search, profile }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile } & SearchProps) {
