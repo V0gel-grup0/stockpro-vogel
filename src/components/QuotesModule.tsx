@@ -30,6 +30,20 @@ const ITEM_LABELS: Record<string, string> = {
   custom: "Outro item",
 };
 
+
+const PAYMENT_TERM_OPTIONS = [
+  "À vista",
+  "50% na aprovação + 50% antes da entrega",
+  "30% de entrada + 70% antes da entrega",
+  "28 dias",
+  "28/56 dias",
+  "30/60 dias",
+  "30/60/90 dias",
+];
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function dateInput(days = 15) {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -138,6 +152,7 @@ export default function QuotesModule({
   const clientOptions = useMemo(() => {
     const query = clientSearch.trim().toLowerCase();
     return clients
+      .filter((client) => UUID_RE.test(String(client.id || "")))
       .filter((client) => !query || String(client.name || "").toLowerCase().includes(query) || String(client.document || "").includes(query))
       .slice(0, 50);
   }, [clients, clientSearch]);
@@ -404,22 +419,42 @@ export default function QuotesModule({
           <div className="field"><label>Oportunidade CRM</label><select className="input" value={form.opportunity_id} onChange={(event) => setForm((current) => ({ ...current, opportunity_id: event.target.value }))}><option value="">Sem oportunidade</option>{clientOpportunities.map((item) => <option key={item.id} value={item.id}>{item.title || "Sem título"}</option>)}</select></div>
           <div className="field"><label>Responsável *</label><select className="input" value={form.responsible_id} onChange={(event) => setForm((current) => ({ ...current, responsible_id: event.target.value }))}><option value="">Selecione</option>{responsibleOptions.map((item) => <option key={item.id} value={item.id}>{item.name || item.email} — {item.role}</option>)}</select></div>
           <div className="field"><label>Validade *</label><input className="input" type="date" value={form.valid_until} onChange={(event) => setForm((current) => ({ ...current, valid_until: event.target.value }))} /></div>
-          <div className="field"><label>Condição de pagamento</label><input className="input" maxLength={500} value={form.payment_terms} onChange={(event) => setForm((current) => ({ ...current, payment_terms: event.target.value }))} /></div>
+          <div className="field">
+            <label>Condição de pagamento</label>
+            <input
+              className="input"
+              list="quote-payment-options"
+              maxLength={500}
+              placeholder="Selecione ou digite uma condição"
+              value={form.payment_terms}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  payment_terms: event.target.value,
+                }))
+              }
+            />
+            <datalist id="quote-payment-options">
+              {PAYMENT_TERM_OPTIONS.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          </div>
           <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></div>
         </div>
         <div className="quote-section-heading"><h3>Itens do orçamento</h3><button className="btn btn-blue" type="button" onClick={() => setForm((current) => ({ ...current, items: [...current.items, emptyItem()] }))}>+ Adicionar item</button></div>
         <div className="quote-items-editor">
           {form.items.map((item, index) => <article className="quote-item-editor" key={index}>
-            <div className="field"><label>Tipo</label><select className="input" value={item.item_type} onChange={(event) => updateItem(index, "item_type", event.target.value)}>{Object.entries(ITEM_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-            {item.item_type === "product" && <div className="field"><label>Produto</label><select className="input" value={item.product_id} onChange={(event) => updateItem(index, "product_id", event.target.value)}><option value="">Selecione</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></div>}
-            {item.item_type === "equipment" && <div className="field"><label>Equipamento</label><select className="input" value={item.item_name} onChange={(event) => updateItem(index, "item_name", event.target.value)}>{EQUIPMENT_CATALOG.map((name) => <option key={name} value={name}>{name}</option>)}</select></div>}
-            {item.item_type === "custom" && <div className="field"><label>Nome</label><input className="input" maxLength={200} value={item.item_name} onChange={(event) => updateItem(index, "item_name", event.target.value)} /></div>}
+            <div className="field quote-item-type"><label>Tipo</label><select className="input" value={item.item_type} onChange={(event) => updateItem(index, "item_type", event.target.value)}>{Object.entries(ITEM_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+            {item.item_type === "product" && <div className="field quote-item-main"><label>Produto</label><select className="input" value={item.product_id} onChange={(event) => updateItem(index, "product_id", event.target.value)}><option value="">Selecione</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></div>}
+            {item.item_type === "equipment" && <div className="field quote-item-main"><label>Equipamento</label><select className="input" value={item.item_name} onChange={(event) => updateItem(index, "item_name", event.target.value)}>{EQUIPMENT_CATALOG.map((name) => <option key={name} value={name}>{name}</option>)}</select></div>}
+            {item.item_type === "custom" && <div className="field quote-item-main"><label>Nome</label><input className="input" maxLength={200} value={item.item_name} onChange={(event) => updateItem(index, "item_name", event.target.value)} /></div>}
             <div className="field quote-description"><label>Descrição</label><input className="input" maxLength={2000} value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} /></div>
-            <div className="field"><label>Quantidade</label><input className="input" type="number" min="0.01" step="0.01" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} /></div>
-            <div className="field"><label>Valor unitário</label><input className="input" type="number" min="0" step="0.01" value={item.unit_price} onChange={(event) => updateItem(index, "unit_price", event.target.value)} /></div>
-            <div className="field"><label>Desconto</label><input className="input" type="number" min="0" step="0.01" value={item.discount_value} onChange={(event) => updateItem(index, "discount_value", event.target.value)} /></div>
+            <div className="field quote-item-quantity"><label>Quantidade</label><input className="input" type="number" min="0.01" step="0.01" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} /></div>
+            <div className="field quote-item-price"><label>Valor unitário</label><input className="input" type="number" min="0" step="0.01" value={item.unit_price} onChange={(event) => updateItem(index, "unit_price", event.target.value)} /></div>
+            <div className="field quote-item-discount"><label>Desconto</label><input className="input" type="number" min="0" step="0.01" value={item.discount_value} onChange={(event) => updateItem(index, "discount_value", event.target.value)} /></div>
             <div className="quote-item-total"><small>Total</small><strong>{money(Math.max(0, Number(item.quantity || 0) * Number(item.unit_price || 0) - Number(item.discount_value || 0)))}</strong></div>
-            <button className="btn btn-red" type="button" disabled={form.items.length === 1} onClick={() => setForm((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }))}>Remover</button>
+            <button className="btn btn-red quote-item-remove" type="button" disabled={form.items.length === 1} onClick={() => setForm((current) => ({ ...current, items: current.items.filter((_, itemIndex) => itemIndex !== index) }))}>Remover</button>
           </article>)}
         </div>
         <div className="quote-financial-editor">
