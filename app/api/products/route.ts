@@ -217,8 +217,43 @@ export async function DELETE(req: Request) {
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.movements.updateMany({ where: { product_id: id }, data: { product_id: null } });
-      await tx.movements.updateMany({ where: { item_type: "produto", item_id: id }, data: { item_id: null } });
+      const product = await tx.products.findUnique({
+        where: { id },
+        select: { name: true },
+      });
+
+      if (!product) {
+        throw new Error("Produto não encontrado.");
+      }
+
+      const fallbackName =
+        String(product.name || "").trim() || "Produto excluído";
+
+      const relatedMovements = await tx.movements.findMany({
+        where: {
+          OR: [
+            { product_id: id },
+            { item_type: "produto", item_id: id },
+          ],
+        },
+        select: {
+          id: true,
+          item_name: true,
+        },
+      });
+
+      for (const movement of relatedMovements) {
+        await tx.movements.update({
+          where: { id: movement.id },
+          data: {
+            product_id: null,
+            item_id: null,
+            item_name:
+              String(movement.item_name || "").trim() || fallbackName,
+          },
+        });
+      }
+
       await tx.products.delete({ where: { id } });
     });
 
