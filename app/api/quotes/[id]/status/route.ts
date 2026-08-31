@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
 import type { AppRole } from "@/lib/permissions";
-import { QUOTE_ROLES, buildQuoteStatusEvent, canTransitionQuoteStatus, isQuoteStatus } from "@/lib/quote-policy";
+import { QUOTE_ROLES, buildQuoteStatusEvent, canTransitionQuoteStatus, isQuoteExpired, isQuoteStatus } from "@/lib/quote-policy";
 import { QUOTE_INCLUDE, QuoteRequestError, UUID_PATTERN, quoteIdWhere } from "@/lib/quote-server";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -25,9 +25,18 @@ export async function PATCH(request: Request, context: Context) {
     if (!isQuoteStatus(body.status) || body.status === "draft") return errorResponse("Novo status inválido.", 400);
     const existing = await prisma.quotes.findFirst({
       where: quoteIdWhere(profile, id, true),
-      select: { id: true, status: true },
+      select: { id: true, status: true, valid_until: true },
     });
     if (!existing) return errorResponse("Orçamento não encontrado ou sem permissão.", 404);
+
+    if (
+      existing.status === "sent" &&
+      body.status === "approved" &&
+      isQuoteExpired(existing.valid_until)
+    ) {
+      return errorResponse("Orçamento vencido não pode ser aprovado.", 409);
+    }
+
     if (!isQuoteStatus(existing.status) || !canTransitionQuoteStatus(existing.status, body.status)) {
       return errorResponse(`Transição de ${existing.status} para ${body.status} não permitida.`, 409);
     }

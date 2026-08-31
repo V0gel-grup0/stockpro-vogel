@@ -12,6 +12,7 @@ import {
   canUseQuotes,
   canViewQuote,
   isOpportunityCompatible,
+  isQuoteExpired,
   unexpectedQuoteInputField,
   validateOrderConversion,
 } from "./quote-policy.ts";
@@ -80,6 +81,15 @@ test("bloqueia transições de status inválidas", () => {
   assert.equal(canTransitionQuoteStatus("sent", "approved"), true);
   assert.equal(canTransitionQuoteStatus("approved", "draft"), false);
   assert.equal(canTransitionQuoteStatus("draft", "approved"), false);
+});
+
+test("identifica orçamento vencido sem considerar o dia atual como vencido", () => {
+  const now = new Date("2026-08-31T18:00:00.000Z");
+
+  assert.equal(isQuoteExpired("2026-08-30", now), true);
+  assert.equal(isQuoteExpired("2026-08-31", now), false);
+  assert.equal(isQuoteExpired("2026-09-01", now), false);
+  assert.equal(isQuoteExpired(null, now), false);
 });
 
 test("preserva histórico ao bloquear hard delete fora de rascunho", () => {

@@ -698,6 +698,7 @@ function CRM({
   };
   const [opportunities, setOpportunities] = useState<AnyRow[]>([]);
   const [crmQuotes, setCrmQuotes] = useState<AnyRow[]>([]);
+  const canUseQuotes = ["administrador", "gerente", "vendedor", "representante"].includes(profile.role);
   const [clients, setClients] = useState<AnyRow[]>([]);
   const [responsibleProfiles, setResponsibleProfiles] = useState<Profile[]>([]);
   const [form, setForm] = useState(empty);
@@ -1016,14 +1017,14 @@ function CRM({
           fetch("/api/crm/opportunities", { cache: "no-store" }),
           fetch("/api/clients", { cache: "no-store" }),
           fetch("/api/profiles", { cache: "no-store" }),
-          fetch("/api/quotes", { cache: "no-store" }),
+          canUseQuotes ? fetch("/api/quotes", { cache: "no-store" }) : Promise.resolve(null),
         ]);
       const [opportunitiesData, clientsData, profilesData, quotesData] =
         await Promise.all([
           opportunitiesResponse.json(),
           clientsResponse.json(),
           profilesResponse.json(),
-          quotesResponse.json(),
+          quotesResponse ? quotesResponse.json() : Promise.resolve({ sucesso: true, quotes: [] }),
         ]);
 
       if (!opportunitiesResponse.ok || !opportunitiesData.sucesso) {
@@ -1042,7 +1043,7 @@ function CRM({
         );
       }
 
-      if (!quotesResponse.ok || !quotesData.sucesso) {
+      if (quotesResponse && (!quotesResponse.ok || !quotesData.sucesso)) {
         throw new Error(quotesData.erro || "Erro ao carregar orçamentos vinculados.");
       }
 
@@ -1796,10 +1797,10 @@ function CRM({
                     <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
                     {(formattedNextActionAt || isBillingStage) && <small style={nextActionOverdue ? { width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(248,113,113,.55)", background: "rgba(127,29,29,.28)", color: "#fca5a5", fontWeight: 900 } : isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>{nextActionOverdue ? "Retorno atrasado" : "Data da próxima ação"}: {formattedNextActionAt || "Não informada"}</small>}
 
-                    <div className="crm-quote-context">
+                    {canUseQuotes && <div className="crm-quote-context">
                       <div><strong>Orçamentos</strong><small>{opportunityQuotes.length ? opportunityQuotes.map((quote) => `ORC-${String(quote.quote_number).padStart(6, "0")}`).join(", ") : "Nenhum orçamento vinculado."}</small></div>
                       <button className="btn btn-gray" type="button" onClick={() => onCreateQuote(opportunity)}>Criar orçamento</button>
-                    </div>
+                    </div>}
 
                     {canManage && <div className="field" style={{ width: "100%", marginTop: 8 }}>
                       <label>Mudar etapa</label>

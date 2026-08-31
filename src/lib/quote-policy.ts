@@ -97,6 +97,25 @@ export function canTransitionQuoteStatus(from: QuoteStatus, to: QuoteStatus) {
   return STATUS_TRANSITIONS[from].includes(to);
 }
 
+export function isQuoteExpired(
+  validUntil: Date | string | null | undefined,
+  now = new Date()
+) {
+  if (!validUntil) return false;
+
+  const datePart =
+    validUntil instanceof Date
+      ? validUntil.toISOString().slice(0, 10)
+      : String(validUntil).slice(0, 10);
+
+  const endOfValidity = new Date(`${datePart}T23:59:59.999Z`);
+
+  return (
+    !Number.isNaN(endOfValidity.getTime()) &&
+    endOfValidity.getTime() < now.getTime()
+  );
+}
+
 export function canEditQuoteStructure(status: QuoteStatus) {
   return status === "draft";
 }
