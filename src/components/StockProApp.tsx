@@ -294,7 +294,7 @@ function baseCelt5000(voltagem: "220V" | "380V", turbinas: 1 | 2 | 3, plus = fal
     itemComposição("Ventilador 120 X 120 X 38", 1, "Ventilação"),
     itemComposição(rele, turbinas, "Elétrica"),
     itemComposição("Prensa cabo", 1, "Acabamento"),
-    itemComposição("Borne 4mm", turbinas * 3, "Elétrica"),
+    itemComposição("Borne 6mm", turbinas * 3, "Elétrica"),
     itemComposição("Tampa borne", turbinas, "Elétrica"),
     itemComposição("Poste borne", 2, "Elétrica"),
     itemComposição("Trilho Din 0,2 m", 1, "Elétrica"),
@@ -3711,7 +3711,7 @@ function Componentes({ search, profile }: SearchProps & { profile: Profile }) {
         </div>
 
         <div className="notice" style={{ marginTop: 16 }}>
-          Exemplo: se o Borne 4mm aparece em vários equipamentos, ele continua sendo um único item no estoque. A quantidade abaixo é apenas a quantidade usada na receita do equipamento selecionado.
+          Exemplo: se o Borne 6mm aparece em vários equipamentos, ele continua sendo um único item no estoque. A quantidade abaixo é apenas a quantidade usada na receita do equipamento selecionado.
         </div>
 
         <div className="product-list-grid" style={{ marginTop: 18 }}>
