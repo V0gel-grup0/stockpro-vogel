@@ -618,7 +618,15 @@ export default function StockProApp() {
         {menuOpen && <aside className="sidebar">
           <div className="brand"><img src="/logo-vogel.png" alt="Grupo Vogel" className="brand-logo" /><div className="brand-text"><strong>StockPro</strong><small>Grupo Vogel Brasil</small></div></div>
           <nav className="menu-list">{menus.map((item) => <button key={item} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => setPage(item)}>{item}</button>)}</nav>
-          <div className="sidebar-footer"><strong>{profile.name || "Colaborador"}</strong><small>{formatRole(profile.role)}</small>{profile.access_code && <small>Código: {profile.access_code}</small>}<button className="btn btn-gray" onClick={logout}>Sair</button></div>
+          <div className="sidebar-footer">
+            <div className="account-details">
+              <strong className="account-name">{profile.name || "Colaborador"}</strong>
+              <span className="account-email">{profile.email}</span>
+              <small className="account-role">{formatRole(profile.role)}</small>
+              {profile.access_code && <small className="account-code">Código: {profile.access_code}</small>}
+            </div>
+            <button className="btn btn-gray account-logout" onClick={logout}>Sair</button>
+          </div>
         </aside>}
         <main className="main-content">
           {page === "Dashboard" && <Dashboard profile={profile} />}

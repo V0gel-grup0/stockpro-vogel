@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSession } from "@/lib/auth";
+import { canProfileUseSystem, createSession } from "@/lib/auth";
+import { REPRESENTATIVE_LINK_REQUIRED_MESSAGE } from "@/lib/representative-access";
 import bcrypt from "bcryptjs";
 
 export const runtime = "nodejs";
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
         email: true,
         role: true,
         status: true,
+        responsible_seller_id: true,
         password_hash: true,
       },
     });
@@ -64,6 +66,20 @@ export async function POST(req: NextRequest) {
           erro: "Seu cadastro não está aprovado para acessar o sistema.",
         },
         { status: 403 }
+      );
+    }
+
+    if (!(await canProfileUseSystem(user))) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          error: REPRESENTATIVE_LINK_REQUIRED_MESSAGE,
+          erro: REPRESENTATIVE_LINK_REQUIRED_MESSAGE,
+        },
+        {
+          status: 403,
+          headers: { "Cache-Control": "no-store" },
+        }
       );
     }
 

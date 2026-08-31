@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { hasValidRepresentativeAccess } from "@/lib/representative-access";
 
 const SESSION_COOKIE_NAME = "stockpro_session";
 const SESSION_DURATION_SECONDS = 8 * 60 * 60;
@@ -177,6 +178,28 @@ export async function deleteSession() {
   });
 }
 
+export async function canProfileUseSystem(profile: {
+  role: string;
+  responsible_seller_id?: string | null;
+}) {
+  if (profile.role !== "representante") {
+    return true;
+  }
+
+  const responsibleSeller = profile.responsible_seller_id
+    ? await prisma.profiles.findUnique({
+        where: { id: profile.responsible_seller_id },
+        select: {
+          id: true,
+          role: true,
+          status: true,
+        },
+      })
+    : null;
+
+  return hasValidRepresentativeAccess(profile, responsibleSeller);
+}
+
 export async function getAuthenticatedProfile() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -222,7 +245,11 @@ export async function getAuthenticatedProfile() {
     },
   });
 
-  if (!profile || profile.status !== "approved") {
+  if (
+    !profile ||
+    profile.status !== "approved" ||
+    !(await canProfileUseSystem(profile))
+  ) {
     return null;
   }
 

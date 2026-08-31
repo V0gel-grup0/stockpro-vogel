@@ -18,8 +18,13 @@ a { color: inherit; }
 .menu-button { min-height: 48px; border: 0; border-radius: 14px; background: transparent; color: #dbeafe; text-align: left; padding: 12px 14px; font-weight: 800; cursor: pointer; }
 .menu-button:hover { background: rgba(37,99,235,.18); }
 .menu-button.active { background: #2563eb; color: white; }
-.sidebar-footer { margin-top: auto; background:#020617; border:1px solid rgba(148,163,184,.16); border-radius:18px; padding:16px; display:grid; gap:8px; }
-.sidebar-footer small { color:#cbd5e1; word-break: break-all; }
+.sidebar-footer { margin-top: auto; min-width:0; background:#020617; border:1px solid rgba(148,163,184,.16); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+.account-details { display:flex; min-width:0; flex-direction:column; gap:6px; }
+.account-name, .account-email, .account-role, .account-code { display:block; min-width:0; max-width:100%; }
+.account-name { line-height:1.35; overflow-wrap:anywhere; }
+.account-email { color:#cbd5e1; font-size:13px; line-height:1.45; overflow-wrap:anywhere; word-break:break-word; }
+.account-role, .account-code { color:#94a3b8; line-height:1.4; overflow-wrap:anywhere; }
+.account-logout { flex:none; width:100%; max-width:100%; align-self:stretch; }
 .main-content { width: 100%; max-width: 1180px; margin: 0 auto; padding: 40px 34px 90px; }
 .page-title { margin: 0 auto 28px; max-width: 1050px; }
 .page-title h1 { margin:0 0 8px; font-size:38px; line-height:1.1; font-weight:900; }
@@ -299,6 +304,12 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
   .sidebar-footer {
     margin-top: 12px !important;
   }
+
+  .sidebar-footer .account-logout {
+    min-width: 0 !important;
+    width: 100% !important;
+    white-space: normal !important;
+  }
 }
 
 /* ===========================
@@ -474,4 +485,3 @@ textarea:focus {
     transform: none !important;
   }
 }
-
