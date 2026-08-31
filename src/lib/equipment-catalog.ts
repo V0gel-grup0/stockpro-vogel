@@ -1,0 +1,16 @@
+export const EQUIPMENT_CATALOG = [
+  "Celt5000 - 220V 1 turbina",
+  "Celt5000 - 220V 2 turbinas",
+  "Celt5000 - 220V 3 turbinas",
+  "Celt5000 - 380V 1 turbina",
+  "Celt5000 - 380V 2 turbinas",
+  "Celt5000 - 380V 3 turbinas",
+  "Celt5000 Plus - 220V 1 turbina + Mínima",
+  "Celt5000 Plus - 220V 2 turbinas + Mínima",
+  "Celt5000 Plus - 220V 3 turbinas + Mínima",
+  "Celt5000 Plus - 380V 1 turbina + Mínima",
+  "Celt5000 Plus - 380V 2 turbinas + Mínima",
+  "Celt5000 Plus - 380V 3 turbinas + Mínima",
+  "CeltPlus - 220V",
+  "CeltPlus - 380V",
+] as const;

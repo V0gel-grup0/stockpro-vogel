@@ -409,10 +409,6 @@ export type equipment_componentsUncheckedUpdateManyWithoutComponentsNestedInput 
   deleteMany?: Prisma.equipment_componentsScalarWhereInput | Prisma.equipment_componentsScalarWhereInput[]
 }
 
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type equipment_componentsCreateWithoutComponentsInput = {
   id?: string
   equipment_name: string

@@ -346,13 +346,14 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const [client, pedidos, oportunidades, atividades, tarefas] =
+    const [client, pedidos, orcamentos, oportunidades, atividades, tarefas] =
       await Promise.all([
         prisma.clients.findUnique({
           where: { id },
           select: { id: true },
         }),
         prisma.orders.count({ where: { client_id: id } }),
+        prisma.quotes.count({ where: { client_id: id } }),
         prisma.crm_opportunities.count({ where: { client_id: id } }),
         prisma.crm_activities.count({ where: { client_id: id } }),
         prisma.crm_tasks.count({ where: { client_id: id } }),
@@ -372,6 +373,7 @@ export async function DELETE(request: Request) {
 
     const vinculos = {
       pedidos,
+      orcamentos,
       oportunidades,
       atividades,
       tarefas,

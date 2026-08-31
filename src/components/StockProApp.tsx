@@ -1,6 +1,8 @@
 "use client";
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
+import QuotesModule from "@/components/QuotesModule";
+import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
   canDeleteComponent,
@@ -268,22 +270,7 @@ function textMatch(item: AnyRow, search: string) {
   return JSON.stringify(item).toLowerCase().includes(q);
 }
 
-const EQUIPAMENTOS = [
-  "Celt5000 - 220V 1 turbina",
-  "Celt5000 - 220V 2 turbinas",
-  "Celt5000 - 220V 3 turbinas",
-  "Celt5000 - 380V 1 turbina",
-  "Celt5000 - 380V 2 turbinas",
-  "Celt5000 - 380V 3 turbinas",
-  "Celt5000 Plus - 220V 1 turbina + Mínima",
-  "Celt5000 Plus - 220V 2 turbinas + Mínima",
-  "Celt5000 Plus - 220V 3 turbinas + Mínima",
-  "Celt5000 Plus - 380V 1 turbina + Mínima",
-  "Celt5000 Plus - 380V 2 turbinas + Mínima",
-  "Celt5000 Plus - 380V 3 turbinas + Mínima",
-  "CeltPlus - 220V",
-  "CeltPlus - 380V",
-];
+const EQUIPAMENTOS: string[] = [...EQUIPMENT_CATALOG];
 
 type ComposiçãoItem = { name: string; category: string; quantity: number };
 
@@ -453,12 +440,12 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
-  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Representantes", "Pedidos", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
+  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -471,6 +458,7 @@ export default function StockProApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [crmNotifications, setCrmNotifications] = useState<CrmNotifications>(EMPTY_CRM_NOTIFICATIONS);
   const [crmNavigationTarget, setCrmNavigationTarget] = useState<CrmNavigationTarget | null>(null);
+  const [quoteNavigationTarget, setQuoteNavigationTarget] = useState<{ clientId: string; opportunityId: string; requestId: number } | null>(null);
 
   useEffect(() => {
     carregarSessao();
@@ -569,6 +557,15 @@ export default function StockProApp() {
     setNotificationsOpen(false);
   }
 
+  function createQuoteFromCrm(opportunity: AnyRow) {
+    setQuoteNavigationTarget({
+      clientId: opportunity.client_id,
+      opportunityId: opportunity.id,
+      requestId: Date.now(),
+    });
+    setPage("Orçamentos");
+  }
+
   async function logout() {
     try {
       const response = await fetch("/api/auth/logout", {
@@ -633,7 +630,8 @@ export default function StockProApp() {
           {page === "Produtos" && <Produtos search={search} profile={profile} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
-          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} />}
+          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} />}
+          {page === "Orçamentos" && <QuotesModule profile={profile} search={search} initialContext={quoteNavigationTarget} onContextConsumed={() => setQuoteNavigationTarget(null)} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
           {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
@@ -679,11 +677,13 @@ function CRM({
   notifications,
   onRefreshNotifications,
   navigationTarget,
+  onCreateQuote,
 }: {
   profile: Profile;
   notifications: CrmNotifications;
   onRefreshNotifications: () => Promise<void>;
   navigationTarget: CrmNavigationTarget | null;
+  onCreateQuote: (opportunity: AnyRow) => void;
 } & SearchProps) {
   const empty = {
     client_id: "",
@@ -697,6 +697,7 @@ function CRM({
     notes: "",
   };
   const [opportunities, setOpportunities] = useState<AnyRow[]>([]);
+  const [crmQuotes, setCrmQuotes] = useState<AnyRow[]>([]);
   const [clients, setClients] = useState<AnyRow[]>([]);
   const [responsibleProfiles, setResponsibleProfiles] = useState<Profile[]>([]);
   const [form, setForm] = useState(empty);
@@ -1010,17 +1011,19 @@ function CRM({
     setLoading(true);
 
     try {
-      const [opportunitiesResponse, clientsResponse, profilesResponse] =
+      const [opportunitiesResponse, clientsResponse, profilesResponse, quotesResponse] =
         await Promise.all([
           fetch("/api/crm/opportunities", { cache: "no-store" }),
           fetch("/api/clients", { cache: "no-store" }),
           fetch("/api/profiles", { cache: "no-store" }),
+          fetch("/api/quotes", { cache: "no-store" }),
         ]);
-      const [opportunitiesData, clientsData, profilesData] =
+      const [opportunitiesData, clientsData, profilesData, quotesData] =
         await Promise.all([
           opportunitiesResponse.json(),
           clientsResponse.json(),
           profilesResponse.json(),
+          quotesResponse.json(),
         ]);
 
       if (!opportunitiesResponse.ok || !opportunitiesData.sucesso) {
@@ -1039,7 +1042,12 @@ function CRM({
         );
       }
 
+      if (!quotesResponse.ok || !quotesData.sucesso) {
+        throw new Error(quotesData.erro || "Erro ao carregar orçamentos vinculados.");
+      }
+
       setOpportunities(opportunitiesData.opportunities || []);
+      setCrmQuotes(quotesData.quotes || []);
       setClients(
         (clientsData.clients || []).sort((a: AnyRow, b: AnyRow) =>
           String(a.name).localeCompare(String(b.name))
@@ -1739,6 +1747,7 @@ function CRM({
                   const activities = activitiesByOpportunity[opportunity.id] || [];
                   const activityLoading = activityLoadingId === opportunity.id;
                   const isDragging = draggedOpportunityId === opportunity.id;
+                  const opportunityQuotes = crmQuotes.filter((quote) => quote.opportunity_id === opportunity.id);
 
                   return <div
                     id={`crm-opportunity-${opportunity.id}`}
@@ -1786,6 +1795,11 @@ function CRM({
                     <small style={isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>Responsável: {opportunity.profiles_responsible?.name || "-"}</small>
                     <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
                     {(formattedNextActionAt || isBillingStage) && <small style={nextActionOverdue ? { width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(248,113,113,.55)", background: "rgba(127,29,29,.28)", color: "#fca5a5", fontWeight: 900 } : isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>{nextActionOverdue ? "Retorno atrasado" : "Data da próxima ação"}: {formattedNextActionAt || "Não informada"}</small>}
+
+                    <div className="crm-quote-context">
+                      <div><strong>Orçamentos</strong><small>{opportunityQuotes.length ? opportunityQuotes.map((quote) => `ORC-${String(quote.quote_number).padStart(6, "0")}`).join(", ") : "Nenhum orçamento vinculado."}</small></div>
+                      <button className="btn btn-gray" type="button" onClick={() => onCreateQuote(opportunity)}>Criar orçamento</button>
+                    </div>
 
                     {canManage && <div className="field" style={{ width: "100%", marginTop: 8 }}>
                       <label>Mudar etapa</label>
@@ -2048,6 +2062,7 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
           const details = vinculos
             ? [
                 `Pedidos: ${Number(vinculos.pedidos || 0)}`,
+                `Orçamentos: ${Number(vinculos.orcamentos || 0)}`,
                 `Oportunidades: ${Number(vinculos.oportunidades || 0)}`,
                 `Atividades: ${Number(vinculos.atividades || 0)}`,
                 `Tarefas: ${Number(vinculos.tarefas || 0)}`,

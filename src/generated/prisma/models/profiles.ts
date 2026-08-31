@@ -335,6 +335,9 @@ export type profilesWhereInput = {
   clients?: Prisma.ClientsListRelationFilter
   movements?: Prisma.MovementsListRelationFilter
   orders?: Prisma.OrdersListRelationFilter
+  quotes_created_by?: Prisma.QuotesListRelationFilter
+  quotes_responsible?: Prisma.QuotesListRelationFilter
+  quote_events?: Prisma.Quote_eventsListRelationFilter
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks_assigned_to?: Prisma.Crm_tasksListRelationFilter
   crm_tasks_created_by?: Prisma.Crm_tasksListRelationFilter
@@ -378,6 +381,9 @@ export type profilesOrderByWithRelationInput = {
   clients?: Prisma.clientsOrderByRelationAggregateInput
   movements?: Prisma.movementsOrderByRelationAggregateInput
   orders?: Prisma.ordersOrderByRelationAggregateInput
+  quotes_created_by?: Prisma.quotesOrderByRelationAggregateInput
+  quotes_responsible?: Prisma.quotesOrderByRelationAggregateInput
+  quote_events?: Prisma.quote_eventsOrderByRelationAggregateInput
   crm_activities?: Prisma.crm_activitiesOrderByRelationAggregateInput
   crm_tasks_assigned_to?: Prisma.crm_tasksOrderByRelationAggregateInput
   crm_tasks_created_by?: Prisma.crm_tasksOrderByRelationAggregateInput
@@ -424,6 +430,9 @@ export type profilesWhereUniqueInput = Prisma.AtLeast<{
   clients?: Prisma.ClientsListRelationFilter
   movements?: Prisma.MovementsListRelationFilter
   orders?: Prisma.OrdersListRelationFilter
+  quotes_created_by?: Prisma.QuotesListRelationFilter
+  quotes_responsible?: Prisma.QuotesListRelationFilter
+  quote_events?: Prisma.Quote_eventsListRelationFilter
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks_assigned_to?: Prisma.Crm_tasksListRelationFilter
   crm_tasks_created_by?: Prisma.Crm_tasksListRelationFilter
@@ -524,6 +533,9 @@ export type profilesCreateInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -567,6 +579,9 @@ export type profilesUncheckedCreateInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -604,6 +619,9 @@ export type profilesUpdateInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -647,6 +665,9 @@ export type profilesUncheckedUpdateInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -738,6 +759,11 @@ export type profilesUncheckedUpdateManyInput = {
 export type ProfilesNullableScalarRelationFilter = {
   is?: Prisma.profilesWhereInput | null
   isNot?: Prisma.profilesWhereInput | null
+}
+
+export type ProfilesScalarRelationFilter = {
+  is?: Prisma.profilesWhereInput
+  isNot?: Prisma.profilesWhereInput
 }
 
 export type ProfilesListRelationFilter = {
@@ -907,6 +933,50 @@ export type profilesUpdateOneWithoutOrdersNestedInput = {
   delete?: Prisma.profilesWhereInput | boolean
   connect?: Prisma.profilesWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.profilesUpdateToOneWithWhereWithoutOrdersInput, Prisma.profilesUpdateWithoutOrdersInput>, Prisma.profilesUncheckedUpdateWithoutOrdersInput>
+}
+
+export type profilesCreateNestedOneWithoutQuotes_created_byInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_created_byInput, Prisma.profilesUncheckedCreateWithoutQuotes_created_byInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuotes_created_byInput
+  connect?: Prisma.profilesWhereUniqueInput
+}
+
+export type profilesCreateNestedOneWithoutQuotes_responsibleInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedCreateWithoutQuotes_responsibleInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuotes_responsibleInput
+  connect?: Prisma.profilesWhereUniqueInput
+}
+
+export type profilesUpdateOneRequiredWithoutQuotes_created_byNestedInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_created_byInput, Prisma.profilesUncheckedCreateWithoutQuotes_created_byInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuotes_created_byInput
+  upsert?: Prisma.profilesUpsertWithoutQuotes_created_byInput
+  connect?: Prisma.profilesWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.profilesUpdateToOneWithWhereWithoutQuotes_created_byInput, Prisma.profilesUpdateWithoutQuotes_created_byInput>, Prisma.profilesUncheckedUpdateWithoutQuotes_created_byInput>
+}
+
+export type profilesUpdateOneWithoutQuotes_responsibleNestedInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedCreateWithoutQuotes_responsibleInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuotes_responsibleInput
+  upsert?: Prisma.profilesUpsertWithoutQuotes_responsibleInput
+  disconnect?: Prisma.profilesWhereInput | boolean
+  delete?: Prisma.profilesWhereInput | boolean
+  connect?: Prisma.profilesWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.profilesUpdateToOneWithWhereWithoutQuotes_responsibleInput, Prisma.profilesUpdateWithoutQuotes_responsibleInput>, Prisma.profilesUncheckedUpdateWithoutQuotes_responsibleInput>
+}
+
+export type profilesCreateNestedOneWithoutQuote_eventsInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuote_eventsInput, Prisma.profilesUncheckedCreateWithoutQuote_eventsInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuote_eventsInput
+  connect?: Prisma.profilesWhereUniqueInput
+}
+
+export type profilesUpdateOneRequiredWithoutQuote_eventsNestedInput = {
+  create?: Prisma.XOR<Prisma.profilesCreateWithoutQuote_eventsInput, Prisma.profilesUncheckedCreateWithoutQuote_eventsInput>
+  connectOrCreate?: Prisma.profilesCreateOrConnectWithoutQuote_eventsInput
+  upsert?: Prisma.profilesUpsertWithoutQuote_eventsInput
+  connect?: Prisma.profilesWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.profilesUpdateToOneWithWhereWithoutQuote_eventsInput, Prisma.profilesUpdateWithoutQuote_eventsInput>, Prisma.profilesUncheckedUpdateWithoutQuote_eventsInput>
 }
 
 export type profilesCreateNestedOneWithoutOther_profiles_profiles_created_byToprofilesInput = {
@@ -1197,6 +1267,9 @@ export type profilesCreateWithoutAssemblies_assemblies_created_byToprofilesInput
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -1239,6 +1312,9 @@ export type profilesUncheckedCreateWithoutAssemblies_assemblies_created_byToprof
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -1280,6 +1356,9 @@ export type profilesCreateWithoutAssemblies_assemblies_technician_idToprofilesIn
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -1322,6 +1401,9 @@ export type profilesUncheckedCreateWithoutAssemblies_assemblies_technician_idTop
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -1374,6 +1456,9 @@ export type profilesUpdateWithoutAssemblies_assemblies_created_byToprofilesInput
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -1416,6 +1501,9 @@ export type profilesUncheckedUpdateWithoutAssemblies_assemblies_created_byToprof
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -1463,6 +1551,9 @@ export type profilesUpdateWithoutAssemblies_assemblies_technician_idToprofilesIn
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -1505,6 +1596,9 @@ export type profilesUncheckedUpdateWithoutAssemblies_assemblies_technician_idTop
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -1541,6 +1635,9 @@ export type profilesCreateWithoutClientsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -1583,6 +1680,9 @@ export type profilesUncheckedCreateWithoutClientsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -1635,6 +1735,9 @@ export type profilesUpdateWithoutClientsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -1677,6 +1780,9 @@ export type profilesUncheckedUpdateWithoutClientsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -1713,6 +1819,9 @@ export type profilesCreateWithoutMovementsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -1755,6 +1864,9 @@ export type profilesUncheckedCreateWithoutMovementsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -1807,6 +1919,9 @@ export type profilesUpdateWithoutMovementsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -1849,6 +1964,9 @@ export type profilesUncheckedUpdateWithoutMovementsInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -1885,6 +2003,9 @@ export type profilesCreateWithoutOrdersInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -1927,6 +2048,9 @@ export type profilesUncheckedCreateWithoutOrdersInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -1979,6 +2103,9 @@ export type profilesUpdateWithoutOrdersInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -2021,6 +2148,561 @@ export type profilesUncheckedUpdateWithoutOrdersInput = {
   assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesCreateWithoutQuotes_created_byInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
+  crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_responsibleInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesUncheckedCreateWithoutQuotes_created_byInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  responsible_seller_id?: string | null
+  responsible_manager_id?: string | null
+  created_by?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
+  crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesCreateOrConnectWithoutQuotes_created_byInput = {
+  where: Prisma.profilesWhereUniqueInput
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_created_byInput, Prisma.profilesUncheckedCreateWithoutQuotes_created_byInput>
+}
+
+export type profilesCreateWithoutQuotes_responsibleInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
+  crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_responsibleInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesUncheckedCreateWithoutQuotes_responsibleInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  responsible_seller_id?: string | null
+  responsible_manager_id?: string | null
+  created_by?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
+  crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesCreateOrConnectWithoutQuotes_responsibleInput = {
+  where: Prisma.profilesWhereUniqueInput
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedCreateWithoutQuotes_responsibleInput>
+}
+
+export type profilesUpsertWithoutQuotes_created_byInput = {
+  update: Prisma.XOR<Prisma.profilesUpdateWithoutQuotes_created_byInput, Prisma.profilesUncheckedUpdateWithoutQuotes_created_byInput>
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_created_byInput, Prisma.profilesUncheckedCreateWithoutQuotes_created_byInput>
+  where?: Prisma.profilesWhereInput
+}
+
+export type profilesUpdateToOneWithWhereWithoutQuotes_created_byInput = {
+  where?: Prisma.profilesWhereInput
+  data: Prisma.XOR<Prisma.profilesUpdateWithoutQuotes_created_byInput, Prisma.profilesUncheckedUpdateWithoutQuotes_created_byInput>
+}
+
+export type profilesUpdateWithoutQuotes_created_byInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
+  crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_responsibleNestedInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesUncheckedUpdateWithoutQuotes_created_byInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_seller_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_manager_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesUpsertWithoutQuotes_responsibleInput = {
+  update: Prisma.XOR<Prisma.profilesUpdateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedUpdateWithoutQuotes_responsibleInput>
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedCreateWithoutQuotes_responsibleInput>
+  where?: Prisma.profilesWhereInput
+}
+
+export type profilesUpdateToOneWithWhereWithoutQuotes_responsibleInput = {
+  where?: Prisma.profilesWhereInput
+  data: Prisma.XOR<Prisma.profilesUpdateWithoutQuotes_responsibleInput, Prisma.profilesUncheckedUpdateWithoutQuotes_responsibleInput>
+}
+
+export type profilesUpdateWithoutQuotes_responsibleInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
+  crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_responsibleNestedInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesUncheckedUpdateWithoutQuotes_responsibleInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_seller_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_manager_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesCreateWithoutQuote_eventsInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_responsibleInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesUncheckedCreateWithoutQuote_eventsInput = {
+  id?: string
+  email: string
+  role?: $Enums.app_role
+  status?: $Enums.account_status
+  name?: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  access_code?: string | null
+  seller_code?: string | null
+  manager_code?: string | null
+  responsible_seller_id?: string | null
+  responsible_manager_id?: string | null
+  created_by?: string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: string | null
+  password_hash?: string | null
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_created_byToprofilesInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedCreateNestedManyWithoutProfiles_assemblies_technician_idToprofilesInput
+  clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
+  movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
+  orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
+  crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_created_byToprofilesInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_manager_idToprofilesInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUncheckedCreateNestedManyWithoutProfiles_profiles_responsible_seller_idToprofilesInput
+}
+
+export type profilesCreateOrConnectWithoutQuote_eventsInput = {
+  where: Prisma.profilesWhereUniqueInput
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuote_eventsInput, Prisma.profilesUncheckedCreateWithoutQuote_eventsInput>
+}
+
+export type profilesUpsertWithoutQuote_eventsInput = {
+  update: Prisma.XOR<Prisma.profilesUpdateWithoutQuote_eventsInput, Prisma.profilesUncheckedUpdateWithoutQuote_eventsInput>
+  create: Prisma.XOR<Prisma.profilesCreateWithoutQuote_eventsInput, Prisma.profilesUncheckedCreateWithoutQuote_eventsInput>
+  where?: Prisma.profilesWhereInput
+}
+
+export type profilesUpdateToOneWithWhereWithoutQuote_eventsInput = {
+  where?: Prisma.profilesWhereInput
+  data: Prisma.XOR<Prisma.profilesUpdateWithoutQuote_eventsInput, Prisma.profilesUncheckedUpdateWithoutQuote_eventsInput>
+}
+
+export type profilesUpdateWithoutQuote_eventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
+  crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
+  crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
+  crm_opportunities_responsible?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_responsibleNestedInput
+  profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_created_byToprofilesNestedInput
+  other_profiles_profiles_created_byToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_created_byToprofilesNestedInput
+  profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_manager_idToprofilesNestedInput
+  other_profiles_profiles_responsible_manager_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_manager_idToprofilesNestedInput
+  profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateOneWithoutOther_profiles_profiles_responsible_seller_idToprofilesNestedInput
+  other_profiles_profiles_responsible_seller_idToprofiles?: Prisma.profilesUpdateManyWithoutProfiles_profiles_responsible_seller_idToprofilesNestedInput
+}
+
+export type profilesUncheckedUpdateWithoutQuote_eventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.Enumapp_roleFieldUpdateOperationsInput | $Enums.app_role
+  status?: Prisma.Enumaccount_statusFieldUpdateOperationsInput | $Enums.account_status
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  access_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seller_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  manager_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_seller_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_manager_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permissions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  approval_notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password_hash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assemblies_assemblies_created_byToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_created_byToprofilesNestedInput
+  assemblies_assemblies_technician_idToprofiles?: Prisma.assembliesUncheckedUpdateManyWithoutProfiles_assemblies_technician_idToprofilesNestedInput
+  clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
+  movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
+  orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -2058,6 +2740,9 @@ export type profilesCreateWithoutOther_profiles_profiles_created_byToprofilesInp
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2100,6 +2785,9 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_created_byTopr
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2141,6 +2829,9 @@ export type profilesCreateWithoutProfiles_profiles_created_byToprofilesInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2182,6 +2873,9 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_created_byToprofiles
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2229,6 +2923,9 @@ export type profilesCreateWithoutOther_profiles_profiles_responsible_manager_idT
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2271,6 +2968,9 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_responsible_ma
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2312,6 +3012,9 @@ export type profilesCreateWithoutProfiles_profiles_responsible_manager_idToprofi
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2353,6 +3056,9 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_responsible_manager_
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2400,6 +3106,9 @@ export type profilesCreateWithoutOther_profiles_profiles_responsible_seller_idTo
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2442,6 +3151,9 @@ export type profilesUncheckedCreateWithoutOther_profiles_profiles_responsible_se
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2483,6 +3195,9 @@ export type profilesCreateWithoutProfiles_profiles_responsible_seller_idToprofil
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2524,6 +3239,9 @@ export type profilesUncheckedCreateWithoutProfiles_profiles_responsible_seller_i
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2582,6 +3300,9 @@ export type profilesUpdateWithoutOther_profiles_profiles_created_byToprofilesInp
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -2624,6 +3345,9 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_created_byTopr
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -2717,6 +3441,9 @@ export type profilesUpdateWithoutOther_profiles_profiles_responsible_manager_idT
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -2759,6 +3486,9 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_responsible_ma
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -2822,6 +3552,9 @@ export type profilesUpdateWithoutOther_profiles_profiles_responsible_seller_idTo
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -2864,6 +3597,9 @@ export type profilesUncheckedUpdateWithoutOther_profiles_profiles_responsible_se
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -2916,6 +3652,9 @@ export type profilesCreateWithoutCrm_opportunities_created_byInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -2958,6 +3697,9 @@ export type profilesUncheckedCreateWithoutCrm_opportunities_created_byInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -2999,6 +3741,9 @@ export type profilesCreateWithoutCrm_opportunities_responsibleInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
@@ -3041,6 +3786,9 @@ export type profilesUncheckedCreateWithoutCrm_opportunities_responsibleInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -3093,6 +3841,9 @@ export type profilesUpdateWithoutCrm_opportunities_created_byInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -3135,6 +3886,9 @@ export type profilesUncheckedUpdateWithoutCrm_opportunities_created_byInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3182,6 +3936,9 @@ export type profilesUpdateWithoutCrm_opportunities_responsibleInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -3224,6 +3981,9 @@ export type profilesUncheckedUpdateWithoutCrm_opportunities_responsibleInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3260,6 +4020,9 @@ export type profilesCreateWithoutCrm_activitiesInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
@@ -3302,6 +4065,9 @@ export type profilesUncheckedCreateWithoutCrm_activitiesInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -3354,6 +4120,9 @@ export type profilesUpdateWithoutCrm_activitiesInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
@@ -3396,6 +4165,9 @@ export type profilesUncheckedUpdateWithoutCrm_activitiesInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3432,6 +4204,9 @@ export type profilesCreateWithoutCrm_tasks_assigned_toInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_created_by?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_created_byInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
@@ -3474,6 +4249,9 @@ export type profilesUncheckedCreateWithoutCrm_tasks_assigned_toInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_created_byInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -3515,6 +4293,9 @@ export type profilesCreateWithoutCrm_tasks_created_byInput = {
   clients?: Prisma.clientsCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksCreateNestedManyWithoutProfiles_assigned_toInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput
@@ -3557,6 +4338,9 @@ export type profilesUncheckedCreateWithoutCrm_tasks_created_byInput = {
   clients?: Prisma.clientsUncheckedCreateNestedManyWithoutProfilesInput
   movements?: Prisma.movementsUncheckedCreateNestedManyWithoutProfilesInput
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutProfilesInput
+  quotes_created_by?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_created_byInput
+  quotes_responsible?: Prisma.quotesUncheckedCreateNestedManyWithoutProfiles_responsibleInput
+  quote_events?: Prisma.quote_eventsUncheckedCreateNestedManyWithoutProfilesInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutProfilesInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutProfiles_assigned_toInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutProfiles_created_byInput
@@ -3609,6 +4393,9 @@ export type profilesUpdateWithoutCrm_tasks_assigned_toInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
@@ -3651,6 +4438,9 @@ export type profilesUncheckedUpdateWithoutCrm_tasks_assigned_toInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3698,6 +4488,9 @@ export type profilesUpdateWithoutCrm_tasks_created_byInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUpdateManyWithoutProfiles_created_byNestedInput
@@ -3740,6 +4533,9 @@ export type profilesUncheckedUpdateWithoutCrm_tasks_created_byInput = {
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_opportunities_created_by?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3854,6 +4650,9 @@ export type profilesUpdateWithoutProfiles_profiles_created_byToprofilesInput = {
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -3895,6 +4694,9 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_created_byToprofiles
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -3958,6 +4760,9 @@ export type profilesUpdateWithoutProfiles_profiles_responsible_manager_idToprofi
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -3999,6 +4804,9 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_responsible_manager_
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -4062,6 +4870,9 @@ export type profilesUpdateWithoutProfiles_profiles_responsible_seller_idToprofil
   clients?: Prisma.clientsUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUpdateManyWithoutProfiles_created_byNestedInput
@@ -4103,6 +4914,9 @@ export type profilesUncheckedUpdateWithoutProfiles_profiles_responsible_seller_i
   clients?: Prisma.clientsUncheckedUpdateManyWithoutProfilesNestedInput
   movements?: Prisma.movementsUncheckedUpdateManyWithoutProfilesNestedInput
   orders?: Prisma.ordersUncheckedUpdateManyWithoutProfilesNestedInput
+  quotes_created_by?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_created_byNestedInput
+  quotes_responsible?: Prisma.quotesUncheckedUpdateManyWithoutProfiles_responsibleNestedInput
+  quote_events?: Prisma.quote_eventsUncheckedUpdateManyWithoutProfilesNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutProfilesNestedInput
   crm_tasks_assigned_to?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_assigned_toNestedInput
   crm_tasks_created_by?: Prisma.crm_tasksUncheckedUpdateManyWithoutProfiles_created_byNestedInput
@@ -4150,6 +4964,9 @@ export type ProfilesCountOutputType = {
   clients: number
   movements: number
   orders: number
+  quotes_created_by: number
+  quotes_responsible: number
+  quote_events: number
   crm_activities: number
   crm_tasks_assigned_to: number
   crm_tasks_created_by: number
@@ -4166,6 +4983,9 @@ export type ProfilesCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensio
   clients?: boolean | ProfilesCountOutputTypeCountClientsArgs
   movements?: boolean | ProfilesCountOutputTypeCountMovementsArgs
   orders?: boolean | ProfilesCountOutputTypeCountOrdersArgs
+  quotes_created_by?: boolean | ProfilesCountOutputTypeCountQuotes_created_byArgs
+  quotes_responsible?: boolean | ProfilesCountOutputTypeCountQuotes_responsibleArgs
+  quote_events?: boolean | ProfilesCountOutputTypeCountQuote_eventsArgs
   crm_activities?: boolean | ProfilesCountOutputTypeCountCrm_activitiesArgs
   crm_tasks_assigned_to?: boolean | ProfilesCountOutputTypeCountCrm_tasks_assigned_toArgs
   crm_tasks_created_by?: boolean | ProfilesCountOutputTypeCountCrm_tasks_created_byArgs
@@ -4219,6 +5039,27 @@ export type ProfilesCountOutputTypeCountMovementsArgs<ExtArgs extends runtime.Ty
  */
 export type ProfilesCountOutputTypeCountOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ordersWhereInput
+}
+
+/**
+ * ProfilesCountOutputType without action
+ */
+export type ProfilesCountOutputTypeCountQuotes_created_byArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.quotesWhereInput
+}
+
+/**
+ * ProfilesCountOutputType without action
+ */
+export type ProfilesCountOutputTypeCountQuotes_responsibleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.quotesWhereInput
+}
+
+/**
+ * ProfilesCountOutputType without action
+ */
+export type ProfilesCountOutputTypeCountQuote_eventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.quote_eventsWhereInput
 }
 
 /**
@@ -4308,6 +5149,9 @@ export type profilesSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   clients?: boolean | Prisma.profiles$clientsArgs<ExtArgs>
   movements?: boolean | Prisma.profiles$movementsArgs<ExtArgs>
   orders?: boolean | Prisma.profiles$ordersArgs<ExtArgs>
+  quotes_created_by?: boolean | Prisma.profiles$quotes_created_byArgs<ExtArgs>
+  quotes_responsible?: boolean | Prisma.profiles$quotes_responsibleArgs<ExtArgs>
+  quote_events?: boolean | Prisma.profiles$quote_eventsArgs<ExtArgs>
   crm_activities?: boolean | Prisma.profiles$crm_activitiesArgs<ExtArgs>
   crm_tasks_assigned_to?: boolean | Prisma.profiles$crm_tasks_assigned_toArgs<ExtArgs>
   crm_tasks_created_by?: boolean | Prisma.profiles$crm_tasks_created_byArgs<ExtArgs>
@@ -4416,6 +5260,9 @@ export type profilesInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   clients?: boolean | Prisma.profiles$clientsArgs<ExtArgs>
   movements?: boolean | Prisma.profiles$movementsArgs<ExtArgs>
   orders?: boolean | Prisma.profiles$ordersArgs<ExtArgs>
+  quotes_created_by?: boolean | Prisma.profiles$quotes_created_byArgs<ExtArgs>
+  quotes_responsible?: boolean | Prisma.profiles$quotes_responsibleArgs<ExtArgs>
+  quote_events?: boolean | Prisma.profiles$quote_eventsArgs<ExtArgs>
   crm_activities?: boolean | Prisma.profiles$crm_activitiesArgs<ExtArgs>
   crm_tasks_assigned_to?: boolean | Prisma.profiles$crm_tasks_assigned_toArgs<ExtArgs>
   crm_tasks_created_by?: boolean | Prisma.profiles$crm_tasks_created_byArgs<ExtArgs>
@@ -4448,6 +5295,9 @@ export type $profilesPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     clients: Prisma.$clientsPayload<ExtArgs>[]
     movements: Prisma.$movementsPayload<ExtArgs>[]
     orders: Prisma.$ordersPayload<ExtArgs>[]
+    quotes_created_by: Prisma.$quotesPayload<ExtArgs>[]
+    quotes_responsible: Prisma.$quotesPayload<ExtArgs>[]
+    quote_events: Prisma.$quote_eventsPayload<ExtArgs>[]
     crm_activities: Prisma.$crm_activitiesPayload<ExtArgs>[]
     crm_tasks_assigned_to: Prisma.$crm_tasksPayload<ExtArgs>[]
     crm_tasks_created_by: Prisma.$crm_tasksPayload<ExtArgs>[]
@@ -4884,6 +5734,9 @@ export interface Prisma__profilesClient<T, Null = never, ExtArgs extends runtime
   clients<T extends Prisma.profiles$clientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$clientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$clientsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   movements<T extends Prisma.profiles$movementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$movementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$movementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   orders<T extends Prisma.profiles$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ordersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quotes_created_by<T extends Prisma.profiles$quotes_created_byArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$quotes_created_byArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$quotesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quotes_responsible<T extends Prisma.profiles$quotes_responsibleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$quotes_responsibleArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$quotesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quote_events<T extends Prisma.profiles$quote_eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$quote_eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$quote_eventsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_activities<T extends Prisma.profiles$crm_activitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$crm_activitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_activitiesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_tasks_assigned_to<T extends Prisma.profiles$crm_tasks_assigned_toArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$crm_tasks_assigned_toArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_tasksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_tasks_created_by<T extends Prisma.profiles$crm_tasks_created_byArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.profiles$crm_tasks_created_byArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_tasksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -5466,6 +6319,78 @@ export type profiles$ordersArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.OrdersScalarFieldEnum | Prisma.OrdersScalarFieldEnum[]
+}
+
+/**
+ * profiles.quotes_created_by
+ */
+export type profiles$quotes_created_byArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the quotes
+   */
+  select?: Prisma.quotesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the quotes
+   */
+  omit?: Prisma.quotesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.quotesInclude<ExtArgs> | null
+  where?: Prisma.quotesWhereInput
+  orderBy?: Prisma.quotesOrderByWithRelationInput | Prisma.quotesOrderByWithRelationInput[]
+  cursor?: Prisma.quotesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuotesScalarFieldEnum | Prisma.QuotesScalarFieldEnum[]
+}
+
+/**
+ * profiles.quotes_responsible
+ */
+export type profiles$quotes_responsibleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the quotes
+   */
+  select?: Prisma.quotesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the quotes
+   */
+  omit?: Prisma.quotesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.quotesInclude<ExtArgs> | null
+  where?: Prisma.quotesWhereInput
+  orderBy?: Prisma.quotesOrderByWithRelationInput | Prisma.quotesOrderByWithRelationInput[]
+  cursor?: Prisma.quotesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuotesScalarFieldEnum | Prisma.QuotesScalarFieldEnum[]
+}
+
+/**
+ * profiles.quote_events
+ */
+export type profiles$quote_eventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the quote_events
+   */
+  select?: Prisma.quote_eventsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the quote_events
+   */
+  omit?: Prisma.quote_eventsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.quote_eventsInclude<ExtArgs> | null
+  where?: Prisma.quote_eventsWhereInput
+  orderBy?: Prisma.quote_eventsOrderByWithRelationInput | Prisma.quote_eventsOrderByWithRelationInput[]
+  cursor?: Prisma.quote_eventsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Quote_eventsScalarFieldEnum | Prisma.Quote_eventsScalarFieldEnum[]
 }
 
 /**

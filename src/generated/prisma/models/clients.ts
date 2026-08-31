@@ -248,6 +248,7 @@ export type clientsWhereInput = {
   created_at?: Prisma.DateTimeNullableFilter<"clients"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
   orders?: Prisma.OrdersListRelationFilter
+  quotes?: Prisma.QuotesListRelationFilter
   crm_opportunities?: Prisma.Crm_opportunitiesListRelationFilter
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks?: Prisma.Crm_tasksListRelationFilter
@@ -269,6 +270,7 @@ export type clientsOrderByWithRelationInput = {
   created_at?: Prisma.SortOrderInput | Prisma.SortOrder
   profiles?: Prisma.profilesOrderByWithRelationInput
   orders?: Prisma.ordersOrderByRelationAggregateInput
+  quotes?: Prisma.quotesOrderByRelationAggregateInput
   crm_opportunities?: Prisma.crm_opportunitiesOrderByRelationAggregateInput
   crm_activities?: Prisma.crm_activitiesOrderByRelationAggregateInput
   crm_tasks?: Prisma.crm_tasksOrderByRelationAggregateInput
@@ -293,6 +295,7 @@ export type clientsWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeNullableFilter<"clients"> | Date | string | null
   profiles?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
   orders?: Prisma.OrdersListRelationFilter
+  quotes?: Prisma.QuotesListRelationFilter
   crm_opportunities?: Prisma.Crm_opportunitiesListRelationFilter
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks?: Prisma.Crm_tasksListRelationFilter
@@ -351,6 +354,7 @@ export type clientsCreateInput = {
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
@@ -371,6 +375,7 @@ export type clientsUncheckedCreateInput = {
   created_by?: string | null
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
@@ -391,6 +396,7 @@ export type clientsUpdateInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
@@ -411,6 +417,7 @@ export type clientsUncheckedUpdateInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
@@ -516,6 +523,11 @@ export type ClientsNullableScalarRelationFilter = {
   isNot?: Prisma.clientsWhereInput | null
 }
 
+export type ClientsScalarRelationFilter = {
+  is?: Prisma.clientsWhereInput
+  isNot?: Prisma.clientsWhereInput
+}
+
 export type ClientsListRelationFilter = {
   every?: Prisma.clientsWhereInput
   some?: Prisma.clientsWhereInput
@@ -524,11 +536,6 @@ export type ClientsListRelationFilter = {
 
 export type clientsOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
-}
-
-export type ClientsScalarRelationFilter = {
-  is?: Prisma.clientsWhereInput
-  isNot?: Prisma.clientsWhereInput
 }
 
 export type BoolFieldUpdateOperationsInput = {
@@ -549,6 +556,20 @@ export type clientsUpdateOneWithoutOrdersNestedInput = {
   delete?: Prisma.clientsWhereInput | boolean
   connect?: Prisma.clientsWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.clientsUpdateToOneWithWhereWithoutOrdersInput, Prisma.clientsUpdateWithoutOrdersInput>, Prisma.clientsUncheckedUpdateWithoutOrdersInput>
+}
+
+export type clientsCreateNestedOneWithoutQuotesInput = {
+  create?: Prisma.XOR<Prisma.clientsCreateWithoutQuotesInput, Prisma.clientsUncheckedCreateWithoutQuotesInput>
+  connectOrCreate?: Prisma.clientsCreateOrConnectWithoutQuotesInput
+  connect?: Prisma.clientsWhereUniqueInput
+}
+
+export type clientsUpdateOneRequiredWithoutQuotesNestedInput = {
+  create?: Prisma.XOR<Prisma.clientsCreateWithoutQuotesInput, Prisma.clientsUncheckedCreateWithoutQuotesInput>
+  connectOrCreate?: Prisma.clientsCreateOrConnectWithoutQuotesInput
+  upsert?: Prisma.clientsUpsertWithoutQuotesInput
+  connect?: Prisma.clientsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.clientsUpdateToOneWithWhereWithoutQuotesInput, Prisma.clientsUpdateWithoutQuotesInput>, Prisma.clientsUncheckedUpdateWithoutQuotesInput>
 }
 
 export type clientsCreateNestedManyWithoutProfilesInput = {
@@ -649,6 +670,7 @@ export type clientsCreateWithoutOrdersInput = {
   proposal_status?: string
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
@@ -668,6 +690,7 @@ export type clientsUncheckedCreateWithoutOrdersInput = {
   proposal_status?: string
   created_by?: string | null
   created_at?: Date | string | null
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
@@ -703,6 +726,7 @@ export type clientsUpdateWithoutOrdersInput = {
   proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
@@ -722,6 +746,103 @@ export type clientsUncheckedUpdateWithoutOrdersInput = {
   proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
+  crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
+  crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
+  crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
+}
+
+export type clientsCreateWithoutQuotesInput = {
+  id?: string
+  name: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  proposal_status?: string
+  created_at?: Date | string | null
+  profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
+  orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
+  crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
+  crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
+}
+
+export type clientsUncheckedCreateWithoutQuotesInput = {
+  id?: string
+  name: string
+  document?: string
+  phone?: string
+  cep?: string
+  city?: string
+  street?: string
+  number?: string
+  no_number?: boolean
+  neighborhood?: string
+  proposal_status?: string
+  created_by?: string | null
+  created_at?: Date | string | null
+  orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
+  crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
+  crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
+}
+
+export type clientsCreateOrConnectWithoutQuotesInput = {
+  where: Prisma.clientsWhereUniqueInput
+  create: Prisma.XOR<Prisma.clientsCreateWithoutQuotesInput, Prisma.clientsUncheckedCreateWithoutQuotesInput>
+}
+
+export type clientsUpsertWithoutQuotesInput = {
+  update: Prisma.XOR<Prisma.clientsUpdateWithoutQuotesInput, Prisma.clientsUncheckedUpdateWithoutQuotesInput>
+  create: Prisma.XOR<Prisma.clientsCreateWithoutQuotesInput, Prisma.clientsUncheckedCreateWithoutQuotesInput>
+  where?: Prisma.clientsWhereInput
+}
+
+export type clientsUpdateToOneWithWhereWithoutQuotesInput = {
+  where?: Prisma.clientsWhereInput
+  data: Prisma.XOR<Prisma.clientsUpdateWithoutQuotesInput, Prisma.clientsUncheckedUpdateWithoutQuotesInput>
+}
+
+export type clientsUpdateWithoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
+  orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
+  crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
+  crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
+}
+
+export type clientsUncheckedUpdateWithoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  document?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  cep?: Prisma.StringFieldUpdateOperationsInput | string
+  city?: Prisma.StringFieldUpdateOperationsInput | string
+  street?: Prisma.StringFieldUpdateOperationsInput | string
+  number?: Prisma.StringFieldUpdateOperationsInput | string
+  no_number?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  neighborhood?: Prisma.StringFieldUpdateOperationsInput | string
+  proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
@@ -741,6 +862,7 @@ export type clientsCreateWithoutProfilesInput = {
   proposal_status?: string
   created_at?: Date | string | null
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
@@ -760,6 +882,7 @@ export type clientsUncheckedCreateWithoutProfilesInput = {
   proposal_status?: string
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
@@ -825,6 +948,7 @@ export type clientsCreateWithoutCrm_opportunitiesInput = {
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
 }
@@ -844,6 +968,7 @@ export type clientsUncheckedCreateWithoutCrm_opportunitiesInput = {
   created_by?: string | null
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
 }
@@ -879,6 +1004,7 @@ export type clientsUpdateWithoutCrm_opportunitiesInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
 }
@@ -898,6 +1024,7 @@ export type clientsUncheckedUpdateWithoutCrm_opportunitiesInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
 }
@@ -917,6 +1044,7 @@ export type clientsCreateWithoutCrm_activitiesInput = {
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutClientsInput
 }
@@ -936,6 +1064,7 @@ export type clientsUncheckedCreateWithoutCrm_activitiesInput = {
   created_by?: string | null
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutClientsInput
 }
@@ -971,6 +1100,7 @@ export type clientsUpdateWithoutCrm_activitiesInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
 }
@@ -990,6 +1120,7 @@ export type clientsUncheckedUpdateWithoutCrm_activitiesInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
 }
@@ -1009,6 +1140,7 @@ export type clientsCreateWithoutCrm_tasksInput = {
   created_at?: Date | string | null
   profiles?: Prisma.profilesCreateNestedOneWithoutClientsInput
   orders?: Prisma.ordersCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutClientsInput
 }
@@ -1028,6 +1160,7 @@ export type clientsUncheckedCreateWithoutCrm_tasksInput = {
   created_by?: string | null
   created_at?: Date | string | null
   orders?: Prisma.ordersUncheckedCreateNestedManyWithoutClientsInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutClientsInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedCreateNestedManyWithoutClientsInput
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutClientsInput
 }
@@ -1063,6 +1196,7 @@ export type clientsUpdateWithoutCrm_tasksInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   profiles?: Prisma.profilesUpdateOneWithoutClientsNestedInput
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
 }
@@ -1082,6 +1216,7 @@ export type clientsUncheckedUpdateWithoutCrm_tasksInput = {
   created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
 }
@@ -1115,6 +1250,7 @@ export type clientsUpdateWithoutProfilesInput = {
   proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutClientsNestedInput
@@ -1134,6 +1270,7 @@ export type clientsUncheckedUpdateWithoutProfilesInput = {
   proposal_status?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   orders?: Prisma.ordersUncheckedUpdateManyWithoutClientsNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutClientsNestedInput
   crm_opportunities?: Prisma.crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutClientsNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutClientsNestedInput
@@ -1161,6 +1298,7 @@ export type clientsUncheckedUpdateManyWithoutProfilesInput = {
 
 export type ClientsCountOutputType = {
   orders: number
+  quotes: number
   crm_opportunities: number
   crm_activities: number
   crm_tasks: number
@@ -1168,6 +1306,7 @@ export type ClientsCountOutputType = {
 
 export type ClientsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   orders?: boolean | ClientsCountOutputTypeCountOrdersArgs
+  quotes?: boolean | ClientsCountOutputTypeCountQuotesArgs
   crm_opportunities?: boolean | ClientsCountOutputTypeCountCrm_opportunitiesArgs
   crm_activities?: boolean | ClientsCountOutputTypeCountCrm_activitiesArgs
   crm_tasks?: boolean | ClientsCountOutputTypeCountCrm_tasksArgs
@@ -1188,6 +1327,13 @@ export type ClientsCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
  */
 export type ClientsCountOutputTypeCountOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ordersWhereInput
+}
+
+/**
+ * ClientsCountOutputType without action
+ */
+export type ClientsCountOutputTypeCountQuotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.quotesWhereInput
 }
 
 /**
@@ -1228,6 +1374,7 @@ export type clientsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   created_at?: boolean
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
   orders?: boolean | Prisma.clients$ordersArgs<ExtArgs>
+  quotes?: boolean | Prisma.clients$quotesArgs<ExtArgs>
   crm_opportunities?: boolean | Prisma.clients$crm_opportunitiesArgs<ExtArgs>
   crm_activities?: boolean | Prisma.clients$crm_activitiesArgs<ExtArgs>
   crm_tasks?: boolean | Prisma.clients$crm_tasksArgs<ExtArgs>
@@ -1288,6 +1435,7 @@ export type clientsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type clientsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profiles?: boolean | Prisma.clients$profilesArgs<ExtArgs>
   orders?: boolean | Prisma.clients$ordersArgs<ExtArgs>
+  quotes?: boolean | Prisma.clients$quotesArgs<ExtArgs>
   crm_opportunities?: boolean | Prisma.clients$crm_opportunitiesArgs<ExtArgs>
   crm_activities?: boolean | Prisma.clients$crm_activitiesArgs<ExtArgs>
   crm_tasks?: boolean | Prisma.clients$crm_tasksArgs<ExtArgs>
@@ -1305,6 +1453,7 @@ export type $clientsPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     profiles: Prisma.$profilesPayload<ExtArgs> | null
     orders: Prisma.$ordersPayload<ExtArgs>[]
+    quotes: Prisma.$quotesPayload<ExtArgs>[]
     crm_opportunities: Prisma.$crm_opportunitiesPayload<ExtArgs>[]
     crm_activities: Prisma.$crm_activitiesPayload<ExtArgs>[]
     crm_tasks: Prisma.$crm_tasksPayload<ExtArgs>[]
@@ -1719,6 +1868,7 @@ export interface Prisma__clientsClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profiles<T extends Prisma.clients$profilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$profilesArgs<ExtArgs>>): Prisma.Prisma__profilesClient<runtime.Types.Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   orders<T extends Prisma.clients$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ordersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quotes<T extends Prisma.clients$quotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$quotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$quotesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_opportunities<T extends Prisma.clients$crm_opportunitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$crm_opportunitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_opportunitiesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_activities<T extends Prisma.clients$crm_activitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$crm_activitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_activitiesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_tasks<T extends Prisma.clients$crm_tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.clients$crm_tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_tasksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2205,6 +2355,30 @@ export type clients$ordersArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.OrdersScalarFieldEnum | Prisma.OrdersScalarFieldEnum[]
+}
+
+/**
+ * clients.quotes
+ */
+export type clients$quotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the quotes
+   */
+  select?: Prisma.quotesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the quotes
+   */
+  omit?: Prisma.quotesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.quotesInclude<ExtArgs> | null
+  where?: Prisma.quotesWhereInput
+  orderBy?: Prisma.quotesOrderByWithRelationInput | Prisma.quotesOrderByWithRelationInput[]
+  cursor?: Prisma.quotesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuotesScalarFieldEnum | Prisma.QuotesScalarFieldEnum[]
 }
 
 /**

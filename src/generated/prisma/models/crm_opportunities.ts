@@ -305,6 +305,7 @@ export type crm_opportunitiesWhereInput = {
   profiles_responsible?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks?: Prisma.Crm_tasksListRelationFilter
+  quotes?: Prisma.QuotesListRelationFilter
 }
 
 export type crm_opportunitiesOrderByWithRelationInput = {
@@ -328,6 +329,7 @@ export type crm_opportunitiesOrderByWithRelationInput = {
   profiles_responsible?: Prisma.profilesOrderByWithRelationInput
   crm_activities?: Prisma.crm_activitiesOrderByRelationAggregateInput
   crm_tasks?: Prisma.crm_tasksOrderByRelationAggregateInput
+  quotes?: Prisma.quotesOrderByRelationAggregateInput
 }
 
 export type crm_opportunitiesWhereUniqueInput = Prisma.AtLeast<{
@@ -354,6 +356,7 @@ export type crm_opportunitiesWhereUniqueInput = Prisma.AtLeast<{
   profiles_responsible?: Prisma.XOR<Prisma.ProfilesNullableScalarRelationFilter, Prisma.profilesWhereInput> | null
   crm_activities?: Prisma.Crm_activitiesListRelationFilter
   crm_tasks?: Prisma.Crm_tasksListRelationFilter
+  quotes?: Prisma.QuotesListRelationFilter
 }, "id">
 
 export type crm_opportunitiesOrderByWithAggregationInput = {
@@ -418,6 +421,7 @@ export type crm_opportunitiesCreateInput = {
   profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateInput = {
@@ -438,6 +442,7 @@ export type crm_opportunitiesUncheckedCreateInput = {
   updated_at?: Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUpdateInput = {
@@ -458,6 +463,7 @@ export type crm_opportunitiesUpdateInput = {
   profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateInput = {
@@ -478,6 +484,7 @@ export type crm_opportunitiesUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesCreateManyInput = {
@@ -539,6 +546,11 @@ export type Crm_opportunitiesListRelationFilter = {
 
 export type crm_opportunitiesOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type Crm_opportunitiesNullableScalarRelationFilter = {
+  is?: Prisma.crm_opportunitiesWhereInput | null
+  isNot?: Prisma.crm_opportunitiesWhereInput | null
 }
 
 export type crm_opportunitiesCountOrderByAggregateInput = {
@@ -605,11 +617,6 @@ export type crm_opportunitiesSumOrderByAggregateInput = {
   probability?: Prisma.SortOrder
 }
 
-export type Crm_opportunitiesNullableScalarRelationFilter = {
-  is?: Prisma.crm_opportunitiesWhereInput | null
-  isNot?: Prisma.crm_opportunitiesWhereInput | null
-}
-
 export type crm_opportunitiesCreateNestedManyWithoutClientsInput = {
   create?: Prisma.XOR<Prisma.crm_opportunitiesCreateWithoutClientsInput, Prisma.crm_opportunitiesUncheckedCreateWithoutClientsInput> | Prisma.crm_opportunitiesCreateWithoutClientsInput[] | Prisma.crm_opportunitiesUncheckedCreateWithoutClientsInput[]
   connectOrCreate?: Prisma.crm_opportunitiesCreateOrConnectWithoutClientsInput | Prisma.crm_opportunitiesCreateOrConnectWithoutClientsInput[]
@@ -650,6 +657,22 @@ export type crm_opportunitiesUncheckedUpdateManyWithoutClientsNestedInput = {
   update?: Prisma.crm_opportunitiesUpdateWithWhereUniqueWithoutClientsInput | Prisma.crm_opportunitiesUpdateWithWhereUniqueWithoutClientsInput[]
   updateMany?: Prisma.crm_opportunitiesUpdateManyWithWhereWithoutClientsInput | Prisma.crm_opportunitiesUpdateManyWithWhereWithoutClientsInput[]
   deleteMany?: Prisma.crm_opportunitiesScalarWhereInput | Prisma.crm_opportunitiesScalarWhereInput[]
+}
+
+export type crm_opportunitiesCreateNestedOneWithoutQuotesInput = {
+  create?: Prisma.XOR<Prisma.crm_opportunitiesCreateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedCreateWithoutQuotesInput>
+  connectOrCreate?: Prisma.crm_opportunitiesCreateOrConnectWithoutQuotesInput
+  connect?: Prisma.crm_opportunitiesWhereUniqueInput
+}
+
+export type crm_opportunitiesUpdateOneWithoutQuotesNestedInput = {
+  create?: Prisma.XOR<Prisma.crm_opportunitiesCreateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedCreateWithoutQuotesInput>
+  connectOrCreate?: Prisma.crm_opportunitiesCreateOrConnectWithoutQuotesInput
+  upsert?: Prisma.crm_opportunitiesUpsertWithoutQuotesInput
+  disconnect?: Prisma.crm_opportunitiesWhereInput | boolean
+  delete?: Prisma.crm_opportunitiesWhereInput | boolean
+  connect?: Prisma.crm_opportunitiesWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.crm_opportunitiesUpdateToOneWithWhereWithoutQuotesInput, Prisma.crm_opportunitiesUpdateWithoutQuotesInput>, Prisma.crm_opportunitiesUncheckedUpdateWithoutQuotesInput>
 }
 
 export type crm_opportunitiesCreateNestedManyWithoutProfiles_created_byInput = {
@@ -785,6 +808,7 @@ export type crm_opportunitiesCreateWithoutClientsInput = {
   profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateWithoutClientsInput = {
@@ -804,6 +828,7 @@ export type crm_opportunitiesUncheckedCreateWithoutClientsInput = {
   updated_at?: Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesCreateOrConnectWithoutClientsInput = {
@@ -853,6 +878,102 @@ export type crm_opportunitiesScalarWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"crm_opportunities"> | Date | string
 }
 
+export type crm_opportunitiesCreateWithoutQuotesInput = {
+  id?: string
+  title?: string
+  stage?: string
+  status?: string
+  estimated_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  probability?: number
+  next_action?: string
+  next_action_at?: Date | string | null
+  lost_reason?: string
+  notes?: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  clients: Prisma.clientsCreateNestedOneWithoutCrm_opportunitiesInput
+  profiles_created_by?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_created_byInput
+  profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
+  crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
+  crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+}
+
+export type crm_opportunitiesUncheckedCreateWithoutQuotesInput = {
+  id?: string
+  client_id: string
+  created_by?: string | null
+  responsible_id?: string | null
+  title?: string
+  stage?: string
+  status?: string
+  estimated_value?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  probability?: number
+  next_action?: string
+  next_action_at?: Date | string | null
+  lost_reason?: string
+  notes?: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+}
+
+export type crm_opportunitiesCreateOrConnectWithoutQuotesInput = {
+  where: Prisma.crm_opportunitiesWhereUniqueInput
+  create: Prisma.XOR<Prisma.crm_opportunitiesCreateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedCreateWithoutQuotesInput>
+}
+
+export type crm_opportunitiesUpsertWithoutQuotesInput = {
+  update: Prisma.XOR<Prisma.crm_opportunitiesUpdateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedUpdateWithoutQuotesInput>
+  create: Prisma.XOR<Prisma.crm_opportunitiesCreateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedCreateWithoutQuotesInput>
+  where?: Prisma.crm_opportunitiesWhereInput
+}
+
+export type crm_opportunitiesUpdateToOneWithWhereWithoutQuotesInput = {
+  where?: Prisma.crm_opportunitiesWhereInput
+  data: Prisma.XOR<Prisma.crm_opportunitiesUpdateWithoutQuotesInput, Prisma.crm_opportunitiesUncheckedUpdateWithoutQuotesInput>
+}
+
+export type crm_opportunitiesUpdateWithoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  stage?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  estimated_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  probability?: Prisma.IntFieldUpdateOperationsInput | number
+  next_action?: Prisma.StringFieldUpdateOperationsInput | string
+  next_action_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lost_reason?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  clients?: Prisma.clientsUpdateOneRequiredWithoutCrm_opportunitiesNestedInput
+  profiles_created_by?: Prisma.profilesUpdateOneWithoutCrm_opportunities_created_byNestedInput
+  profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
+  crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
+  crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+}
+
+export type crm_opportunitiesUncheckedUpdateWithoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  client_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsible_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  stage?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  estimated_value?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  probability?: Prisma.IntFieldUpdateOperationsInput | number
+  next_action?: Prisma.StringFieldUpdateOperationsInput | string
+  next_action_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lost_reason?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+}
+
 export type crm_opportunitiesCreateWithoutProfiles_created_byInput = {
   id?: string
   title?: string
@@ -870,6 +991,7 @@ export type crm_opportunitiesCreateWithoutProfiles_created_byInput = {
   profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateWithoutProfiles_created_byInput = {
@@ -889,6 +1011,7 @@ export type crm_opportunitiesUncheckedCreateWithoutProfiles_created_byInput = {
   updated_at?: Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesCreateOrConnectWithoutProfiles_created_byInput = {
@@ -918,6 +1041,7 @@ export type crm_opportunitiesCreateWithoutProfiles_responsibleInput = {
   profiles_created_by?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_created_byInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateWithoutProfiles_responsibleInput = {
@@ -937,6 +1061,7 @@ export type crm_opportunitiesUncheckedCreateWithoutProfiles_responsibleInput = {
   updated_at?: Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesCreateOrConnectWithoutProfiles_responsibleInput = {
@@ -998,6 +1123,7 @@ export type crm_opportunitiesCreateWithoutCrm_activitiesInput = {
   profiles_created_by?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_created_byInput
   profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
   crm_tasks?: Prisma.crm_tasksCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateWithoutCrm_activitiesInput = {
@@ -1017,6 +1143,7 @@ export type crm_opportunitiesUncheckedCreateWithoutCrm_activitiesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   crm_tasks?: Prisma.crm_tasksUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesCreateOrConnectWithoutCrm_activitiesInput = {
@@ -1052,6 +1179,7 @@ export type crm_opportunitiesUpdateWithoutCrm_activitiesInput = {
   profiles_created_by?: Prisma.profilesUpdateOneWithoutCrm_opportunities_created_byNestedInput
   profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateWithoutCrm_activitiesInput = {
@@ -1071,6 +1199,7 @@ export type crm_opportunitiesUncheckedUpdateWithoutCrm_activitiesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesCreateWithoutCrm_tasksInput = {
@@ -1090,6 +1219,7 @@ export type crm_opportunitiesCreateWithoutCrm_tasksInput = {
   profiles_created_by?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_created_byInput
   profiles_responsible?: Prisma.profilesCreateNestedOneWithoutCrm_opportunities_responsibleInput
   crm_activities?: Prisma.crm_activitiesCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesUncheckedCreateWithoutCrm_tasksInput = {
@@ -1109,6 +1239,7 @@ export type crm_opportunitiesUncheckedCreateWithoutCrm_tasksInput = {
   created_at?: Date | string
   updated_at?: Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
+  quotes?: Prisma.quotesUncheckedCreateNestedManyWithoutCrm_opportunitiesInput
 }
 
 export type crm_opportunitiesCreateOrConnectWithoutCrm_tasksInput = {
@@ -1144,6 +1275,7 @@ export type crm_opportunitiesUpdateWithoutCrm_tasksInput = {
   profiles_created_by?: Prisma.profilesUpdateOneWithoutCrm_opportunities_created_byNestedInput
   profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateWithoutCrm_tasksInput = {
@@ -1163,6 +1295,7 @@ export type crm_opportunitiesUncheckedUpdateWithoutCrm_tasksInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesCreateManyClientsInput = {
@@ -1199,6 +1332,7 @@ export type crm_opportunitiesUpdateWithoutClientsInput = {
   profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateWithoutClientsInput = {
@@ -1218,6 +1352,7 @@ export type crm_opportunitiesUncheckedUpdateWithoutClientsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateManyWithoutClientsInput = {
@@ -1288,6 +1423,7 @@ export type crm_opportunitiesUpdateWithoutProfiles_created_byInput = {
   profiles_responsible?: Prisma.profilesUpdateOneWithoutCrm_opportunities_responsibleNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateWithoutProfiles_created_byInput = {
@@ -1307,6 +1443,7 @@ export type crm_opportunitiesUncheckedUpdateWithoutProfiles_created_byInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateManyWithoutProfiles_created_byInput = {
@@ -1343,6 +1480,7 @@ export type crm_opportunitiesUpdateWithoutProfiles_responsibleInput = {
   profiles_created_by?: Prisma.profilesUpdateOneWithoutCrm_opportunities_created_byNestedInput
   crm_activities?: Prisma.crm_activitiesUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateWithoutProfiles_responsibleInput = {
@@ -1362,6 +1500,7 @@ export type crm_opportunitiesUncheckedUpdateWithoutProfiles_responsibleInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   crm_activities?: Prisma.crm_activitiesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
   crm_tasks?: Prisma.crm_tasksUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
+  quotes?: Prisma.quotesUncheckedUpdateManyWithoutCrm_opportunitiesNestedInput
 }
 
 export type crm_opportunitiesUncheckedUpdateManyWithoutProfiles_responsibleInput = {
@@ -1389,11 +1528,13 @@ export type crm_opportunitiesUncheckedUpdateManyWithoutProfiles_responsibleInput
 export type Crm_opportunitiesCountOutputType = {
   crm_activities: number
   crm_tasks: number
+  quotes: number
 }
 
 export type Crm_opportunitiesCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   crm_activities?: boolean | Crm_opportunitiesCountOutputTypeCountCrm_activitiesArgs
   crm_tasks?: boolean | Crm_opportunitiesCountOutputTypeCountCrm_tasksArgs
+  quotes?: boolean | Crm_opportunitiesCountOutputTypeCountQuotesArgs
 }
 
 /**
@@ -1420,6 +1561,13 @@ export type Crm_opportunitiesCountOutputTypeCountCrm_tasksArgs<ExtArgs extends r
   where?: Prisma.crm_tasksWhereInput
 }
 
+/**
+ * Crm_opportunitiesCountOutputType without action
+ */
+export type Crm_opportunitiesCountOutputTypeCountQuotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.quotesWhereInput
+}
+
 
 export type crm_opportunitiesSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1442,6 +1590,7 @@ export type crm_opportunitiesSelect<ExtArgs extends runtime.Types.Extensions.Int
   profiles_responsible?: boolean | Prisma.crm_opportunities$profiles_responsibleArgs<ExtArgs>
   crm_activities?: boolean | Prisma.crm_opportunities$crm_activitiesArgs<ExtArgs>
   crm_tasks?: boolean | Prisma.crm_opportunities$crm_tasksArgs<ExtArgs>
+  quotes?: boolean | Prisma.crm_opportunities$quotesArgs<ExtArgs>
   _count?: boolean | Prisma.Crm_opportunitiesCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["crm_opportunities"]>
 
@@ -1512,6 +1661,7 @@ export type crm_opportunitiesInclude<ExtArgs extends runtime.Types.Extensions.In
   profiles_responsible?: boolean | Prisma.crm_opportunities$profiles_responsibleArgs<ExtArgs>
   crm_activities?: boolean | Prisma.crm_opportunities$crm_activitiesArgs<ExtArgs>
   crm_tasks?: boolean | Prisma.crm_opportunities$crm_tasksArgs<ExtArgs>
+  quotes?: boolean | Prisma.crm_opportunities$quotesArgs<ExtArgs>
   _count?: boolean | Prisma.Crm_opportunitiesCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type crm_opportunitiesIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1533,6 +1683,7 @@ export type $crm_opportunitiesPayload<ExtArgs extends runtime.Types.Extensions.I
     profiles_responsible: Prisma.$profilesPayload<ExtArgs> | null
     crm_activities: Prisma.$crm_activitiesPayload<ExtArgs>[]
     crm_tasks: Prisma.$crm_tasksPayload<ExtArgs>[]
+    quotes: Prisma.$quotesPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1949,6 +2100,7 @@ export interface Prisma__crm_opportunitiesClient<T, Null = never, ExtArgs extend
   profiles_responsible<T extends Prisma.crm_opportunities$profiles_responsibleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.crm_opportunities$profiles_responsibleArgs<ExtArgs>>): Prisma.Prisma__profilesClient<runtime.Types.Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   crm_activities<T extends Prisma.crm_opportunities$crm_activitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.crm_opportunities$crm_activitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_activitiesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   crm_tasks<T extends Prisma.crm_opportunities$crm_tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.crm_opportunities$crm_tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$crm_tasksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quotes<T extends Prisma.crm_opportunities$quotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.crm_opportunities$quotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$quotesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2477,6 +2629,30 @@ export type crm_opportunities$crm_tasksArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.Crm_tasksScalarFieldEnum | Prisma.Crm_tasksScalarFieldEnum[]
+}
+
+/**
+ * crm_opportunities.quotes
+ */
+export type crm_opportunities$quotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the quotes
+   */
+  select?: Prisma.quotesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the quotes
+   */
+  omit?: Prisma.quotesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.quotesInclude<ExtArgs> | null
+  where?: Prisma.quotesWhereInput
+  orderBy?: Prisma.quotesOrderByWithRelationInput | Prisma.quotesOrderByWithRelationInput[]
+  cursor?: Prisma.quotesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuotesScalarFieldEnum | Prisma.QuotesScalarFieldEnum[]
 }
 
 /**
