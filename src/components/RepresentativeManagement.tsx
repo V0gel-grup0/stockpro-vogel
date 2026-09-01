@@ -60,6 +60,7 @@ function Progress({ value, color = "#2563eb" }: { value: number; color?: string 
 
 export default function RepresentativeManagement({ representativeId, onBack }: { representativeId: string; onBack?: () => void }) {
   const [data, setData] = useState<ManagementData | null>(null);
+  const [products, setProducts] = useState<Row[]>([]);
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Resumo");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,6 +72,8 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
   const [collectionForm, setCollectionForm] = useState({ receivable_id: "", contact_date: nowLocal(), contact_type: "whatsapp", notes: "", payment_promise: "", promised_date: "", next_contact_at: "" });
   const [contractForm, setContractForm] = useState({ contract_number: "", contract_type: "representacao", start_date: today(), end_date: today(), region: "", exclusive: false, status: "ativo", notes: "" });
   const [invoiceForm, setInvoiceForm] = useState({ invoice_number: "", issued_at: today(), amount: "0", purchase_id: "", notes: "" });
+  const [contractPdf, setContractPdf] = useState<File | null>(null);
+  const [invoicePdf, setInvoicePdf] = useState<File | null>(null);
 
   const endpoint = `/api/representatives/${encodeURIComponent(representativeId)}/management`;
 
@@ -83,6 +86,18 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
       setData(payload);
       setProfileForm({ company: payload.representative.representative_company || "", region: payload.representative.representative_region || "" });
       setContractForm((current) => ({ ...current, region: current.region || payload.representative.representative_region || "" }));
+
+      if (payload.capabilities?.can_manage_financials) {
+        try {
+          const productsResponse = await fetch("/api/products", { cache: "no-store" });
+          const productsPayload = await productsResponse.json();
+          setProducts(productsResponse.ok && productsPayload.sucesso ? productsPayload.products || [] : []);
+        } catch {
+          setProducts([]);
+        }
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
       setData(null);
       setMessage(error instanceof Error ? error.message : "Erro ao carregar a gestão do representante.");
@@ -113,20 +128,20 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
       if (!response.ok || !payload.sucesso) throw new Error(payload.erro || "Erro ao salvar.");
       setMessage(successMessage);
       await load();
-      return true;
+      return payload;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao salvar.");
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
   }
 
   async function uploadFile(kind: "contract" | "invoice", recordId: string, fileKind: "pdf" | "xml", file?: File) {
-    if (!file) return;
+    if (!file) return false;
     if (file.size <= 0 || file.size > 4_000_000) {
       setMessage("O anexo deve ter no máximo 4 MB.");
-      return;
+      return false;
     }
     try {
       setSaving(true);
@@ -142,11 +157,32 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
       if (!response.ok || !payload.sucesso) throw new Error(payload.erro || "Erro ao anexar arquivo.");
       setMessage("Anexo salvo com sucesso.");
       await load();
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao anexar arquivo.");
+      return false;
     } finally {
       setSaving(false);
     }
+  }
+
+  function choosePdf(file: File | undefined, setter: (file: File | null) => void) {
+    if (!file) {
+      setter(null);
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith(".pdf") || (file.type && file.type !== "application/pdf")) {
+      setMessage("Selecione um arquivo PDF válido.");
+      setter(null);
+      return;
+    }
+    if (file.size <= 0 || file.size > 4_000_000) {
+      setMessage("O PDF deve ter no máximo 4 MB.");
+      setter(null);
+      return;
+    }
+    setMessage("");
+    setter(file);
   }
 
   const openReceivables = useMemo(() => data?.receivables.filter((item) => item.effective_status !== "pago") || [], [data]);
@@ -228,21 +264,40 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
         <div className="form-grid">
           <FormField label="Data" type="date" value={purchaseForm.purchase_date} onChange={(purchase_date) => setPurchaseForm((current) => ({ ...current, purchase_date }))} />
           <FormSelect label="Tipo" value={purchaseForm.item_type} onChange={(item_type) => setPurchaseForm((current) => ({ ...current, item_type }))}><option value="equipamento">Equipamento</option><option value="produto">Produto</option></FormSelect>
-          <FormField label="Equipamento/produto" value={purchaseForm.item_name} onChange={(item_name) => setPurchaseForm((current) => ({ ...current, item_name }))} />
+          <FormSelect label="Equipamento/produto" value={purchaseForm.product_id} onChange={(product_id) => {
+            const product = products.find((item) => item.id === product_id);
+            setPurchaseForm((current) => ({
+              ...current,
+              product_id,
+              item_name: product?.name || "",
+              unit_price: product ? String(product.sale_price ?? 0) : "0",
+            }));
+          }}>
+            <option value="">Selecione</option>
+            {products.map((product) => <option key={product.id} value={product.id}>{product.name}{product.sku ? ` • ${product.sku}` : ""}</option>)}
+          </FormSelect>
           <FormField label="Quantidade" type="number" min="1" step="1" value={purchaseForm.quantity} onChange={(quantity) => setPurchaseForm((current) => ({ ...current, quantity }))} />
           <FormField label="Valor unitário" type="number" min="0" step="0.01" value={purchaseForm.unit_price} onChange={(unit_price) => setPurchaseForm((current) => ({ ...current, unit_price }))} />
           <FormField label="Frete" type="number" min="0" step="0.01" value={purchaseForm.shipping_value} onChange={(shipping_value) => setPurchaseForm((current) => ({ ...current, shipping_value }))} />
           <FormField label="Quantidade de parcelas" type="number" min="1" step="1" value={purchaseForm.installment_count} onChange={(installment_count) => setPurchaseForm((current) => ({ ...current, installment_count }))} />
           <FormField label="Primeiro vencimento" type="date" value={purchaseForm.first_due_date} onChange={(first_due_date) => setPurchaseForm((current) => ({ ...current, first_due_date }))} />
           <FormSelect label="Status" value={purchaseForm.status} onChange={(status) => setPurchaseForm((current) => ({ ...current, status }))}><option value="pendente">Pendente</option><option value="confirmada">Confirmada</option><option value="concluida">Concluída</option></FormSelect>
-          <FormField label="Condição de pagamento" value={purchaseForm.payment_terms} onChange={(payment_terms) => setPurchaseForm((current) => ({ ...current, payment_terms }))} />
+          <FormSelect label="Forma de pagamento" value={purchaseForm.payment_terms} onChange={(payment_terms) => setPurchaseForm((current) => ({ ...current, payment_terms }))}>
+            <option value="">Selecione</option>
+            <option value="pix">PIX</option>
+            <option value="boleto">Boleto</option>
+            <option value="transferencia">Transferência</option>
+            <option value="cartao">Cartão</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="a_combinar">A combinar</option>
+          </FormSelect>
           <div className="field"><label>Valor total</label><div className="input representative-readonly">{money(purchasePreview)}</div></div>
           <FormArea label="Observações" value={purchaseForm.notes} onChange={(notes) => setPurchaseForm((current) => ({ ...current, notes }))} />
         </div>
-        <div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={async () => { if (await submit("purchase", purchaseForm, "Compra e parcelas registradas com sucesso.")) setPurchaseForm((current) => ({ ...current, item_name: "", quantity: "1", unit_price: "0", shipping_value: "0", notes: "" })); }}>Registrar compra</button></div>
+        <div className="form-actions"><button className="btn btn-green" disabled={saving || !purchaseForm.product_id || !purchaseForm.payment_terms} onClick={async () => { if (await submit("purchase", purchaseForm, "Compra e parcelas registradas com sucesso.")) setPurchaseForm((current) => ({ ...current, product_id: "", item_name: "", quantity: "1", unit_price: "0", shipping_value: "0", payment_terms: "", notes: "" })); }}>Registrar compra</button></div>
       </section>}
       <section className="card" style={{ marginTop: capabilities.can_manage_financials ? 24 : 0 }}><h2 className="card-title">Histórico de compras</h2>
-        {data.purchases.length === 0 ? <p className="muted">Nenhuma compra registrada.</p> : <div className="product-list-grid">{data.purchases.map((purchase) => <article className="stat-card user-card" key={purchase.id}><strong>{purchase.item_name}</strong><small>{dateLabel(purchase.purchase_date)} • {purchase.quantity} × {money(purchase.unit_price)}</small><small>Subtotal: {money(purchase.subtotal)} • Frete: {money(purchase.shipping_value)}</small><small>Total: <b>{money(purchase.total_value)}</b></small><small>Pagamento: {purchase.payment_terms || "-"}</small><small>Status: {statusLabel(purchase.status)}</small>{purchase.notes && <small>{purchase.notes}</small>}</article>)}</div>}
+        {data.purchases.length === 0 ? <p className="muted">Nenhuma compra registrada.</p> : <div className="product-list-grid">{data.purchases.map((purchase) => <article className="stat-card user-card" key={purchase.id}><strong>{purchase.item_name}</strong><small>{dateLabel(purchase.purchase_date)} • {purchase.quantity} × {money(purchase.unit_price)}</small><small>Subtotal: {money(purchase.subtotal)} • Frete: {money(purchase.shipping_value)}</small><small>Total: <b>{money(purchase.total_value)}</b></small><small>Pagamento: {purchase.payment_terms ? statusLabel(purchase.payment_terms) : "-"}</small><small>Status: {statusLabel(purchase.status)}</small>{purchase.notes && <small>{purchase.notes}</small>}</article>)}</div>}
       </section>
     </>}
 
@@ -285,8 +340,26 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
         <FormField label="Região" value={contractForm.region} onChange={(region) => setContractForm((current) => ({ ...current, region }))} />
         <FormSelect label="Status" value={contractForm.status} onChange={(status) => setContractForm((current) => ({ ...current, status }))}><option value="rascunho">Rascunho</option><option value="ativo">Ativo</option><option value="vencido">Vencido</option><option value="encerrado">Encerrado</option></FormSelect>
         <label className="check-row"><input type="checkbox" checked={contractForm.exclusive} onChange={(event) => setContractForm((current) => ({ ...current, exclusive: event.target.checked }))} /> Exclusividade</label>
+        <div className="field">
+          <label>Contrato em PDF</label>
+          <label className="btn btn-blue" style={{ width: "fit-content", cursor: "pointer" }}>
+            {contractPdf ? "Trocar PDF selecionado" : "Selecionar PDF"}
+            <input key={contractPdf ? `${contractPdf.name}-${contractPdf.size}` : "contract-empty"} hidden type="file" accept=".pdf,application/pdf" onChange={(event) => choosePdf(event.target.files?.[0], setContractPdf)} />
+          </label>
+          {contractPdf && <small>Selecionado: <b>{contractPdf.name}</b></small>}
+        </div>
         <FormArea label="Observações" value={contractForm.notes} onChange={(notes) => setContractForm((current) => ({ ...current, notes }))} />
-      </div><div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={async () => { if (await submit("contract", contractForm, "Contrato cadastrado com sucesso.")) setContractForm((current) => ({ ...current, contract_number: "", notes: "" })); }}>Cadastrar contrato</button></div></section>}
+      </div><div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={async () => {
+        const payload = await submit("contract", contractForm, contractPdf ? "Contrato cadastrado. Salvando PDF..." : "Contrato cadastrado com sucesso.");
+        if (!payload?.contract?.id) return;
+        if (contractPdf) {
+          const attached = await uploadFile("contract", payload.contract.id, "pdf", contractPdf);
+          if (!attached) return;
+          setMessage("Contrato cadastrado e PDF anexado com sucesso.");
+        }
+        setContractForm((current) => ({ ...current, contract_number: "", notes: "" }));
+        setContractPdf(null);
+      }}>Cadastrar contrato</button></div></section>}
       <section className="card" style={{ marginTop: capabilities.can_manage_financials ? 24 : 0 }}><h2 className="card-title">Contratos</h2>{data.contracts.length === 0 ? <p className="muted">Nenhum contrato cadastrado.</p> : <div className="product-list-grid">{data.contracts.map((contract) => <article className="stat-card user-card" key={contract.id}><strong>{contract.contract_number} • {contract.contract_type}</strong><small>{dateLabel(contract.start_date)} a {dateLabel(contract.end_date)}</small><small>Região: {contract.region || "-"} • Exclusividade: {contract.exclusive ? "Sim" : "Não"}</small><small>Status: {statusLabel(contract.effective_status || contract.status)}</small>{contract.file_name && <small>PDF: <b>{contract.file_name}</b></small>}<div className="form-actions representative-inline-actions">{capabilities.can_manage_financials && <label className="btn btn-blue">{contract.file_name ? "Trocar contrato" : "Anexar contrato"}<input hidden type="file" accept=".pdf,application/pdf" onChange={(event) => uploadFile("contract", contract.id, "pdf", event.target.files?.[0])} /></label>}{contract.file_name && <button className="btn btn-gray" onClick={() => window.open(`${endpoint}/contracts/${contract.id}/file`, "_blank", "noopener,noreferrer")}>Visualizar contrato</button>}</div></article>)}</div>}</section>
     </>}
 
@@ -296,8 +369,26 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
         <FormField label="Data de emissão" type="date" value={invoiceForm.issued_at} onChange={(issued_at) => setInvoiceForm((current) => ({ ...current, issued_at }))} />
         <FormField label="Valor" type="number" min="0" step="0.01" value={invoiceForm.amount} onChange={(amount) => setInvoiceForm((current) => ({ ...current, amount }))} />
         <FormSelect label="Compra relacionada" value={invoiceForm.purchase_id} onChange={(purchase_id) => setInvoiceForm((current) => ({ ...current, purchase_id }))}><option value="">Sem compra vinculada</option>{data.purchases.map((purchase) => <option key={purchase.id} value={purchase.id}>{dateLabel(purchase.purchase_date)} • {purchase.item_name} • {money(purchase.total_value)}</option>)}</FormSelect>
+        <div className="field">
+          <label>Nota fiscal em PDF</label>
+          <label className="btn btn-blue" style={{ width: "fit-content", cursor: "pointer" }}>
+            {invoicePdf ? "Trocar PDF selecionado" : "Selecionar PDF"}
+            <input key={invoicePdf ? `${invoicePdf.name}-${invoicePdf.size}` : "invoice-empty"} hidden type="file" accept=".pdf,application/pdf" onChange={(event) => choosePdf(event.target.files?.[0], setInvoicePdf)} />
+          </label>
+          {invoicePdf && <small>Selecionado: <b>{invoicePdf.name}</b></small>}
+        </div>
         <FormArea label="Observações" value={invoiceForm.notes} onChange={(notes) => setInvoiceForm((current) => ({ ...current, notes }))} />
-      </div><div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={async () => { if (await submit("invoice", invoiceForm, "Nota fiscal cadastrada com sucesso.")) setInvoiceForm((current) => ({ ...current, invoice_number: "", amount: "0", notes: "" })); }}>Cadastrar NF</button></div></section>}
+      </div><div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={async () => {
+        const payload = await submit("invoice", invoiceForm, invoicePdf ? "Nota fiscal cadastrada. Salvando PDF..." : "Nota fiscal cadastrada com sucesso.");
+        if (!payload?.invoice?.id) return;
+        if (invoicePdf) {
+          const attached = await uploadFile("invoice", payload.invoice.id, "pdf", invoicePdf);
+          if (!attached) return;
+          setMessage("Nota fiscal cadastrada e PDF anexado com sucesso.");
+        }
+        setInvoiceForm((current) => ({ ...current, invoice_number: "", amount: "0", notes: "" }));
+        setInvoicePdf(null);
+      }}>Cadastrar NF</button></div></section>}
       <section className="card" style={{ marginTop: capabilities.can_manage_financials ? 24 : 0 }}><h2 className="card-title">Histórico fiscal</h2>{data.invoices.length === 0 ? <p className="muted">Nenhuma nota fiscal cadastrada.</p> : <div className="product-list-grid">{data.invoices.map((invoice) => <article className="stat-card user-card" key={invoice.id}><strong>NF {invoice.invoice_number}</strong><small>Emissão: {dateLabel(invoice.issued_at)} • Valor: {money(invoice.amount)}</small>{invoice.notes && <small>{invoice.notes}</small>}{invoice.pdf_file_name && <small>PDF: <b>{invoice.pdf_file_name}</b></small>}{invoice.xml_file_name && <small>XML: <b>{invoice.xml_file_name}</b></small>}<div className="form-actions representative-inline-actions">{capabilities.can_manage_financials && <><label className="btn btn-blue">{invoice.pdf_file_name ? "Trocar PDF" : "Anexar PDF"}<input hidden type="file" accept=".pdf,application/pdf" onChange={(event) => uploadFile("invoice", invoice.id, "pdf", event.target.files?.[0])} /></label><label className="btn btn-blue">{invoice.xml_file_name ? "Trocar XML" : "Anexar XML"}<input hidden type="file" accept=".xml,application/xml,text/xml" onChange={(event) => uploadFile("invoice", invoice.id, "xml", event.target.files?.[0])} /></label></>}{invoice.pdf_file_name && <button className="btn btn-gray" onClick={() => window.open(`${endpoint}/invoices/${invoice.id}/file?kind=pdf`, "_blank", "noopener,noreferrer")}>Visualizar PDF</button>}{invoice.xml_file_name && <button className="btn btn-gray" onClick={() => window.open(`${endpoint}/invoices/${invoice.id}/file?kind=xml`, "_blank", "noopener,noreferrer")}>Baixar XML</button>}</div></article>)}</div>}</section>
     </>}
   </>;
