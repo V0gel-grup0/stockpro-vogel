@@ -2,6 +2,7 @@
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
+import RepresentativeManagement from "@/components/RepresentativeManagement";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
@@ -42,6 +43,8 @@ type Profile = {
   number?: string;
   no_number?: boolean;
   neighborhood?: string;
+  representative_company?: string;
+  representative_region?: string;
   access_code?: string;
   seller_code?: string;
   manager_code?: string;
@@ -445,7 +448,7 @@ const menuByRole: Record<Role, string[]> = {
   vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Minha Gestão", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -637,6 +640,7 @@ export default function StockProApp() {
           {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
           {page === "Colaboradores" && <Colaboradores roles={COLABORADOR_ROLES} title="Colaboradores" currentUser={profile} search={search} />}
           {page === "Representantes" && <Colaboradores role="representante" title="Representantes" currentUser={profile} search={search} />}
+          {page === "Minha Gestão" && <RepresentativeManagement representativeId={profile.id} />}
           {page === "Análise de Cadastros" && <AnáliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
           {page === "Componentes" && <Componentes search={search} profile={profile} />}
@@ -2238,6 +2242,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const [items, setItems] = useState<Profile[]>([]);
   const [msg, setMsg] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [managedRepresentativeId, setManagedRepresentativeId] = useState<string | null>(null);
   const roleList = roles || (role ? [role] : []);
   const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
 
@@ -2416,6 +2421,10 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
   const cadastroUrl = role === "representante" ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
 
+  if (isRepresentante && managedRepresentativeId) {
+    return <RepresentativeManagement representativeId={managedRepresentativeId} onBack={() => setManagedRepresentativeId(null)} />;
+  }
+
   return <>
     <Title title={title} desc={desc} />
     <section className="card">
@@ -2438,6 +2447,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           {item.seller_code && <small>Código vendedor: {item.seller_code}</small>}
           {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
           <div className="form-actions">
+            {isRepresentante && currentUser && ["administrador", "gerente", "vendedor"].includes(currentUser.role) && <button className="btn btn-blue" onClick={() => setManagedRepresentativeId(item.id)}>Gestão</button>}
             {podeAvaliar(item) && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
             {podeAvaliar(item) && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
             {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}

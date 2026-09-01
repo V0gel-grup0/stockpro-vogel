@@ -80,6 +80,44 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
 .mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: 8px; }
 .check-row { color: #cbd5e1; font-size: 13px; display: flex; gap: 6px; align-items: center; }
 
+/* Gestão do representante */
+.representative-title { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+.representative-identity { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:18px; padding:24px 28px; }
+.representative-identity div { min-width:0; }
+.representative-identity span { display:block; color:#94a3b8; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+.representative-identity strong { display:block; color:#fff; overflow-wrap:anywhere; }
+.representative-tabs { max-width:1050px; margin:22px auto; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.representative-tabs button { flex:0 0 auto; min-height:42px; padding:9px 16px; border-radius:12px; border:1px solid rgba(148,163,184,.28); background:#0f172a; color:#cbd5e1; font-weight:800; cursor:pointer; }
+.representative-tabs button.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+.representative-summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.representative-progress { width:100%; height:10px; overflow:hidden; border-radius:999px; background:#020617; border:1px solid rgba(148,163,184,.18); }
+.representative-progress div { height:100%; border-radius:999px; transition:width .2s ease; }
+.representative-alerts { display:grid; gap:10px; }
+.representative-alert { border-radius:12px; padding:12px 14px; font-weight:700; border:1px solid rgba(148,163,184,.22); background:#111c2e; }
+.representative-alert.danger { border-color:rgba(248,113,113,.5); color:#fecaca; background:rgba(127,29,29,.22); }
+.representative-alert.warning { border-color:rgba(250,204,21,.4); color:#fef08a; background:rgba(113,63,18,.2); }
+.representative-message { max-width:1050px; margin:0 auto 22px; padding:14px 18px; border-radius:14px; font-weight:800; }
+.representative-message.success { color:#86efac; background:rgba(20,83,45,.35); border:1px solid rgba(74,222,128,.4); }
+.representative-message.error { color:#fca5a5; background:rgba(127,29,29,.3); border:1px solid rgba(248,113,113,.4); }
+.representative-readonly { display:flex; align-items:center; color:#93c5fd; font-weight:800; }
+.representative-inline-actions { margin-top:10px; gap:10px; }
+.representative-inline-actions .btn { min-height:40px; padding:8px 14px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; }
+.muted { color:#94a3b8; }
+.status-vencido { color:#f87171; }
+.status-pago { color:#4ade80; }
+.status-parcialmente_pago { color:#facc15; }
+.status-pendente { color:#93c5fd; }
+
+@media (max-width:1023px) {
+  .representative-identity, .representative-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width:760px) {
+  .representative-title { align-items:stretch; flex-direction:column; }
+  .representative-identity, .representative-summary-grid { grid-template-columns:1fr; }
+  .representative-tabs { margin-left:0; margin-right:0; }
+}
+
 /* Patch interface 2026-06 */
 .notifications-panel {
   position: absolute;
