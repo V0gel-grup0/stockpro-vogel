@@ -234,6 +234,8 @@ model profiles {
   number                                                   String              @default("")
   no_number                                                Boolean             @default(false)
   neighborhood                                             String              @default("")
+  representative_company                                  String              @default("")
+  representative_region                                   String              @default("")
   access_code                                              String?
   seller_code                                              String?
   manager_code                                             String?
@@ -264,6 +266,174 @@ model profiles {
   other_profiles_profiles_responsible_manager_idToprofiles profiles[]          @relation("profiles_responsible_manager_idToprofiles")
   profiles_profiles_responsible_seller_idToprofiles        profiles?           @relation("profiles_responsible_seller_idToprofiles", fields: [responsible_seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_profiles_profiles_responsible_seller_idToprofiles  profiles[]          @relation("profiles_responsible_seller_idToprofiles")
+  representative_goals_owned                              representative_goals[]              @relation("representative_goals_representative")
+  representative_goals_created                            representative_goals[]              @relation("representative_goals_created_by")
+  representative_purchases_owned                          representative_purchases[]          @relation("representative_purchases_representative")
+  representative_purchases_created                        representative_purchases[]          @relation("representative_purchases_created_by")
+  representative_receivables_owned                        representative_receivables[]        @relation("representative_receivables_representative")
+  representative_payments_owned                           representative_payments[]           @relation("representative_payments_representative")
+  representative_payments_created                         representative_payments[]           @relation("representative_payments_created_by")
+  representative_collections_owned                        representative_collection_history[] @relation("representative_collections_representative")
+  representative_collections_created                      representative_collection_history[] @relation("representative_collections_created_by")
+  representative_contracts_owned                          representative_contracts[]          @relation("representative_contracts_representative")
+  representative_contracts_uploaded                       representative_contracts[]          @relation("representative_contracts_uploaded_by")
+  representative_invoices_owned                           representative_invoices[]           @relation("representative_invoices_representative")
+  representative_invoices_uploaded                        representative_invoices[]           @relation("representative_invoices_uploaded_by")
+}
+
+model representative_goals {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String   @db.Uuid
+  reference_month       DateTime @db.Date
+  equipment_target      Int      @default(0)
+  revenue_target        Decimal  @default(0) @db.Decimal(14, 2)
+  notes                 String   @default("")
+  created_by            String   @db.Uuid
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+  representative        profiles @relation("representative_goals_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creator               profiles @relation("representative_goals_created_by", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@unique([representative_id, reference_month])
+  @@index([reference_month])
+}
+
+model representative_purchases {
+  id                    String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String                       @db.Uuid
+  purchase_date         DateTime                     @db.Date
+  item_type             String
+  product_id            String?                      @db.Uuid
+  item_name             String
+  quantity              Int
+  unit_price            Decimal                      @db.Decimal(14, 2)
+  subtotal              Decimal                      @db.Decimal(14, 2)
+  shipping_value        Decimal                      @default(0) @db.Decimal(14, 2)
+  total_value           Decimal                      @db.Decimal(14, 2)
+  payment_terms         String                       @default("")
+  notes                 String                       @default("")
+  status                String                       @default("pendente")
+  created_by            String                       @db.Uuid
+  created_at            DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                     @default(now()) @db.Timestamptz(6)
+  representative        profiles                     @relation("representative_purchases_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creator               profiles                     @relation("representative_purchases_created_by", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  receivables           representative_receivables[]
+  invoices              representative_invoices[]
+
+  @@index([representative_id, purchase_date])
+  @@index([product_id])
+}
+
+model representative_receivables {
+  id                    String                              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String                              @db.Uuid
+  purchase_id           String                              @db.Uuid
+  installment_number    Int
+  due_date              DateTime                            @db.Date
+  original_amount       Decimal                             @db.Decimal(14, 2)
+  received_amount       Decimal                             @default(0) @db.Decimal(14, 2)
+  status                String                              @default("pendente")
+  created_at            DateTime                            @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                            @default(now()) @db.Timestamptz(6)
+  representative        profiles                            @relation("representative_receivables_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  purchase              representative_purchases           @relation(fields: [purchase_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  payments              representative_payments[]
+  collections           representative_collection_history[]
+
+  @@unique([purchase_id, installment_number])
+  @@index([representative_id, due_date])
+  @@index([status])
+}
+
+model representative_payments {
+  id                    String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String                     @db.Uuid
+  receivable_id         String                     @db.Uuid
+  payment_date          DateTime                   @db.Date
+  amount                Decimal                    @db.Decimal(14, 2)
+  payment_method        String
+  notes                 String                     @default("")
+  created_by            String                     @db.Uuid
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  representative        profiles                   @relation("representative_payments_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  receivable            representative_receivables @relation(fields: [receivable_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creator               profiles                   @relation("representative_payments_created_by", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([representative_id, payment_date])
+  @@index([receivable_id])
+}
+
+model representative_collection_history {
+  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String                      @db.Uuid
+  receivable_id         String?                     @db.Uuid
+  contact_date          DateTime                    @db.Timestamptz(6)
+  contact_type          String
+  notes                 String
+  payment_promise       String                      @default("")
+  promised_date         DateTime?                   @db.Date
+  next_contact_at       DateTime?                   @db.Timestamptz(6)
+  created_by            String                      @db.Uuid
+  created_at            DateTime                    @default(now()) @db.Timestamptz(6)
+  representative        profiles                    @relation("representative_collections_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  receivable            representative_receivables? @relation(fields: [receivable_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creator               profiles                    @relation("representative_collections_created_by", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([representative_id, contact_date])
+  @@index([receivable_id])
+  @@index([next_contact_at])
+}
+
+model representative_contracts {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String   @db.Uuid
+  contract_number       String
+  contract_type         String
+  start_date            DateTime @db.Date
+  end_date              DateTime @db.Date
+  region                String   @default("")
+  exclusive             Boolean  @default(false)
+  status                String   @default("ativo")
+  notes                 String   @default("")
+  file_name             String?
+  file_data             Bytes?
+  file_size             Int?
+  mime_type             String?
+  uploaded_by           String?  @db.Uuid
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+  representative        profiles @relation("representative_contracts_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  uploader              profiles? @relation("representative_contracts_uploaded_by", fields: [uploaded_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@unique([representative_id, contract_number])
+  @@index([representative_id, end_date])
+}
+
+model representative_invoices {
+  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  representative_id     String                    @db.Uuid
+  purchase_id           String?                   @db.Uuid
+  invoice_number        String
+  issued_at             DateTime                  @db.Date
+  amount                Decimal                   @db.Decimal(14, 2)
+  notes                 String                    @default("")
+  pdf_file_name         String?
+  pdf_file_data         Bytes?
+  pdf_file_size         Int?
+  xml_file_name         String?
+  xml_file_data         Bytes?
+  xml_file_size         Int?
+  uploaded_by           String?                   @db.Uuid
+  created_at            DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                  @default(now()) @db.Timestamptz(6)
+  representative        profiles                  @relation("representative_invoices_representative", fields: [representative_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  purchase              representative_purchases? @relation(fields: [purchase_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  uploader              profiles?                 @relation("representative_invoices_uploaded_by", fields: [uploaded_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@unique([representative_id, invoice_number])
+  @@index([representative_id, issued_at])
+  @@index([purchase_id])
 }
 
 model suppliers {
