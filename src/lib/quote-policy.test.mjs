@@ -156,13 +156,25 @@ test("conversão bloqueia segundo pedido", () => {
   assert.equal(result.allowed, false);
 });
 
-test("conversão multi-item é bloqueada para evitar perda", () => {
+test("conversão permite vários itens no mesmo pedido", () => {
   const result = validateOrderConversion("approved", null, [
-    { item_type: "product", product_id: "product-a", quantity: 1 },
+    { item_type: "product", product_id: "product-a", quantity: 2 },
     { item_type: "equipment", product_id: null, quantity: 1 },
+    { item_type: "custom", product_id: null, quantity: 1.5 },
   ]);
-  assert.equal(result.allowed, false);
-  assert.match(result.reason, /vários itens/);
+  assert.equal(result.allowed, true);
+  assert.equal(result.itemCount, 3);
+});
+
+test("conversão exige quantidade inteira para produto e equipamento", () => {
+  const product = validateOrderConversion("approved", null, [
+    { item_type: "product", product_id: "product-a", quantity: 1.5 },
+  ]);
+  const equipment = validateOrderConversion("approved", null, [
+    { item_type: "equipment", product_id: null, quantity: 2.25 },
+  ]);
+  assert.equal(product.allowed, false);
+  assert.equal(equipment.allowed, false);
 });
 
 test("representante sem vendedor válido continua bloqueado", () => {
