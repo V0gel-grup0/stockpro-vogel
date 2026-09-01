@@ -22,3 +22,32 @@ select.input {
   line-height: 1 !important;
   white-space: nowrap !important;
 }
+
+/* Mantém nome/e-mail e botão Sair sempre inteiros no rodapé da sidebar.
+   Somente a lista de menus rola quando não couber na altura disponível. */
+@media (min-width: 769px) {
+  .sidebar {
+    overflow: hidden !important;
+  }
+
+  .sidebar .menu-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 4px;
+  }
+
+  .sidebar-footer {
+    flex: 0 0 auto !important;
+    margin-top: 0 !important;
+    width: 100% !important;
+    min-height: max-content !important;
+    overflow: visible !important;
+  }
+
+  .account-details {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+}
