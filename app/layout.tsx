@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./field-fixes.css";
 import "./mobile.css";
+import "./mobile-menu.css";
 
 export const metadata: Metadata = {
   title: "StockPro Vogel",
