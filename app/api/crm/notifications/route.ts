@@ -8,8 +8,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CRM_TIME_ZONE = "America/Sao_Paulo";
-const visibleForAllRoles = new Set(["administrador", "gerente"]);
-const visibleForOwnRoles = new Set(["vendedor", "representante"]);
 
 type DateParts = {
   year: number;
@@ -67,21 +65,6 @@ function addCalendarDays(parts: DateParts, days: number): DateParts {
   };
 }
 
-function emptyResponse() {
-  return {
-    sucesso: true,
-    resumo: {
-      atrasadas: 0,
-      hoje: 0,
-      proximas: 0,
-      total_atencao: 0,
-    },
-    atrasadas: [],
-    hoje: [],
-    proximas: [],
-  };
-}
-
 function errorResponse(erro: string, status: number) {
   return NextResponse.json({ sucesso: false, erro }, { status });
 }
@@ -94,24 +77,16 @@ export async function GET() {
       return errorResponse("Não autenticado.", 401);
     }
 
-    const canSeeAll = visibleForAllRoles.has(authenticatedProfile.role);
-    const canSeeOwn = visibleForOwnRoles.has(authenticatedProfile.role);
-
-    if (!canSeeAll && !canSeeOwn) {
-      return NextResponse.json(emptyResponse());
-    }
-
     const todayParts = getDateParts(new Date());
     const todayStart = startOfZonedDay(todayParts);
     const tomorrowStart = startOfZonedDay(addCalendarDays(todayParts, 1));
     const upcomingEnd = startOfZonedDay(addCalendarDays(todayParts, 8));
 
-    const visibilityWhere = canSeeOwn
-      ? buildOpportunityVisibilityWhere({
-          id: authenticatedProfile.id,
-          role: authenticatedProfile.role,
-        })
-      : undefined;
+    const visibilityWhere = buildOpportunityVisibilityWhere({
+      id: authenticatedProfile.id,
+      role: authenticatedProfile.role,
+    });
+
     const opportunities = await prisma.crm_opportunities.findMany({
       where: {
         next_action: {
