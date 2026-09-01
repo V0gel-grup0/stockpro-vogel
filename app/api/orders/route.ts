@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { authorizeApi } from "@/lib/api-auth";
 import {
   buildAccessibleClientWhere,
@@ -39,6 +39,42 @@ function orderScope(profile: { id: string; role: AppRole }): Prisma.ordersWhereI
   }
 
   return {};
+}
+
+function isMissingOrderItemsTable(error: unknown) {
+  const candidate = error as { code?: string; meta?: { code?: string }; message?: string };
+  return (
+    (candidate?.code === "P2010" && candidate?.meta?.code === "42P01") ||
+    String(candidate?.message || "").includes('relation "order_items" does not exist')
+  );
+}
+
+async function loadOrderItems(orderIds: string[]) {
+  if (!orderIds.length) return [];
+
+  try {
+    return await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
+      SELECT
+        id,
+        order_id,
+        source_quote_item_id,
+        item_type,
+        product_id,
+        item_name,
+        description,
+        quantity,
+        unit_price,
+        discount_value,
+        total_value,
+        created_at
+      FROM order_items
+      WHERE order_id IN (${Prisma.join(orderIds)})
+      ORDER BY created_at ASC, id ASC
+    `);
+  } catch (error) {
+    if (isMissingOrderItemsTable(error)) return [];
+    throw error;
+  }
 }
 
 async function canAccessEveryClient(
@@ -94,7 +130,18 @@ export async function GET() {
       }),
       orderBy: { created_at: "desc" },
     });
-    return NextResponse.json({ sucesso: true, orders: toJsonSafe(orders) });
+    const orderItems = await loadOrderItems(orders.map((order) => order.id));
+    const itemsByOrder = new Map<string, Array<Record<string, unknown>>>();
+    for (const item of orderItems) {
+      const orderId = String(item.order_id || "");
+      if (!itemsByOrder.has(orderId)) itemsByOrder.set(orderId, []);
+      itemsByOrder.get(orderId)?.push(item);
+    }
+    const enrichedOrders = orders.map((order) => ({
+      ...order,
+      order_items: itemsByOrder.get(order.id) || [],
+    }));
+    return NextResponse.json({ sucesso: true, orders: toJsonSafe(enrichedOrders) });
   } catch (error) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao carregar pedidos." }, { status: 500 });
   }
@@ -229,6 +276,11 @@ export async function DELETE(request: Request) {
     await prisma.$transaction(async (tx) => {
       await tx.movements.updateMany({ where: { order_id: id }, data: { order_id: null } });
       await tx.conta_azul_logs.deleteMany({ where: { order_id: id } });
+      try {
+        await tx.$executeRaw`DELETE FROM order_items WHERE order_id = ${id}::uuid`;
+      } catch (error) {
+        if (!isMissingOrderItemsTable(error)) throw error;
+      }
       await tx.orders.delete({ where: { id } });
     });
     return NextResponse.json({ sucesso: true });
