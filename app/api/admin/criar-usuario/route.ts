@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { getAuthenticatedProfile } from "@/lib/auth";
 
 type TipoUsuario =
   | "gerente"
@@ -73,6 +74,47 @@ export async function POST(request: Request) {
     if (!tipoNormalizado) {
       return NextResponse.json(
         { error: "Tipo de usuário inválido." },
+        { status: 400 }
+      );
+    }
+
+    const authenticatedProfile = await getAuthenticatedProfile();
+    const publicRegistration = !authenticatedProfile;
+    const managerAllowedRoles: TipoUsuario[] = [
+      "vendedor",
+      "funcionario",
+      "tecnico",
+      "representante",
+    ];
+
+    if (publicRegistration && tipoNormalizado !== "representante") {
+      return NextResponse.json(
+        { error: "Sem autenticação, somente o cadastro de representante é permitido." },
+        { status: 403 }
+      );
+    }
+
+    if (
+      authenticatedProfile &&
+      authenticatedProfile.role !== "administrador" &&
+      !(
+        authenticatedProfile.role === "gerente" &&
+        managerAllowedRoles.includes(tipoNormalizado)
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Seu perfil não tem permissão para criar este tipo de usuário." },
+        { status: 403 }
+      );
+    }
+
+    if (
+      typeof senha !== "string" ||
+      senha.length < 8 ||
+      senha.length > 128
+    ) {
+      return NextResponse.json(
+        { error: "A senha deve ter entre 8 e 128 caracteres." },
         { status: 400 }
       );
     }
@@ -165,6 +207,7 @@ export async function POST(request: Request) {
         seller_code: sellerCode,
         manager_code: managerCode,
         responsible_seller_id: responsibleSellerId,
+        created_by: authenticatedProfile?.id ?? null,
       },
     });
 
@@ -183,13 +226,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: unknown) {
-    console.error("Erro ao criar usuário:");
-    console.dir(error, { depth: null });
-
-    if (error && typeof error === "object" && "cause" in error) {
-      console.error("Causa interna:");
-      console.dir(error.cause, { depth: null });
-    }
+    console.error("Erro ao criar usuário:", error);
 
     const prismaCode =
       error && typeof error === "object" && "code" in error
@@ -203,13 +240,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const mensagem =
-      error instanceof Error
-        ? error.message
-        : "Erro inesperado ao salvar usuário.";
-
     return NextResponse.json(
-      { error: mensagem },
+      { error: "Erro inesperado ao salvar usuário." },
       { status: 500 }
     );
   }

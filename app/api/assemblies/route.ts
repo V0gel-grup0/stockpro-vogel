@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
+import { ASSEMBLY_DELETE_ROLES } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 
@@ -7,13 +9,14 @@ export const dynamic = "force-dynamic";
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 
 export async function GET() {
-  try { const assemblies = await prisma.assemblies.findMany({ orderBy: { created_at: "desc" } }); return NextResponse.json({ sucesso: true, assemblies: toJsonSafe(assemblies) }); }
+  try { const authorization = await authorizeApi(["administrador", "gerente", "tecnico"]); if ("response" in authorization) return authorization.response; const assemblies = await prisma.assemblies.findMany({ orderBy: { created_at: "desc" } }); return NextResponse.json({ sucesso: true, assemblies: toJsonSafe(assemblies) }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao carregar montagens." }, { status: 500 }); }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json(); const equipment = text(body.equipment); const quantity = Number(body.quantity || 0); const createdBy = text(body.created_by); const technicianId = text(body.technician_id) || null;
+    const authorization = await authorizeApi(["administrador", "gerente", "tecnico"]); if ("response" in authorization) return authorization.response;
+    const body = await request.json(); const equipment = text(body.equipment); const quantity = Number(body.quantity || 0); const createdBy = authorization.profile.id; const technicianId = text(body.technician_id) || null;
     if (!equipment || !Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ sucesso: false, erro: "Dados da montagem inválidos." }, { status: 400 });
     const assembly = await prisma.$transaction(async (tx) => {
       const divisions = await tx.equipment_components.findMany({ where: { equipment_name: equipment }, include: { components: true } });
@@ -38,11 +41,11 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  try { const body = await request.json(); const id = text(body.id); const quantity = Number(body.quantity || 0); if (!id || !text(body.equipment) || quantity <= 0) return NextResponse.json({ sucesso: false, erro: "Dados inválidos." }, { status: 400 }); const assembly = await prisma.assemblies.update({ where: { id }, data: { equipment: text(body.equipment), quantity: Math.trunc(quantity), technician_id: text(body.technician_id) || null } }); return NextResponse.json({ sucesso: true, assembly: toJsonSafe(assembly) }); }
+  try { const authorization = await authorizeApi(["administrador", "gerente", "tecnico"]); if ("response" in authorization) return authorization.response; const body = await request.json(); const id = text(body.id); const quantity = Number(body.quantity || 0); if (!id || !text(body.equipment) || quantity <= 0) return NextResponse.json({ sucesso: false, erro: "Dados inválidos." }, { status: 400 }); const assembly = await prisma.assemblies.update({ where: { id }, data: { equipment: text(body.equipment), quantity: Math.trunc(quantity), technician_id: text(body.technician_id) || null } }); return NextResponse.json({ sucesso: true, assembly: toJsonSafe(assembly) }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao atualizar montagem." }, { status: 500 }); }
 }
 
 export async function DELETE(request: Request) {
-  try { const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 }); await prisma.assemblies.delete({ where: { id } }); return NextResponse.json({ sucesso: true }); }
+  try { const authorization = await authorizeApi(ASSEMBLY_DELETE_ROLES); if ("response" in authorization) return authorization.response; const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 }); await prisma.assemblies.delete({ where: { id } }); return NextResponse.json({ sucesso: true }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao excluir montagem." }, { status: 500 }); }
 }

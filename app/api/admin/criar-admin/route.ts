@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedProfile } from "@/lib/auth";
 
 function somenteNumeros(valor: string) {
   return String(valor || "").replace(/\D/g, "");
@@ -8,6 +9,22 @@ function somenteNumeros(valor: string) {
 
 export async function POST(request: Request) {
   try {
+    const existingAdministrator = await prisma.profiles.findFirst({
+      where: { role: "administrador" },
+      select: { id: true },
+    });
+
+    if (existingAdministrator) {
+      const authenticatedProfile = await getAuthenticatedProfile();
+
+      if (!authenticatedProfile || authenticatedProfile.role !== "administrador") {
+        return NextResponse.json(
+          { error: "A criação de administradores exige uma sessão administrativa." },
+          { status: 403 }
+        );
+      }
+    }
+
     const body = await request.json();
 
     const {
@@ -91,11 +108,11 @@ export async function POST(request: Request) {
         role: usuarioCriado.role,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro ao criar administrador:", error);
 
     return NextResponse.json(
-      { error: error.message || "Erro inesperado ao criar administrador." },
+      { error: "Erro inesperado ao criar administrador." },
       { status: 500 }
     );
   }

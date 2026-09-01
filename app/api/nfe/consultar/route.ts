@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 
 function somenteNumeros(valor: string) {
   return String(valor || "").replace(/\D/g, "");
@@ -6,6 +7,13 @@ function somenteNumeros(valor: string) {
 
 export async function POST(request: Request) {
   try {
+    const authorization = await authorizeApi([
+      "administrador",
+      "gerente",
+      "funcionario",
+    ]);
+    if ("response" in authorization) return authorization.response;
+
     const { nf_key } = await request.json();
 
     const chave = somenteNumeros(nf_key);

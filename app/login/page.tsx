@@ -31,7 +31,6 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("stockpro_usuario", JSON.stringify(dados.usuario));
       router.replace("/");
     } catch {
       setMsg("Não foi possível conectar ao sistema.");

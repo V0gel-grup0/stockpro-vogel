@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { buildOpportunityVisibilityWhere } from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -105,6 +106,12 @@ export async function GET() {
     const tomorrowStart = startOfZonedDay(addCalendarDays(todayParts, 1));
     const upcomingEnd = startOfZonedDay(addCalendarDays(todayParts, 8));
 
+    const visibilityWhere = canSeeOwn
+      ? buildOpportunityVisibilityWhere({
+          id: authenticatedProfile.id,
+          role: authenticatedProfile.role,
+        })
+      : undefined;
     const opportunities = await prisma.crm_opportunities.findMany({
       where: {
         next_action: {
@@ -114,14 +121,7 @@ export async function GET() {
           not: null,
           lt: upcomingEnd,
         },
-        ...(canSeeOwn
-          ? {
-              OR: [
-                { responsible_id: authenticatedProfile.id },
-                { created_by: authenticatedProfile.id },
-              ],
-            }
-          : {}),
+        ...(visibilityWhere || {}),
       },
       orderBy: {
         next_action_at: "asc",

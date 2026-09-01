@@ -1,6 +1,20 @@
 "use client";
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
+import QuotesModule from "@/components/QuotesModule";
+import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
+import {
+  canDeleteAssembly,
+  canDeleteComponent,
+  canDeleteOrder,
+  canDeleteProducts,
+  canManageOpportunityRecord,
+  canReviewRepresentative,
+  canUnifyComponents,
+  canUpdateOrderStatus,
+  canWriteProducts,
+  type AppRole,
+} from "@/lib/permissions";
 
 function getSaleCode(order: any) {
   if (order?.order_number !== undefined && order?.order_number !== null) {
@@ -13,7 +27,7 @@ function getSaleCode(order: any) {
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-type Role = "administrador" | "gerente" | "vendedor" | "funcionario" | "tecnico" | "representante";
+type Role = AppRole;
 type Profile = {
   id: string;
   email: string;
@@ -256,22 +270,7 @@ function textMatch(item: AnyRow, search: string) {
   return JSON.stringify(item).toLowerCase().includes(q);
 }
 
-const EQUIPAMENTOS = [
-  "Celt5000 - 220V 1 turbina",
-  "Celt5000 - 220V 2 turbinas",
-  "Celt5000 - 220V 3 turbinas",
-  "Celt5000 - 380V 1 turbina",
-  "Celt5000 - 380V 2 turbinas",
-  "Celt5000 - 380V 3 turbinas",
-  "Celt5000 Plus - 220V 1 turbina + Mínima",
-  "Celt5000 Plus - 220V 2 turbinas + Mínima",
-  "Celt5000 Plus - 220V 3 turbinas + Mínima",
-  "Celt5000 Plus - 380V 1 turbina + Mínima",
-  "Celt5000 Plus - 380V 2 turbinas + Mínima",
-  "Celt5000 Plus - 380V 3 turbinas + Mínima",
-  "CeltPlus - 220V",
-  "CeltPlus - 380V",
-];
+const EQUIPAMENTOS: string[] = [...EQUIPMENT_CATALOG];
 
 type ComposiçãoItem = { name: string; category: string; quantity: number };
 
@@ -441,12 +440,12 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Pedidos", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Pedidos", "Relatórios", "Meu Perfil"],
-  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Representantes", "Pedidos", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
+  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -459,6 +458,7 @@ export default function StockProApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [crmNotifications, setCrmNotifications] = useState<CrmNotifications>(EMPTY_CRM_NOTIFICATIONS);
   const [crmNavigationTarget, setCrmNavigationTarget] = useState<CrmNavigationTarget | null>(null);
+  const [quoteNavigationTarget, setQuoteNavigationTarget] = useState<{ clientId: string; opportunityId: string; requestId: number } | null>(null);
 
   useEffect(() => {
     carregarSessao();
@@ -477,14 +477,12 @@ export default function StockProApp() {
       });
 
       if (respostaPerfil.status === 401) {
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
       }
 
       if (!respostaPerfil.ok) {
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
@@ -509,7 +507,6 @@ export default function StockProApp() {
 
       if (!rolesPermitidas.includes(roleNormalizada as Role)) {
         console.error("Perfil com função inválida:", perfilCompleto.role);
-        localStorage.removeItem("stockpro_usuario");
         setProfile(null);
         router.replace("/login");
         return;
@@ -520,15 +517,9 @@ export default function StockProApp() {
         role: roleNormalizada as Role,
       } as Profile;
 
-      localStorage.setItem(
-        "stockpro_usuario",
-        JSON.stringify(perfilFinal)
-      );
-
       setProfile(perfilFinal);
     } catch (error) {
       console.error("Erro ao carregar usuário:", error);
-      localStorage.removeItem("stockpro_usuario");
       setProfile(null);
       router.replace("/login");
     } finally {
@@ -566,6 +557,15 @@ export default function StockProApp() {
     setNotificationsOpen(false);
   }
 
+  function createQuoteFromCrm(opportunity: AnyRow) {
+    setQuoteNavigationTarget({
+      clientId: opportunity.client_id,
+      opportunityId: opportunity.id,
+      requestId: Date.now(),
+    });
+    setPage("Orçamentos");
+  }
+
   async function logout() {
     try {
       const response = await fetch("/api/auth/logout", {
@@ -578,7 +578,6 @@ export default function StockProApp() {
         throw new Error("Nao foi possivel encerrar a sessao.");
       }
 
-      localStorage.removeItem("stockpro_usuario");
       router.replace("/login");
       router.refresh();
     } catch (error) {
@@ -616,14 +615,23 @@ export default function StockProApp() {
         {menuOpen && <aside className="sidebar">
           <div className="brand"><img src="/logo-vogel.png" alt="Grupo Vogel" className="brand-logo" /><div className="brand-text"><strong>StockPro</strong><small>Grupo Vogel Brasil</small></div></div>
           <nav className="menu-list">{menus.map((item) => <button key={item} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => setPage(item)}>{item}</button>)}</nav>
-          <div className="sidebar-footer"><strong>{profile.name || "Colaborador"}</strong><small>{formatRole(profile.role)}</small>{profile.access_code && <small>Código: {profile.access_code}</small>}<button className="btn btn-gray" onClick={logout}>Sair</button></div>
+          <div className="sidebar-footer">
+            <div className="account-details">
+              <strong className="account-name">{profile.name || "Colaborador"}</strong>
+              <span className="account-email">{profile.email}</span>
+              <small className="account-role">{formatRole(profile.role)}</small>
+              {profile.access_code && <small className="account-code">Código: {profile.access_code}</small>}
+            </div>
+            <button className="btn btn-gray account-logout" onClick={logout}>Sair</button>
+          </div>
         </aside>}
         <main className="main-content">
           {page === "Dashboard" && <Dashboard profile={profile} />}
-          {page === "Produtos" && <Produtos search={search} />}
+          {page === "Produtos" && <Produtos search={search} profile={profile} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
-          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} />}
+          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} />}
+          {page === "Orçamentos" && <QuotesModule profile={profile} search={search} initialContext={quoteNavigationTarget} onContextConsumed={() => setQuoteNavigationTarget(null)} />}
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
           {page === "Equipamentos Montados" && <EquipamentosMontados search={search} />}
@@ -631,7 +639,7 @@ export default function StockProApp() {
           {page === "Representantes" && <Colaboradores role="representante" title="Representantes" currentUser={profile} search={search} />}
           {page === "Análise de Cadastros" && <AnáliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
-          {page === "Componentes" && <Componentes search={search} />}
+          {page === "Componentes" && <Componentes search={search} profile={profile} />}
           {page === "Conta Azul" && <ContaAzul />}
           {page === "Relatórios" && <Relatorios profile={profile} />}
           {page === "Meu Perfil" && <MeuPerfil profile={profile} onUpdated={carregarSessao} />}
@@ -669,11 +677,13 @@ function CRM({
   notifications,
   onRefreshNotifications,
   navigationTarget,
+  onCreateQuote,
 }: {
   profile: Profile;
   notifications: CrmNotifications;
   onRefreshNotifications: () => Promise<void>;
   navigationTarget: CrmNavigationTarget | null;
+  onCreateQuote: (opportunity: AnyRow) => void;
 } & SearchProps) {
   const empty = {
     client_id: "",
@@ -687,6 +697,8 @@ function CRM({
     notes: "",
   };
   const [opportunities, setOpportunities] = useState<AnyRow[]>([]);
+  const [crmQuotes, setCrmQuotes] = useState<AnyRow[]>([]);
+  const canUseQuotes = ["administrador", "gerente", "vendedor", "representante"].includes(profile.role);
   const [clients, setClients] = useState<AnyRow[]>([]);
   const [responsibleProfiles, setResponsibleProfiles] = useState<Profile[]>([]);
   const [form, setForm] = useState(empty);
@@ -859,15 +871,10 @@ function CRM({
   }
 
   function canManageOpportunity(opportunity: AnyRow) {
-    if (profile.role === "administrador" || profile.role === "gerente") {
-      return true;
-    }
-
-    return (
-      (profile.role === "vendedor" || profile.role === "representante") &&
-      (opportunity.created_by === profile.id ||
-        opportunity.responsible_id === profile.id)
-    );
+    return canManageOpportunityRecord(profile, {
+      created_by: opportunity.created_by || null,
+      responsible_id: opportunity.responsible_id || null,
+    });
   }
 
   async function loadOpportunityActivities(opportunityId: string, force = false) {
@@ -1005,17 +1012,19 @@ function CRM({
     setLoading(true);
 
     try {
-      const [opportunitiesResponse, clientsResponse, profilesResponse] =
+      const [opportunitiesResponse, clientsResponse, profilesResponse, quotesResponse] =
         await Promise.all([
           fetch("/api/crm/opportunities", { cache: "no-store" }),
           fetch("/api/clients", { cache: "no-store" }),
           fetch("/api/profiles", { cache: "no-store" }),
+          canUseQuotes ? fetch("/api/quotes", { cache: "no-store" }) : Promise.resolve(null),
         ]);
-      const [opportunitiesData, clientsData, profilesData] =
+      const [opportunitiesData, clientsData, profilesData, quotesData] =
         await Promise.all([
           opportunitiesResponse.json(),
           clientsResponse.json(),
           profilesResponse.json(),
+          quotesResponse ? quotesResponse.json() : Promise.resolve({ sucesso: true, quotes: [] }),
         ]);
 
       if (!opportunitiesResponse.ok || !opportunitiesData.sucesso) {
@@ -1034,7 +1043,12 @@ function CRM({
         );
       }
 
+      if (quotesResponse && (!quotesResponse.ok || !quotesData.sucesso)) {
+        throw new Error(quotesData.erro || "Erro ao carregar orçamentos vinculados.");
+      }
+
       setOpportunities(opportunitiesData.opportunities || []);
+      setCrmQuotes(quotesData.quotes || []);
       setClients(
         (clientsData.clients || []).sort((a: AnyRow, b: AnyRow) =>
           String(a.name).localeCompare(String(b.name))
@@ -1734,6 +1748,7 @@ function CRM({
                   const activities = activitiesByOpportunity[opportunity.id] || [];
                   const activityLoading = activityLoadingId === opportunity.id;
                   const isDragging = draggedOpportunityId === opportunity.id;
+                  const opportunityQuotes = crmQuotes.filter((quote) => quote.opportunity_id === opportunity.id);
 
                   return <div
                     id={`crm-opportunity-${opportunity.id}`}
@@ -1781,6 +1796,11 @@ function CRM({
                     <small style={isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>Responsável: {opportunity.profiles_responsible?.name || "-"}</small>
                     <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
                     {(formattedNextActionAt || isBillingStage) && <small style={nextActionOverdue ? { width: "100%", padding: "8px 10px", borderRadius: 9, border: "1px solid rgba(248,113,113,.55)", background: "rgba(127,29,29,.28)", color: "#fca5a5", fontWeight: 900 } : isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>{nextActionOverdue ? "Retorno atrasado" : "Data da próxima ação"}: {formattedNextActionAt || "Não informada"}</small>}
+
+                    {canUseQuotes && <div className="crm-quote-context">
+                      <div><strong>Orçamentos</strong><small>{opportunityQuotes.length ? opportunityQuotes.map((quote) => `ORC-${String(quote.quote_number).padStart(6, "0")}`).join(", ") : "Nenhum orçamento vinculado."}</small></div>
+                      <button className="btn btn-gray" type="button" onClick={() => onCreateQuote(opportunity)}>Criar orçamento</button>
+                    </div>}
 
                     {canManage && <div className="field" style={{ width: "100%", marginTop: 8 }}>
                       <label>Mudar etapa</label>
@@ -1844,13 +1864,15 @@ function CRM({
   </>;
 }
 
-function Produtos({ search }: SearchProps) {
+function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
   const empty = { name: "", sku: "", category: "Lâmpadas dimerizáveis", subcategory: "E27", cost_price: "", sale_price: "", quantity: "", min_stock: "", supplier_id: "", description: "" };
   const [form, setForm] = useState(empty);
   const [items, setItems] = useState<AnyRow[]>([]);
   const [suppliers, setSuppliers] = useState<AnyRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const canWrite = canWriteProducts(profile.role);
+  const canDelete = canDeleteProducts(profile.role);
 
   useEffect(() => {
     carregar();
@@ -1860,21 +1882,13 @@ function Produtos({ search }: SearchProps) {
     try {
       setMsg("");
 
-      const [productsResponse, suppliersResponse] =
-        await Promise.all([
-          fetch("/api/products", {
-            cache: "no-store",
-          }),
-          fetch("/api/suppliers", {
-            cache: "no-store",
-          }),
-        ]);
-
-      const [productsResult, suppliersResult] =
-        await Promise.all([
-          productsResponse.json(),
-          suppliersResponse.json(),
-        ]);
+      const [productsResponse, suppliersResponse] = await Promise.all([
+        fetch("/api/products", { cache: "no-store" }),
+        canWrite
+          ? fetch("/api/suppliers", { cache: "no-store" })
+          : Promise.resolve(null),
+      ]);
+      const productsResult = await productsResponse.json();
 
       if (!productsResponse.ok) {
         throw new Error(
@@ -1883,15 +1897,16 @@ function Produtos({ search }: SearchProps) {
         );
       }
 
-      if (!suppliersResponse.ok) {
-        throw new Error(
-          suppliersResult.erro ||
-            "Erro ao carregar fornecedores."
-        );
-      }
-
       setItems(productsResult.products || []);
-      setSuppliers(suppliersResult.suppliers || []);
+      if (suppliersResponse) {
+        const suppliersResult = await suppliersResponse.json();
+        if (!suppliersResponse.ok) {
+          throw new Error(
+            suppliersResult.erro || "Erro ao carregar fornecedores."
+          );
+        }
+        setSuppliers(suppliersResult.suppliers || []);
+      }
     } catch (error) {
       console.error(
         "Erro ao carregar produtos e fornecedores:",
@@ -1968,7 +1983,7 @@ function Produtos({ search }: SearchProps) {
   const subcats = CATEGORIAS_REVENDA.find((c) => c.category === form.category)?.subcategories || [];
   const filtered = items.filter((i) => textMatch(i, search));
  
- return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." /><section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}><button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button></div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small><div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button><button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button></div></div>)}</div></section></>;
+ return <><Title title="Produtos" desc="Revenda: lâmpadas dimerizáveis, dimmer e soquetes E-27." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
 }
 
 function Pessoas({ title, table, kind, search, profile }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile } & SearchProps) {
@@ -2048,6 +2063,7 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
           const details = vinculos
             ? [
                 `Pedidos: ${Number(vinculos.pedidos || 0)}`,
+                `Orçamentos: ${Number(vinculos.orcamentos || 0)}`,
                 `Oportunidades: ${Number(vinculos.oportunidades || 0)}`,
                 `Atividades: ${Number(vinculos.atividades || 0)}`,
                 `Tarefas: ${Number(vinculos.tarefas || 0)}`,
@@ -2306,13 +2322,13 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
       setLoadingId(id);
       setMsg("");
 
-      const response = await fetch("/api/profiles", {
-        method: "PUT",
+      const response = await fetch("/api/admin/aprovar-representante", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id,
+          representante_id: id,
           status,
         }),
       });
@@ -2389,7 +2405,15 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
     }
   }
 
-  const podeAvaliar = isRepresentante && currentUser && ["administrador", "vendedor"].includes(currentUser.role);
+  const podeAvaliar = (item: Profile) =>
+    Boolean(
+      isRepresentante &&
+        currentUser &&
+        canReviewRepresentative(currentUser, {
+          role: item.role,
+          responsible_seller_id: item.responsible_seller_id || null,
+        })
+    );
   const filtered = items.filter((i) => textMatch(i, search));
   const desc = isRepresentante ? "Representantes cadastrados." : "Gerentes, vendedores, técnicos/montadores e funcionários em uma única lista.";
   const cadastroUrl = role === "representante" ? "/cadastrar-usuario?tipo=representante" : "/cadastrar-usuario";
@@ -2416,8 +2440,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           {item.seller_code && <small>Código vendedor: {item.seller_code}</small>}
           {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
           <div className="form-actions">
-            {podeAvaliar && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
-            {podeAvaliar && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
+            {podeAvaliar(item) && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
+            {podeAvaliar(item) && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
             {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}
           </div>
         </div>)}
@@ -2658,7 +2682,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     carregar();
   }
 
-  const canManage = ["administrador", "gerente", "vendedor"].includes(profile.role);
+  const canManage = canUpdateOrderStatus(profile.role);
+  const canDelete = canDeleteOrder(profile.role);
   const canEmitNf = ["administrador", "gerente"].includes(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
   const countByStatus = useMemo(() => {
@@ -2714,7 +2739,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
             <small>NF/Conta Azul: {o.conta_azul_status ? String(o.conta_azul_status).replaceAll("_", " ") : "Não solicitada"}</small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canManage && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
         })}
       </div>
@@ -3366,7 +3391,7 @@ function Movimentações({ profile }: { profile: Profile }) {
   );
 }
 
-function Componentes({ search }: SearchProps) {
+function Componentes({ search, profile }: SearchProps & { profile: Profile }) {
   const empty = {
     name: "",
     category: "",
@@ -3680,9 +3705,9 @@ function Componentes({ search }: SearchProps) {
           <button className="btn btn-gray" onClick={() => cadastrarPadrao()} disabled={loadingPadrao}>
             Cadastrar todos os componentes únicos no estoque geral
           </button>
-          <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
+          {canUnifyComponents(profile.role) && <button className="btn btn-gray" onClick={unificarDuplicados} disabled={loadingUnificar}>
             {loadingUnificar ? "Unificando..." : "Unificar duplicados"}
-          </button>
+          </button>}
         </div>
 
         <div className="notice" style={{ marginTop: 16 }}>
@@ -3881,7 +3906,7 @@ function Componentes({ search }: SearchProps) {
               </div>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
-                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+                {canDeleteComponent(profile.role) && <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>}
               </div>
             </div>
           ))}
@@ -3987,7 +4012,7 @@ function Montagens({ profile, search }: { profile: Profile } & SearchProps) {
               <small>Qtd: {i.quantity}</small>
               <div className="form-actions">
                 <button className="btn btn-blue" onClick={() => editar(i)}>Editar</button>
-                <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>
+                {canDeleteAssembly(profile.role) && <button className="btn btn-red" onClick={() => excluir(i.id)}>Excluir</button>}
               </div>
             </div>
           ))}

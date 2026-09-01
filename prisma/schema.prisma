@@ -35,6 +35,7 @@ model clients {
   created_at        DateTime?           @default(now()) @db.Timestamptz(6)
   profiles          profiles?           @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders            orders[]
+  quotes            quotes[]
   crm_opportunities crm_opportunities[]
   crm_activities    crm_activities[]
   crm_tasks         crm_tasks[]
@@ -118,6 +119,80 @@ model orders {
   movements         movements[]
   clients           clients?          @relation(fields: [client_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   profiles          profiles?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  generated_quotes  quotes[]
+}
+
+model quotes {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_number         Int                @unique @default(autoincrement())
+  client_id            String             @db.Uuid
+  opportunity_id       String?            @db.Uuid
+  created_by           String             @db.Uuid
+  responsible_id       String?            @db.Uuid
+  status               String             @default("draft")
+  valid_until          DateTime           @db.Date
+  payment_terms        String             @default("")
+  notes                String             @default("")
+  discount_value       Decimal            @default(0) @db.Decimal(14, 2)
+  shipping_value       Decimal            @default(0) @db.Decimal(14, 2)
+  subtotal             Decimal            @default(0) @db.Decimal(14, 2)
+  total_value          Decimal            @default(0) @db.Decimal(14, 2)
+  generated_order_id   String?            @unique @db.Uuid
+  sent_at              DateTime?          @db.Timestamptz(6)
+  approved_at          DateTime?          @db.Timestamptz(6)
+  rejected_at          DateTime?          @db.Timestamptz(6)
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime           @default(now()) @db.Timestamptz(6)
+  clients              clients            @relation(fields: [client_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  crm_opportunities    crm_opportunities? @relation(fields: [opportunity_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  profiles_created_by  profiles           @relation("quotes_created_byToprofiles", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles_responsible profiles?          @relation("quotes_responsible_idToprofiles", fields: [responsible_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  orders               orders?            @relation(fields: [generated_order_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  quote_items          quote_items[]
+  quote_events         quote_events[]
+
+  @@index([client_id])
+  @@index([opportunity_id])
+  @@index([created_by])
+  @@index([responsible_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model quote_items {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_id       String    @db.Uuid
+  item_type      String
+  product_id     String?   @db.Uuid
+  item_name      String
+  description    String    @default("")
+  quantity       Decimal   @db.Decimal(12, 2)
+  unit_price     Decimal   @db.Decimal(14, 2)
+  discount_value Decimal   @default(0) @db.Decimal(14, 2)
+  total_value    Decimal   @db.Decimal(14, 2)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  quotes         quotes    @relation(fields: [quote_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  products       products? @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([quote_id])
+  @@index([product_id])
+}
+
+model quote_events {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_id        String   @db.Uuid
+  created_by      String   @db.Uuid
+  type            String
+  description     String
+  previous_status String?
+  new_status      String?
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  quotes          quotes   @relation(fields: [quote_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  profiles        profiles @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([quote_id, created_at])
+  @@index([created_by])
 }
 
 model playing_with_neon {
@@ -127,21 +202,22 @@ model playing_with_neon {
 }
 
 model products {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  sku         String      @unique(map: "products_sku_unique", where: raw("(sku <> ''::text)")) @default("")
-  category    String      @default("")
-  subcategory String      @default("")
-  cost_price  Decimal     @default(0) @db.Decimal
-  sale_price  Decimal     @default(0) @db.Decimal
-  quantity    Int         @default(0)
-  min_stock   Int         @default(0)
-  supplier_id String?     @db.Uuid
-  description String      @default("")
-  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  suppliers   suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sku         String        @unique(map: "products_sku_unique", where: raw("(sku <> ''::text)")) @default("")
+  category    String        @default("")
+  subcategory String        @default("")
+  cost_price  Decimal       @default(0) @db.Decimal
+  sale_price  Decimal       @default(0) @db.Decimal
+  quantity    Int           @default(0)
+  min_stock   Int           @default(0)
+  supplier_id String?       @db.Uuid
+  description String        @default("")
+  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  suppliers   suppliers?    @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   movements   movements[]
+  quote_items quote_items[]
 }
 
 model profiles {
@@ -174,6 +250,9 @@ model profiles {
   clients                                                  clients[]
   movements                                                movements[]
   orders                                                   orders[]
+  quotes_created_by                                        quotes[]            @relation("quotes_created_byToprofiles")
+  quotes_responsible                                       quotes[]            @relation("quotes_responsible_idToprofiles")
+  quote_events                                             quote_events[]
   crm_activities                                           crm_activities[]
   crm_tasks_assigned_to                                    crm_tasks[]         @relation("crm_tasks_assigned_toToprofiles")
   crm_tasks_created_by                                     crm_tasks[]         @relation("crm_tasks_created_byToprofiles")
@@ -264,6 +343,7 @@ model crm_opportunities {
   profiles_responsible profiles?        @relation("crm_opportunities_responsible_idToprofiles", fields: [responsible_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   crm_activities       crm_activities[]
   crm_tasks            crm_tasks[]
+  quotes               quotes[]
 }
 
 model crm_activities {

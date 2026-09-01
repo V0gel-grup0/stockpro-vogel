@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -6,6 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const authorization = await authorizeApi();
+    if ("response" in authorization) return authorization.response;
+
     const [products, clients, orders, pending] = await Promise.all([
       prisma.products.findMany({ select: { quantity: true, min_stock: true } }),
       prisma.clients.count(), prisma.orders.count(), prisma.profiles.count({ where: { status: "pending" } }),
