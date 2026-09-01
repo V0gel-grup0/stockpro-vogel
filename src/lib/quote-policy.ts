@@ -188,34 +188,46 @@ export function validateOrderConversion(
         : "Somente orçamento aprovado pode gerar pedido.",
     };
   }
-  if (items.length !== 1) {
+
+  if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
     return {
       allowed: false as const,
-      reason:
-        "Este orçamento possui vários itens e o modelo atual de pedidos ainda não suporta conversão automática sem perda de informações.",
+      reason: "O orçamento precisa possuir entre 1 e 100 itens para gerar pedido.",
     };
   }
-  const item = items[0];
-  const quantity = Number(item.quantity);
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return {
-      allowed: false as const,
-      reason:
-        "O pedido atual exige quantidade inteira e este orçamento não pode ser convertido sem perda.",
-    };
+
+  for (const item of items) {
+    if (!["product", "equipment", "custom"].includes(item.item_type)) {
+      return {
+        allowed: false as const,
+        reason: "O orçamento possui um tipo de item incompatível com pedidos.",
+      };
+    }
+
+    const quantity = Number(item.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return {
+        allowed: false as const,
+        reason: "O orçamento possui quantidade inválida para gerar pedido.",
+      };
+    }
+
+    if (["product", "equipment"].includes(item.item_type) && !Number.isInteger(quantity)) {
+      return {
+        allowed: false as const,
+        reason: "Produtos e equipamentos precisam ter quantidade inteira para gerar pedido.",
+      };
+    }
+
+    if (item.item_type === "product" && !item.product_id) {
+      return {
+        allowed: false as const,
+        reason: "Existe produto sem vínculo com o cadastro de produtos.",
+      };
+    }
   }
-  if (
-    item.item_type === "custom" ||
-    (item.item_type === "product" && !item.product_id) ||
-    !["product", "equipment"].includes(item.item_type)
-  ) {
-    return {
-      allowed: false as const,
-      reason:
-        "Este tipo de item não pode ser representado com segurança no modelo atual de pedidos.",
-    };
-  }
-  return { allowed: true as const, quantity };
+
+  return { allowed: true as const, itemCount: items.length };
 }
 
 function decimalParts(
