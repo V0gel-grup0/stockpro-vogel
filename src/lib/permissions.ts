@@ -58,6 +58,11 @@ export const ORDER_DELETE_ROLES = [
   "administrador",
 ] as const satisfies readonly AppRole[];
 
+export const ORDER_NF_WRITE_ROLES = [
+  "administrador",
+  "gerente",
+] as const satisfies readonly AppRole[];
+
 export const COMPONENT_DELETE_ROLES = [
   "administrador",
   "gerente",
@@ -98,6 +103,8 @@ export const canUpdateOrderStatus = (role: string) =>
   roleAllowed(role, ORDER_STATUS_ROLES);
 export const canDeleteOrder = (role: string) =>
   roleAllowed(role, ORDER_DELETE_ROLES);
+export const canAttachOrderNf = (role: string) =>
+  roleAllowed(role, ORDER_NF_WRITE_ROLES);
 export const canDeleteComponent = (role: string) =>
   roleAllowed(role, COMPONENT_DELETE_ROLES);
 export const canDeleteAssembly = (role: string) =>

@@ -77,6 +77,28 @@ async function loadOrderItems(orderIds: string[]) {
   }
 }
 
+async function loadOrderNfAttachments(orderIds: string[]) {
+  if (!orderIds.length) return [];
+
+  try {
+    return await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
+      SELECT
+        order_id,
+        file_name,
+        file_size,
+        updated_at
+      FROM order_nf_attachments
+      WHERE order_id IN (${Prisma.join(orderIds)})
+    `);
+  } catch (error) {
+    const message = String((error as any)?.message || "");
+    if (message.includes('relation "order_nf_attachments" does not exist')) {
+      return [];
+    }
+    throw error;
+  }
+}
+
 async function canAccessEveryClient(
   profile: { id: string; role: AppRole },
   clientIds: string[]
@@ -130,16 +152,28 @@ export async function GET() {
       }),
       orderBy: { created_at: "desc" },
     });
-    const orderItems = await loadOrderItems(orders.map((order) => order.id));
+    const orderIds = orders.map((order) => order.id);
+    const [orderItems, nfAttachments] = await Promise.all([
+      loadOrderItems(orderIds),
+      loadOrderNfAttachments(orderIds),
+    ]);
+
     const itemsByOrder = new Map<string, Array<Record<string, unknown>>>();
     for (const item of orderItems) {
       const orderId = String(item.order_id || "");
       if (!itemsByOrder.has(orderId)) itemsByOrder.set(orderId, []);
       itemsByOrder.get(orderId)?.push(item);
     }
+    const nfByOrder = new Map<string, Record<string, unknown>>();
+
+    for (const attachment of nfAttachments) {
+      nfByOrder.set(String(attachment.order_id || ""), attachment);
+    }
+
     const enrichedOrders = orders.map((order) => ({
       ...order,
       order_items: itemsByOrder.get(order.id) || [],
+      nf_attachment: nfByOrder.get(order.id) || null,
     }));
     return NextResponse.json({ sucesso: true, orders: toJsonSafe(enrichedOrders) });
   } catch (error) {

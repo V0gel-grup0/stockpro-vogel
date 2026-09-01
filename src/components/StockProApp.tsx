@@ -4,6 +4,7 @@ import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
+  canAttachOrderNf,
   canDeleteAssembly,
   canDeleteComponent,
   canDeleteOrder,
@@ -2573,6 +2574,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [statusView, setStatusView] = useState("todos");
+  const [uploadingNfOrderId, setUploadingNfOrderId] = useState<string | null>(null);
 
   useEffect(() => { carregar(); }, []);
 
@@ -2673,8 +2675,73 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setMsg("Pedido excluído com sucesso.");
   }
 
+  async function anexarNf(
+    orderId: string,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (
+      !file.name.toLowerCase().endsWith(".pdf") ||
+      (file.type !== "" && file.type !== "application/pdf")
+    ) {
+      setMsg("Selecione um arquivo PDF válido.");
+      return;
+    }
+
+    if (file.size <= 0 || file.size > 4_000_000) {
+      setMsg("O PDF da NF deve ter no máximo 4 MB.");
+      return;
+    }
+
+    try {
+      setUploadingNfOrderId(orderId);
+      setMsg("");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(orderId)}/nf`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.sucesso) {
+        throw new Error(data.erro || "Erro ao anexar NF.");
+      }
+
+      setMsg("NF anexada ao pedido com sucesso.");
+      await carregar();
+    } catch (error) {
+      setMsg(
+        error instanceof Error
+          ? error.message
+          : "Erro ao anexar NF."
+      );
+    } finally {
+      setUploadingNfOrderId(null);
+    }
+  }
+
+  function visualizarNf(orderId: string) {
+    window.open(
+      `/api/orders/${encodeURIComponent(orderId)}/nf`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
   const canManage = canUpdateOrderStatus(profile.role);
   const canDelete = canDeleteOrder(profile.role);
+  const canAttachNf = canAttachOrderNf(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
   const countByStatus = useMemo(() => {
     const map: Record<string, number> = {};
@@ -2727,8 +2794,54 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Qtd: {o.quantity}</small>
             <small>Total: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
+
+            {o.nf_attachment && (
+              <small>
+                NF anexada: <b>{o.nf_attachment.file_name}</b>
+              </small>
+            )}
+
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+
+            <div className="form-actions">
+              <button className="btn btn-blue" onClick={() => editar(o)}>
+                Editar
+              </button>
+
+              {canAttachNf && (
+                <label className="btn btn-blue" style={{ cursor: "pointer" }}>
+                  {uploadingNfOrderId === o.id
+                    ? "Anexando..."
+                    : o.nf_attachment
+                      ? "Trocar NF"
+                      : "Anexar NF"}
+
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    disabled={uploadingNfOrderId === o.id}
+                    onChange={(event) => anexarNf(o.id, event)}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              )}
+
+              {o.nf_attachment && (
+                <button
+                  type="button"
+                  className="btn btn-gray"
+                  onClick={() => visualizarNf(o.id)}
+                >
+                  Visualizar NF
+                </button>
+              )}
+
+              {canDelete && (
+                <button className="btn btn-red" onClick={() => excluir(o.id)}>
+                  Excluir
+                </button>
+              )}
+            </div>
           </div>;
         })}
       </div>

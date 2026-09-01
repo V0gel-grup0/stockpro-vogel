@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canAttachOrderNf,
   canDeleteAssembly,
   canDeleteComponent,
   canDeleteOrder,
@@ -14,6 +15,16 @@ import {
   canWriteProducts,
   canWriteSuppliers,
 } from "./permissions.ts";
+
+test("somente administrador e gerente podem anexar NF ao pedido", () => {
+  for (const role of ["administrador", "gerente"]) {
+    assert.equal(canAttachOrderNf(role), true, role);
+  }
+
+  for (const role of ["vendedor", "funcionario", "tecnico", "representante"]) {
+    assert.equal(canAttachOrderNf(role), false, role);
+  }
+});
 
 test("representante lê produtos sem receber escrita ou exclusão", () => {
   assert.equal(canReadProducts("representante"), true);

@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { authorizeApi } from "@/lib/api-auth";
-import { ORDER_ROLES, type AppRole } from "@/lib/permissions";
+import {
+  ORDER_NF_WRITE_ROLES,
+  ORDER_ROLES,
+  type AppRole,
+} from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 4_000_000;
+
+function hasPdfSignature(bytes: Buffer) {
+  return bytes.length >= 5 && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
+}
 
 function orderScope(profile: { id: string; role: AppRole }): Prisma.ordersWhereInput {
   if (profile.role === "representante") return { created_by: profile.id };
@@ -86,7 +94,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authorization = await authorizeApi(ORDER_ROLES);
+    const authorization = await authorizeApi(ORDER_NF_WRITE_ROLES);
     if ("response" in authorization) return authorization.response;
 
     const { id } = await context.params;
@@ -106,7 +114,10 @@ export async function POST(
       return NextResponse.json({ sucesso: false, erro: "Selecione o PDF da NF." }, { status: 400 });
     }
 
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    if (
+      !file.name.toLowerCase().endsWith(".pdf") ||
+      (file.type !== "" && file.type !== "application/pdf")
+    ) {
       return NextResponse.json({ sucesso: false, erro: "O anexo deve ser um arquivo PDF." }, { status: 400 });
     }
 
@@ -115,8 +126,12 @@ export async function POST(
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
+    if (!hasPdfSignature(bytes)) {
+      return NextResponse.json({ sucesso: false, erro: "O arquivo enviado não é um PDF válido." }, { status: 400 });
+    }
+
     const fileName = file.name.slice(0, 240);
-    const mimeType = file.type || "application/pdf";
+    const mimeType = "application/pdf";
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO order_nf_attachments (
