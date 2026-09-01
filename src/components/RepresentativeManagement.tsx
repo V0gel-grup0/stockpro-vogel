@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 
 type Row = Record<string, any>;
 type ManagementData = {
@@ -263,19 +264,26 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
       {capabilities.can_manage_financials && <section className="card"><h2 className="card-title">Registrar compra</h2>
         <div className="form-grid">
           <FormField label="Data" type="date" value={purchaseForm.purchase_date} onChange={(purchase_date) => setPurchaseForm((current) => ({ ...current, purchase_date }))} />
-          <FormSelect label="Tipo" value={purchaseForm.item_type} onChange={(item_type) => setPurchaseForm((current) => ({ ...current, item_type }))}><option value="equipamento">Equipamento</option><option value="produto">Produto</option></FormSelect>
-          <FormSelect label="Equipamento/produto" value={purchaseForm.product_id} onChange={(product_id) => {
-            const product = products.find((item) => item.id === product_id);
-            setPurchaseForm((current) => ({
-              ...current,
-              product_id,
-              item_name: product?.name || "",
-              unit_price: product ? String(product.sale_price ?? 0) : "0",
-            }));
-          }}>
-            <option value="">Selecione</option>
-            {products.map((product) => <option key={product.id} value={product.id}>{product.name}{product.sku ? ` • ${product.sku}` : ""}</option>)}
-          </FormSelect>
+          <FormSelect label="Tipo" value={purchaseForm.item_type} onChange={(item_type) => setPurchaseForm((current) => ({ ...current, item_type, product_id: "", item_name: "", unit_price: "0" }))}><option value="equipamento">Equipamento</option><option value="produto">Produto</option></FormSelect>
+          {purchaseForm.item_type === "equipamento" ? (
+            <FormSelect label="Equipamento" value={purchaseForm.item_name} onChange={(item_name) => setPurchaseForm((current) => ({ ...current, product_id: "", item_name }))}>
+              <option value="">Selecione</option>
+              {EQUIPMENT_CATALOG.map((equipment) => <option key={equipment} value={equipment}>{equipment}</option>)}
+            </FormSelect>
+          ) : (
+            <FormSelect label="Produto" value={purchaseForm.product_id} onChange={(product_id) => {
+              const product = products.find((item) => item.id === product_id);
+              setPurchaseForm((current) => ({
+                ...current,
+                product_id,
+                item_name: product?.name || "",
+                unit_price: product ? String(product.sale_price ?? 0) : "0",
+              }));
+            }}>
+              <option value="">Selecione</option>
+              {products.map((product) => <option key={product.id} value={product.id}>{product.name}{product.sku ? ` • ${product.sku}` : ""}</option>)}
+            </FormSelect>
+          )}
           <FormField label="Quantidade" type="number" min="1" step="1" value={purchaseForm.quantity} onChange={(quantity) => setPurchaseForm((current) => ({ ...current, quantity }))} />
           <FormField label="Valor unitário" type="number" min="0" step="0.01" value={purchaseForm.unit_price} onChange={(unit_price) => setPurchaseForm((current) => ({ ...current, unit_price }))} />
           <FormField label="Frete" type="number" min="0" step="0.01" value={purchaseForm.shipping_value} onChange={(shipping_value) => setPurchaseForm((current) => ({ ...current, shipping_value }))} />
@@ -294,7 +302,7 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
           <div className="field"><label>Valor total</label><div className="input representative-readonly">{money(purchasePreview)}</div></div>
           <FormArea label="Observações" value={purchaseForm.notes} onChange={(notes) => setPurchaseForm((current) => ({ ...current, notes }))} />
         </div>
-        <div className="form-actions"><button className="btn btn-green" disabled={saving || !purchaseForm.product_id || !purchaseForm.payment_terms} onClick={async () => { if (await submit("purchase", purchaseForm, "Compra e parcelas registradas com sucesso.")) setPurchaseForm((current) => ({ ...current, product_id: "", item_name: "", quantity: "1", unit_price: "0", shipping_value: "0", payment_terms: "", notes: "" })); }}>Registrar compra</button></div>
+        <div className="form-actions"><button className="btn btn-green" disabled={saving || !purchaseForm.item_name || !purchaseForm.payment_terms} onClick={async () => { if (await submit("purchase", purchaseForm, "Compra e parcelas registradas com sucesso.")) setPurchaseForm((current) => ({ ...current, product_id: "", item_name: "", quantity: "1", unit_price: "0", shipping_value: "0", payment_terms: "", notes: "" })); }}>Registrar compra</button></div>
       </section>}
       <section className="card" style={{ marginTop: capabilities.can_manage_financials ? 24 : 0 }}><h2 className="card-title">Histórico de compras</h2>
         {data.purchases.length === 0 ? <p className="muted">Nenhuma compra registrada.</p> : <div className="product-list-grid">{data.purchases.map((purchase) => <article className="stat-card user-card" key={purchase.id}><strong>{purchase.item_name}</strong><small>{dateLabel(purchase.purchase_date)} • {purchase.quantity} × {money(purchase.unit_price)}</small><small>Subtotal: {money(purchase.subtotal)} • Frete: {money(purchase.shipping_value)}</small><small>Total: <b>{money(purchase.total_value)}</b></small><small>Pagamento: {purchase.payment_terms ? statusLabel(purchase.payment_terms) : "-"}</small><small>Status: {statusLabel(purchase.status)}</small>{purchase.notes && <small>{purchase.notes}</small>}</article>)}</div>}
