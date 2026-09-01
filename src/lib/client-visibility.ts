@@ -62,80 +62,42 @@ export function buildAccessibleClientWhere(
     : { id: clientId };
 }
 
+function buildOwnCrmOpportunityWhere(
+  profile: ClientVisibilityProfile
+): Prisma.crm_opportunitiesWhereInput | undefined {
+  if (profile.role === "administrador") return undefined;
+
+  return {
+    OR: [
+      { created_by: profile.id },
+      { responsible_id: profile.id },
+    ],
+  };
+}
+
 export function buildOpportunityVisibilityWhere(
   profile: ClientVisibilityProfile
 ): Prisma.crm_opportunitiesWhereInput | undefined {
-  const policy = getClientVisibilityPolicy(profile);
-
-  if (policy.mode === "all") return undefined;
-
-  const conditions: Prisma.crm_opportunitiesWhereInput[] = [
-    { created_by: policy.profileId },
-    { responsible_id: policy.profileId },
-  ];
-
-  if (policy.mode === "seller") {
-    conditions.push(
-      {
-        profiles_created_by: {
-          is: {
-            role: "representante",
-            responsible_seller_id: policy.profileId,
-          },
-        },
-      },
-      {
-        profiles_responsible: {
-          is: {
-            role: "representante",
-            responsible_seller_id: policy.profileId,
-          },
-        },
-      }
-    );
-  }
-
-  return { OR: conditions };
+  return buildOwnCrmOpportunityWhere(profile);
 }
 
 export function buildOpportunityManagementWhere(
   profile: ClientVisibilityProfile
 ): Prisma.crm_opportunitiesWhereInput | undefined {
-  const policy = getClientVisibilityPolicy(profile);
-
-  if (policy.mode === "all") return undefined;
-
-  return {
-    OR: [
-      { created_by: policy.profileId },
-      { responsible_id: policy.profileId },
-    ],
-  };
+  return buildOwnCrmOpportunityWhere(profile);
 }
 
 export function buildActivityVisibilityWhere(
   profile: ClientVisibilityProfile
 ): Prisma.crm_activitiesWhereInput | undefined {
-  const policy = getClientVisibilityPolicy(profile);
+  if (profile.role === "administrador") return undefined;
 
-  if (policy.mode === "all") return undefined;
+  const opportunityVisibility = buildOwnCrmOpportunityWhere(profile);
 
-  const opportunityVisibility = buildOpportunityVisibilityWhere(profile);
-  const conditions: Prisma.crm_activitiesWhereInput[] = [
-    { created_by: policy.profileId },
-    { crm_opportunities: { is: opportunityVisibility } },
-  ];
-
-  if (policy.mode === "seller") {
-    conditions.push({
-      profiles: {
-        is: {
-          role: "representante",
-          responsible_seller_id: policy.profileId,
-        },
-      },
-    });
-  }
-
-  return { OR: conditions };
+  return {
+    OR: [
+      { created_by: profile.id },
+      { crm_opportunities: { is: opportunityVisibility } },
+    ],
+  };
 }
