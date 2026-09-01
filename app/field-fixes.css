@@ -1,0 +1,12 @@
+/* Ajuste visual de campos nativos: mantém o texto centralizado verticalmente. */
+.input:not(textarea) {
+  line-height: 1.2;
+}
+
+select.input {
+  height: 46px;
+  min-height: 46px;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 46px;
+}
