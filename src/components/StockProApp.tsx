@@ -440,7 +440,7 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Conta Azul", "Relatórios", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Relatórios", "Meu Perfil"],
   gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
   vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
@@ -640,7 +640,6 @@ export default function StockProApp() {
           {page === "Análise de Cadastros" && <AnáliseCadastros currentUser={profile} search={search} />}
           {page === "Pedidos" && <Pedidos profile={profile} search={search} />}
           {page === "Componentes" && <Componentes search={search} profile={profile} />}
-          {page === "Conta Azul" && <ContaAzul />}
           {page === "Relatórios" && <Relatorios profile={profile} />}
           {page === "Meu Perfil" && <MeuPerfil profile={profile} onUpdated={carregarSessao} />}
         </main>
@@ -1618,7 +1617,6 @@ function CRM({
             <small>Frete: {money(order.shipping_value)}</small>
             <small>Total nominal: {money(totalNominal)}</small>
             {tracking && <small>Rastreio: {tracking}</small>}
-            {order.conta_azul_status && <small>Status de solicitação de NF: {String(order.conta_azul_status).replaceAll("_", " ")}</small>}
           </div>;
         })}</div>}
       </section>
@@ -2675,16 +2673,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setMsg("Pedido excluído com sucesso.");
   }
 
-  async function emitirNf(orderId: string) {
-    const r = await fetch("/api/conta-azul/emitir-nf", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order_id: orderId }) });
-    const d = await r.json();
-    setMsg(d.message || d.error || "Solicitação enviada.");
-    carregar();
-  }
-
   const canManage = canUpdateOrderStatus(profile.role);
   const canDelete = canDeleteOrder(profile.role);
-  const canEmitNf = ["administrador", "gerente"].includes(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
   const countByStatus = useMemo(() => {
     const map: Record<string, number> = {};
@@ -2737,9 +2727,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Qtd: {o.quantity}</small>
             <small>Total: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
-            <small>NF/Conta Azul: {o.conta_azul_status ? String(o.conta_azul_status).replaceAll("_", " ") : "Não solicitada"}</small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canEmitNf && <button className="btn btn-blue" onClick={() => emitirNf(o.id)}>Emitir NF</button>}{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
         })}
       </div>
@@ -3099,11 +3088,11 @@ function Movimentações({ profile }: { profile: Profile }) {
     <>
       <Title
         title="Movimentações"
-        desc="Controle entradas por NF/PDF e saídas automáticas por pedido."
+        desc="Controle de entradas por anexo de NF e saídas automáticas por pedido."
       />
 
       <section className="card">
-        <h2 className="card-title">Entrada por PDF/DANFE da NF</h2>
+        <h2 className="card-title">Anexo de NF</h2>
 
         <div className="form-grid">
           <Field
@@ -3127,7 +3116,7 @@ function Movimentações({ profile }: { profile: Profile }) {
 
         <div className="form-actions">
           <label className="btn btn-blue" style={{ cursor: "pointer" }}>
-            {loadingNf ? "Lendo PDF..." : "Importar PDF/DANFE da NF"}
+            {loadingNf ? "Anexando..." : "Anexar PDF/DANFE da NF"}
             <input
               type="file"
               accept=".pdf,application/pdf"
@@ -4161,7 +4150,6 @@ function EquipamentosMontados({ search }: SearchProps) {
 }
 
 
-function ContaAzul() { return <><Title title="Conta Azul" desc="Configuração para criação automática de Nota Fiscal." /><section className="card"><h2 className="card-title">Integração Conta Azul</h2><p style={{ color: "#94a3b8" }}>Configure na Vercel as variáveis CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET e CONTA_AZUL_REFRESH_TOKEN. O botão de NF nos pedidos chama a API /api/conta-azul/emitir-nf.</p><div className="reports-grid" style={{ marginTop: 24 }}><StatCard label="Status" value="Preparado" /><StatCard label="NF automática" value="Botão nos pedidos" /><StatCard label="Ambiente" value="Produção/Vercel" /></div></section></>; }
 function Relatorios({ profile }: { profile: Profile }) {
   const [products, setProducts] = useState<AnyRow[]>([]);
   const [movements, setMovements] = useState<AnyRow[]>([]);
