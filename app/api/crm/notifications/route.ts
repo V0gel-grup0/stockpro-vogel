@@ -8,8 +8,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CRM_TIME_ZONE = "America/Sao_Paulo";
-const visibleForAllRoles = new Set(["administrador", "gerente"]);
-const visibleForOwnRoles = new Set(["vendedor", "representante"]);
+const visibleForAllRoles = new Set(["administrador"]);
+const visibleForOwnRoles = new Set([
+  "gerente",
+  "vendedor",
+  "funcionario",
+  "tecnico",
+  "representante",
+]);
 
 type DateParts = {
   year: number;

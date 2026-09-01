@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
 import "./globals.css";
 import "./field-fixes.css";
+import "./mobile.css";
+import "./mobile-menu.css";
 
 export const metadata: Metadata = {
   title: "StockPro Vogel",
@@ -10,7 +13,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        {children}
+        <CrmAdminFiltersEnhancer />
+      </body>
     </html>
   );
 }

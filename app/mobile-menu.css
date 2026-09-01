@@ -1,0 +1,85 @@
+@media (max-width: 760px) {
+  .sidebar {
+    position: fixed !important;
+    top: calc(62px + env(safe-area-inset-top)) !important;
+    left: 0 !important;
+    width: min(86vw, 340px) !important;
+    max-width: 340px !important;
+    height: calc(100dvh - 62px - env(safe-area-inset-top)) !important;
+    min-height: 0 !important;
+    padding: 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    overflow: hidden !important;
+    background: #0b1324 !important;
+    border-right: 1px solid rgba(96,165,250,.22) !important;
+    border-bottom: 0 !important;
+    box-shadow: 18px 0 48px rgba(0,0,0,.48) !important;
+    z-index: 95 !important;
+  }
+
+  .brand {
+    flex: 0 0 auto !important;
+    padding: 0 2px 12px !important;
+    border-bottom: 1px solid rgba(148,163,184,.16);
+  }
+
+  .sidebar nav,
+  .sidebar-menu,
+  .menu-list {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 4px 2px 10px !important;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sidebar button,
+  .sidebar a,
+  .menu-item,
+  .menu-button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 46px !important;
+    white-space: normal !important;
+    text-align: left !important;
+    padding: 11px 13px !important;
+    border-radius: 12px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .menu-button.active {
+    background: #1d4ed8 !important;
+    box-shadow: inset 3px 0 0 #93c5fd;
+  }
+
+  .sidebar-footer {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding: 12px !important;
+    gap: 8px !important;
+    border-radius: 14px !important;
+    background: #060d1c !important;
+  }
+
+  .sidebar-footer .account-logout,
+  .account-logout {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+}
