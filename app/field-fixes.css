@@ -1,4 +1,4 @@
-/* Ajuste visual de campos nativos: mantém o texto centralizado verticalmente. */
+/* Ajustes visuais de alinhamento dos controles nativos. */
 .input:not(textarea) {
   line-height: 1.2;
 }
@@ -9,4 +9,16 @@ select.input {
   padding-top: 0;
   padding-bottom: 0;
   line-height: 46px;
+}
+
+.account-logout {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 0 16px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
 }
