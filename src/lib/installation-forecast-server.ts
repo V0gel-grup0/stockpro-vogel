@@ -38,6 +38,22 @@ export async function ensureInstallationForecastTable() {
     CREATE INDEX IF NOT EXISTS installation_forecasts_probable_date_idx
       ON installation_forecasts(probable_date)
   `);
+
+  await prisma.$executeRawUnsafe(`
+    UPDATE installation_forecasts AS forecast
+       SET order_id = quote.generated_order_id,
+           updated_at = now()
+      FROM quotes AS quote
+     WHERE quote.opportunity_id = forecast.opportunity_id
+       AND quote.generated_order_id IS NOT NULL
+       AND forecast.order_id IS NULL
+       AND NOT EXISTS (
+         SELECT 1
+           FROM installation_forecasts AS existing
+          WHERE existing.order_id = quote.generated_order_id
+            AND existing.id <> forecast.id
+       )
+  `);
 }
 
 export function buildInstallationOrderScope(profile: { id: string; role: AppRole }): Prisma.ordersWhereInput | null {
