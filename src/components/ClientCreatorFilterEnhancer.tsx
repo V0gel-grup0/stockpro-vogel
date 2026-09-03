@@ -73,7 +73,7 @@ function findClientsSection() {
   return { heading, section };
 }
 
-function findClientFormGrid() {
+function findClientFormSection() {
   const heading = Array.from(document.querySelectorAll("h2.card-title")).find(
     (item) => ["Novo cadastro", "Editar cadastro"].includes(item.textContent?.trim() || "")
   );
@@ -83,7 +83,7 @@ function findClientFormGrid() {
   const pageText = document.body.textContent || "";
   if (!pageText.includes("Clientes com endereço automático por CEP.")) return null;
 
-  return section.querySelector<HTMLElement>(".form-grid");
+  return section;
 }
 
 function ensureFilterHost() {
@@ -101,15 +101,23 @@ function ensureFilterHost() {
 }
 
 function ensureFormHost() {
-  const grid = findClientFormGrid();
-  if (!grid) return null;
+  const section = findClientFormSection();
+  if (!section) return null;
 
-  let host = grid.querySelector<HTMLDivElement>("#client-creator-form-host");
+  let host = section.querySelector<HTMLDivElement>("#client-creator-form-host");
   if (!host) {
     host = document.createElement("div");
     host.id = "client-creator-form-host";
     host.className = "field";
-    grid.appendChild(host);
+    host.style.maxWidth = "420px";
+    host.style.marginTop = "18px";
+
+    const actions = section.querySelector<HTMLElement>(".form-actions");
+    if (actions) {
+      section.insertBefore(host, actions);
+    } else {
+      section.appendChild(host);
+    }
   }
   return host;
 }
