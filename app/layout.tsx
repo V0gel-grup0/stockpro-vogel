@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
+import InstallationForecastEnhancer from "@/components/InstallationForecastEnhancer";
 import "./globals.css";
 import "./field-fixes.css";
 import "./mobile.css";
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <CrmAdminFiltersEnhancer />
+        <InstallationForecastEnhancer />
       </body>
     </html>
   );
