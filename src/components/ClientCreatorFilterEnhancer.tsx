@@ -25,6 +25,39 @@ function digits(value: string | null | undefined) {
   return String(value || "").replace(/\D/g, "");
 }
 
+function normalize(value: string | null | undefined) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function findClientForCard(
+  card: HTMLElement,
+  clients: Client[],
+  usedClientIds = new Set<string>()
+) {
+  const cardName = normalize(card.querySelector("strong")?.textContent || "");
+  const nameMatches = clients.filter(
+    (client) => normalize(client.name) === cardName && !usedClientIds.has(client.id)
+  );
+
+  if (nameMatches.length === 1) return nameMatches[0];
+
+  const cardDigits = digits(card.textContent);
+  const byDocument = clients.find((client) => {
+    if (usedClientIds.has(client.id)) return false;
+    const document = digits(client.document);
+    return document.length >= 11 && cardDigits.includes(document);
+  });
+
+  if (byDocument) return byDocument;
+  if (nameMatches.length > 0) return nameMatches[0];
+
+  return clients.find((client) => normalize(client.name) === cardName);
+}
+
 function findClientsSection() {
   const heading = Array.from(document.querySelectorAll("h2.card-title")).find(
     (item) => item.textContent?.trim() === "Cadastros lançados"
@@ -241,15 +274,13 @@ export default function ClientCreatorFilterEnhancer() {
     if (!found) return;
 
     const cards = Array.from(found.section.querySelectorAll<HTMLElement>(".user-card"));
+    const usedClientIds = new Set<string>();
 
     cards.forEach((card) => {
       card.querySelector("[data-client-creator-label]")?.remove();
 
-      const cardDigits = digits(card.textContent);
-      const client = clients.find((item) => {
-        const doc = digits(item.document);
-        return doc.length >= 11 && cardDigits.includes(doc);
-      });
+      const client = findClientForCard(card, clients, usedClientIds);
+      if (client) usedClientIds.add(client.id);
 
       const matches =
         !creatorId ||
@@ -259,11 +290,14 @@ export default function ClientCreatorFilterEnhancer() {
       card.style.display = matches ? "" : "none";
 
       if (client) {
-        const label = document.createElement("small");
+        const label = document.createElement("div");
         label.dataset.clientCreatorLabel = "true";
         label.textContent = `Cadastrado por: ${client.creator?.name || "Não identificado"}`;
         label.style.color = "#93c5fd";
-        label.style.fontWeight = "700";
+        label.style.fontWeight = "800";
+        label.style.fontSize = "13px";
+        label.style.marginTop = "8px";
+        label.style.marginBottom = "2px";
         const actions = card.querySelector(".form-actions");
         if (actions) card.insertBefore(label, actions);
         else card.appendChild(label);
@@ -289,11 +323,7 @@ export default function ClientCreatorFilterEnhancer() {
       if (text === "Editar") {
         const card = button.closest<HTMLElement>(".user-card");
         if (!card) return;
-        const cardDigits = digits(card.textContent);
-        const client = clients.find((item) => {
-          const doc = digits(item.document);
-          return doc.length >= 11 && cardDigits.includes(doc);
-        });
+        const client = findClientForCard(card, clients);
         setFormCreatorId(client?.creator?.id || "");
       }
 
