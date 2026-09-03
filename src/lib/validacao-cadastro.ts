@@ -92,15 +92,12 @@ export function validarNomeCompleto(
   }
 
   /*
-   * Empresas podem ter razões sociais curtas ou
-   * conter números, siglas e outros caracteres.
+   * Quando o campo possui 14 dígitos, tratamos como empresa e aceitamos
+   * razão social. O documento em si pode ser provisório/incompleto e não
+   * é mais usado para bloquear o cadastro.
    */
   if (document.length === 14) {
     return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(name);
-  }
-
-  if (document.length !== 11) {
-    return false;
   }
 
   const parts = name
@@ -109,9 +106,8 @@ export function validarNomeCompleto(
     .filter(Boolean);
 
   /*
-   * Para CPF, exigimos pelo menos nome e sobrenome.
-   * Algumas pessoas possuem legalmente apenas duas partes,
-   * como "Matheus Meert".
+   * Para pessoa física (ou documento ainda não confirmado), mantemos a
+   * exigência de nome e sobrenome.
    */
   if (parts.length < 2) {
     return false;
@@ -163,10 +159,6 @@ export function validarNomeCompleto(
       return false;
     }
 
-    /*
-     * Impede iniciais isoladas, como:
-     * João P Silva
-     */
     return lettersOnly.length >= 2;
   });
 }
@@ -329,31 +321,23 @@ export function validarCadastroPessoa(
     return {
       valido: false,
       erro:
-        document.length === 11
-          ? "Informe o nome completo, com nome e sobrenome."
-          : "Informe uma razão social válida.",
+        document.length === 14
+          ? "Informe uma razão social válida."
+          : "Informe o nome completo, com nome e sobrenome.",
     };
   }
 
-  if (!validarCpfCnpj(document)) {
-    return {
-      valido: false,
-      erro: "Informe um CPF ou CNPJ válido.",
-    };
-  }
+  /*
+   * CPF/CNPJ e CEP podem estar provisórios, incompletos ou ainda não
+   * confirmados pelo cliente. Mantemos os valores informados, mas eles não
+   * impedem mais o cadastro.
+   */
 
   if (!validarTelefone(phone)) {
     return {
       valido: false,
       erro:
         "Informe um telefone válido com DDD.",
-    };
-  }
-
-  if (!validarCep(cep)) {
-    return {
-      valido: false,
-      erro: "Informe um CEP válido.",
     };
   }
 
