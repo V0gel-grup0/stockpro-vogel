@@ -9,10 +9,11 @@ export async function GET() {
     const authorization = await authorizeApi();
     if ("response" in authorization) return authorization.response;
 
-    const canSeeFullProfiles = ["administrador", "gerente"].includes(
+    const isAdministrator = authorization.profile.role === "administrador";
+    const canSeeTeam = ["administrador", "gerente"].includes(
       authorization.profile.role
     );
-    const visibleProfileWhere = canSeeFullProfiles
+    const visibleProfileWhere = canSeeTeam
       ? undefined
       : authorization.profile.role === "vendedor"
         ? {
@@ -22,32 +23,52 @@ export async function GET() {
             ],
           }
         : { id: authorization.profile.id };
+
     const profiles = await prisma.profiles.findMany({
       where: visibleProfileWhere,
       orderBy: {
         created_at: "desc",
       },
-      ...(canSeeFullProfiles
-        ? {}
+      select: isAdministrator
+        ? {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            document: true,
+            phone: true,
+            cep: true,
+            city: true,
+            street: true,
+            number: true,
+            no_number: true,
+            neighborhood: true,
+            representative_company: true,
+            representative_region: true,
+            access_code: true,
+            seller_code: true,
+            manager_code: true,
+            responsible_seller_id: true,
+            responsible_manager_id: true,
+            created_by: true,
+            permissions: true,
+            approval_notes: true,
+            created_at: true,
+            updated_at: true,
+          }
         : {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-              status: true,
-              access_code: true,
-              seller_code: true,
-              responsible_seller_id: true,
-            },
-          }),
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            responsible_seller_id: true,
+            responsible_manager_id: true,
+          },
     });
 
-    const safeProfiles = canSeeFullProfiles
-      ? profiles.map(({ password_hash: _passwordHash, ...profile }) => profile)
-      : profiles;
-
-    return NextResponse.json(safeProfiles);
+    return NextResponse.json(profiles);
   } catch (error) {
     console.error("Erro ao listar perfis:", error);
 

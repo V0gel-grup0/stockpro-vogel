@@ -23,29 +23,19 @@ export type CadastroPessoaNormalizado = {
 };
 
 export type ResultadoValidacaoCadastro =
-  | {
-      valido: true;
-      dados: CadastroPessoaNormalizado;
-    }
-  | {
-      valido: false;
-      erro: string;
-    };
+  | { valido: true; dados: CadastroPessoaNormalizado }
+  | { valido: false; erro: string };
 
 export function somenteDigitos(value: unknown): string {
   return String(value ?? "").replace(/\D/g, "");
 }
 
 function normalizarTexto(value: unknown): string {
-  return String(value ?? "")
-    .trim()
-    .replace(/\s+/g, " ");
+  return String(value ?? "").trim().replace(/\s+/g, " ");
 }
 
 function todosCaracteresIguais(value: string): boolean {
-  return /^([A-Za-z0-9])\1+$/.test(
-    value.replace(/[\s./,\-]/g, "")
-  );
+  return /^([A-Za-z0-9])\1+$/.test(value.replace(/[\s./,\-]/g, ""));
 }
 
 const INVALID_TEXT_VALUES = new Set([
@@ -58,19 +48,10 @@ const INVALID_TEXT_VALUES = new Set([
   "aaaa",
 ]);
 
-function textoValido(
-  value: string,
-  minimumLength: number
-): boolean {
+function textoValido(value: string, minimumLength: number): boolean {
   if (value.length < minimumLength) return false;
-
-  if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(value)) {
-    return false;
-  }
-
-  if (todosCaracteresIguais(value)) {
-    return false;
-  }
+  if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(value)) return false;
+  if (todosCaracteresIguais(value)) return false;
 
   const normalized = value
     .normalize("NFD")
@@ -80,51 +61,22 @@ function textoValido(
   return !INVALID_TEXT_VALUES.has(normalized);
 }
 
-export function validarNomeCompleto(
-  value: unknown,
-  documentValue: unknown
-): boolean {
+export function validarNomeCompleto(value: unknown, documentValue: unknown): boolean {
   const name = normalizarTexto(value);
   const document = somenteDigitos(documentValue);
 
-  if (!textoValido(name, 3)) {
-    return false;
-  }
+  if (!textoValido(name, 3)) return false;
 
-  /*
-   * Empresas podem ter razões sociais curtas ou
-   * conter números, siglas e outros caracteres.
-   */
+  // 14 dígitos indicam cadastro empresarial para fins da regra de nome.
+  // O CNPJ em si não é validado nem bloqueia o cadastro.
   if (document.length === 14) {
     return /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(name);
   }
 
-  if (document.length !== 11) {
-    return false;
-  }
+  const parts = name.split(" ").map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2) return false;
 
-  const parts = name
-    .split(" ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  /*
-   * Para CPF, exigimos pelo menos nome e sobrenome.
-   * Algumas pessoas possuem legalmente apenas duas partes,
-   * como "Matheus Meert".
-   */
-  if (parts.length < 2) {
-    return false;
-  }
-
-  const particles = new Set([
-    "da",
-    "das",
-    "de",
-    "do",
-    "dos",
-    "e",
-  ]);
+  const particles = new Set(["da", "das", "de", "do", "dos", "e"]);
 
   return parts.every((part) => {
     const normalizedPart = part
@@ -132,41 +84,15 @@ export function validarNomeCompleto(
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
 
-    if (particles.has(normalizedPart)) {
-      return true;
-    }
+    if (particles.has(normalizedPart)) return true;
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ'’-]+$/.test(part)) return false;
+    if (INVALID_TEXT_VALUES.has(normalizedPart)) return false;
 
-    if (
-      !/^[A-Za-zÀ-ÖØ-öø-ÿ'’-]+$/.test(part)
-    ) {
-      return false;
-    }
-
-    if (INVALID_TEXT_VALUES.has(normalizedPart)) {
-      return false;
-    }
-
-    const lettersOnly = normalizedPart.replace(
-      /['’\-]/g,
-      ""
-    );
-
+    const lettersOnly = normalizedPart.replace(/['’\-]/g, "");
     const obviousKeyboardSequence =
-      /^(?:asdf(?:gh)?|qwer(?:ty)?|zxcv(?:bn)?|hjkl)$/.test(
-        lettersOnly
-      );
+      /^(?:asdf(?:gh)?|qwer(?:ty)?|zxcv(?:bn)?|hjkl)$/.test(lettersOnly);
 
-    if (
-      obviousKeyboardSequence ||
-      /([a-z])\1{3,}/.test(lettersOnly)
-    ) {
-      return false;
-    }
-
-    /*
-     * Impede iniciais isoladas, como:
-     * João P Silva
-     */
+    if (obviousKeyboardSequence || /([a-z])\1{3,}/.test(lettersOnly)) return false;
     return lettersOnly.length >= 2;
   });
 }
@@ -177,33 +103,20 @@ function digitosRepetidos(value: string): boolean {
 
 function calcularDigitoCpf(base: string): number {
   const initialWeight = base.length + 1;
-  const sum = base
-    .split("")
-    .reduce(
-      (total, digit, index) =>
-        total + Number(digit) * (initialWeight - index),
-      0
-    );
+  const sum = base.split("").reduce(
+    (total, digit, index) => total + Number(digit) * (initialWeight - index),
+    0
+  );
   const remainder = sum % 11;
-
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
 export function validarCpf(value: unknown): boolean {
   const cpf = somenteDigitos(value);
-
-  if (cpf.length !== 11 || digitosRepetidos(cpf)) {
-    return false;
-  }
-
+  if (cpf.length !== 11 || digitosRepetidos(cpf)) return false;
   const firstDigit = calcularDigitoCpf(cpf.slice(0, 9));
-
-  if (firstDigit !== Number(cpf[9])) {
-    return false;
-  }
-
+  if (firstDigit !== Number(cpf[9])) return false;
   const secondDigit = calcularDigitoCpf(cpf.slice(0, 10));
-
   return secondDigit === Number(cpf[10]);
 }
 
@@ -213,39 +126,22 @@ export function existeCpfDuplicado(
   currentClientId?: string
 ): boolean {
   const cpf = somenteDigitos(value);
-
-  if (cpf.length !== 11) {
-    return false;
-  }
-
+  if (cpf.length !== 11) return false;
   return clients.some(
-    (client) =>
-      client.id !== currentClientId &&
-      somenteDigitos(client.document) === cpf
+    (client) => client.id !== currentClientId && somenteDigitos(client.document) === cpf
   );
 }
 
 export function validarCnpj(value: unknown): boolean {
   const cnpj = somenteDigitos(value);
+  if (cnpj.length !== 14 || digitosRepetidos(cnpj)) return false;
 
-  if (cnpj.length !== 14 || digitosRepetidos(cnpj)) {
-    return false;
-  }
-
-  const calcularDigito = (
-    base: string,
-    weights: number[]
-  ) => {
-    const sum = base
-      .split("")
-      .reduce(
-        (total, number, index) =>
-          total + Number(number) * weights[index],
-        0
-      );
-
+  const calcularDigito = (base: string, weights: number[]) => {
+    const sum = base.split("").reduce(
+      (total, number, index) => total + Number(number) * weights[index],
+      0
+    );
     const remainder = sum % 11;
-
     return remainder < 2 ? 0 : 11 - remainder;
   };
 
@@ -253,42 +149,26 @@ export function validarCnpj(value: unknown): boolean {
     cnpj.slice(0, 12),
     [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
   );
-
-  if (firstDigit !== Number(cnpj[12])) {
-    return false;
-  }
+  if (firstDigit !== Number(cnpj[12])) return false;
 
   const secondDigit = calcularDigito(
     cnpj.slice(0, 13),
     [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
   );
-
   return secondDigit === Number(cnpj[13]);
 }
 
 export function validarCpfCnpj(value: unknown): boolean {
   const document = somenteDigitos(value);
-
-  if (document.length === 11) {
-    return validarCpf(document);
-  }
-
-  if (document.length === 14) {
-    return validarCnpj(document);
-  }
-
+  if (document.length === 11) return validarCpf(document);
+  if (document.length === 14) return validarCnpj(document);
   return false;
 }
 
 export function validarTelefone(value: unknown): boolean {
   const phone = somenteDigitos(value);
 
-  if (
-    ![10, 11].includes(phone.length) ||
-    digitosRepetidos(phone)
-  ) {
-    return false;
-  }
+  if (![10, 11].includes(phone.length) || digitosRepetidos(phone)) return false;
 
   const areaCode = phone.slice(0, 2);
   const subscriberNumber = phone.slice(2);
@@ -306,7 +186,6 @@ export function validarTelefone(value: unknown): boolean {
 
 export function validarCep(value: unknown): boolean {
   const cep = somenteDigitos(value);
-
   return cep.length === 8 && !digitosRepetidos(cep);
 }
 
@@ -321,39 +200,23 @@ export function validarCadastroPessoa(
   const street = normalizarTexto(input.street);
   const number = normalizarTexto(input.number);
   const no_number = Boolean(input.no_number);
-  const neighborhood = normalizarTexto(
-    input.neighborhood
-  );
+  const neighborhood = normalizarTexto(input.neighborhood);
 
+  // Bloqueios mantidos: nome, telefone e cidade.
   if (!validarNomeCompleto(name, document)) {
     return {
       valido: false,
       erro:
-        document.length === 11
-          ? "Informe o nome completo, com nome e sobrenome."
-          : "Informe uma razão social válida.",
-    };
-  }
-
-  if (!validarCpfCnpj(document)) {
-    return {
-      valido: false,
-      erro: "Informe um CPF ou CNPJ válido.",
+        document.length === 14
+          ? "Informe uma razão social válida."
+          : "Informe o nome completo, com nome e sobrenome.",
     };
   }
 
   if (!validarTelefone(phone)) {
     return {
       valido: false,
-      erro:
-        "Informe um telefone válido com DDD.",
-    };
-  }
-
-  if (!validarCep(cep)) {
-    return {
-      valido: false,
-      erro: "Informe um CEP válido.",
+      erro: "Informe um telefone válido com DDD.",
     };
   }
 
@@ -364,35 +227,7 @@ export function validarCadastroPessoa(
     };
   }
 
-  if (!textoValido(street, 2)) {
-    return {
-      valido: false,
-      erro: "Informe uma rua válida.",
-    };
-  }
-
-  if (!textoValido(neighborhood, 2)) {
-    return {
-      valido: false,
-      erro: "Informe um bairro válido.",
-    };
-  }
-
-  if (
-    !no_number &&
-    (
-      !number ||
-      !/[1-9A-Za-zÀ-ÖØ-öø-ÿ]/.test(number) ||
-      /^0+$/.test(number)
-    )
-  ) {
-    return {
-      valido: false,
-      erro:
-        "Informe um número válido ou marque Sem número.",
-    };
-  }
-
+  // CPF/CNPJ, CEP, rua, bairro e número ficam informativos e não bloqueiam.
   return {
     valido: true,
     dados: {

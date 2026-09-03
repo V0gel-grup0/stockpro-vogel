@@ -40,15 +40,15 @@ export type ClientVisibilityPolicy =
 export function getClientVisibilityPolicy(
   profile: ClientVisibilityProfile
 ): ClientVisibilityPolicy {
+  if (profile.role === "administrador") {
+    return { mode: "all" };
+  }
+
   if (profile.role === "vendedor") {
     return { mode: "seller", profileId: profile.id };
   }
 
-  if (profile.role === "representante") {
-    return { mode: "own", profileId: profile.id };
-  }
-
-  return { mode: "all" };
+  return { mode: "own", profileId: profile.id };
 }
 
 export function canViewClientSnapshot(
@@ -69,14 +69,13 @@ export function canViewClientSnapshot(
   }
 
   const hasVisibleOpportunity = client.opportunities?.some(
-      (opportunity) =>
-        opportunity.created_by === policy.profileId ||
-        opportunity.responsible_id === policy.profileId ||
-        (policy.mode === "seller" &&
-          (opportunity.creator?.responsible_seller_id === policy.profileId ||
-            opportunity.responsible?.responsible_seller_id ===
-              policy.profileId))
-    );
+    (opportunity) =>
+      opportunity.created_by === policy.profileId ||
+      opportunity.responsible_id === policy.profileId ||
+      (policy.mode === "seller" &&
+        (opportunity.creator?.responsible_seller_id === policy.profileId ||
+          opportunity.responsible?.responsible_seller_id === policy.profileId))
+  );
 
   if (hasVisibleOpportunity) return true;
 
