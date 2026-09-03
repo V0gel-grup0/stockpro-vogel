@@ -176,7 +176,8 @@ export function validarTelefone(value: unknown): boolean {
   if (
     areaCode === "00" ||
     Number(areaCode) < 11 ||
-    /^0+$/.test(subscriberNumber)
+    /^0+$/.test(subscriberNumber) ||
+    digitosRepetidos(subscriberNumber)
   ) {
     return false;
   }
