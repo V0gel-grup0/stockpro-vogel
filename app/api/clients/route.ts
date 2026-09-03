@@ -57,11 +57,31 @@ export async function GET() {
       orderBy: {
         created_at: "desc",
       },
+      include: {
+        profiles: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
     });
+
+    const safeClients = clients.map(({ profiles, ...client }) => ({
+      ...client,
+      creator: profiles
+        ? {
+            id: profiles.id,
+            name: profiles.name,
+            role: profiles.role,
+          }
+        : null,
+    }));
 
     return NextResponse.json({
       sucesso: true,
-      clients,
+      clients: safeClients,
     });
   } catch (error) {
     console.error("Erro ao carregar clientes:", error);
@@ -210,7 +230,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (["vendedor", "representante"].includes(authorization.profile.role)) {
+    if (authorization.profile.role !== "administrador") {
       const ownedClient = await prisma.clients.findFirst({
         where: buildAccessibleClientWhere(
           {
