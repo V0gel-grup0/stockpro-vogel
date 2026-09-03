@@ -109,9 +109,12 @@ export default function ClientCreatorFilterEnhancer() {
 
   async function reloadClients() {
     const clientsResponse = await fetch("/api/clients", { cache: "no-store" });
-    if (!clientsResponse.ok) return;
+    if (!clientsResponse.ok) return [] as Client[];
     const data = await clientsResponse.json();
-    if (data.sucesso) setClients(data.clients || []);
+    if (!data.sucesso) return [] as Client[];
+    const nextClients = (data.clients || []) as Client[];
+    setClients(nextClients);
+    return nextClients;
   }
 
   useEffect(() => {
@@ -167,6 +170,52 @@ export default function ClientCreatorFilterEnhancer() {
     const observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    let checking = false;
+
+    const checkForNewClients = async () => {
+      if (checking || document.visibilityState === "hidden") return;
+      const found = findClientsSection();
+      if (!found) return;
+
+      checking = true;
+      try {
+        const response = await fetch("/api/clients", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.sucesso) return;
+
+        const serverCount = Array.isArray(data.clients) ? data.clients.length : 0;
+        const renderedCount = found.section.querySelectorAll(".user-card").length;
+
+        if (serverCount !== renderedCount) {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Erro ao verificar novos clientes:", error);
+      } finally {
+        checking = false;
+      }
+    };
+
+    const interval = window.setInterval(checkForNewClients, 12000);
+    const onFocus = () => void checkForNewClients();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void checkForNewClients();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [isAdmin]);
 
   const creators = useMemo(() => {
@@ -326,30 +375,48 @@ export default function ClientCreatorFilterEnhancer() {
       {filterHost &&
         createPortal(
           <div
-            className="field"
             style={{
-              maxWidth: 420,
-              padding: 12,
-              border: "1px solid rgba(96,165,250,.24)",
-              borderRadius: 14,
-              background: "rgba(15,23,42,.7)",
+              display: "flex",
+              gap: 10,
+              alignItems: "end",
+              flexWrap: "wrap",
             }}
           >
-            <label htmlFor="client-creator-filter">Cadastrado por</label>
-            <select
-              id="client-creator-filter"
-              className="input"
-              value={creatorId}
-              onChange={(event) => setCreatorId(event.target.value)}
+            <div
+              className="field"
+              style={{
+                flex: "1 1 280px",
+                maxWidth: 420,
+                padding: 12,
+                border: "1px solid rgba(96,165,250,.24)",
+                borderRadius: 14,
+                background: "rgba(15,23,42,.7)",
+              }}
             >
-              <option value="">Todos</option>
-              <option value="__none__">Não identificado</option>
-              {creators.map((creator) => (
-                <option key={creator.id} value={creator.id}>
-                  {creator.name}
-                </option>
-              ))}
-            </select>
+              <label htmlFor="client-creator-filter">Cadastrado por</label>
+              <select
+                id="client-creator-filter"
+                className="input"
+                value={creatorId}
+                onChange={(event) => setCreatorId(event.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="__none__">Não identificado</option>
+                {creators.map((creator) => (
+                  <option key={creator.id} value={creator.id}>
+                    {creator.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className="btn btn-gray"
+              style={{ minHeight: 46, marginBottom: 1 }}
+              onClick={() => window.location.reload()}
+            >
+              Atualizar lista
+            </button>
           </div>,
           filterHost
         )}
