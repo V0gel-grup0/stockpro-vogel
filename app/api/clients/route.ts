@@ -43,6 +43,38 @@ async function documentoJaCadastrado(
   );
 }
 
+async function validateRequestedCreator(value: unknown) {
+  const requestedId = String(value ?? "").trim();
+
+  if (!requestedId) {
+    return { id: null as string | null, erro: null as string | null };
+  }
+
+  if (!uuidPattern.test(requestedId)) {
+    return {
+      id: null,
+      erro: "O cadastrador selecionado é inválido.",
+    };
+  }
+
+  const profile = await prisma.profiles.findUnique({
+    where: { id: requestedId },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!profile || profile.status !== "approved") {
+    return {
+      id: null,
+      erro: "O cadastrador selecionado não está disponível.",
+    };
+  }
+
+  return { id: profile.id, erro: null };
+}
+
 export async function GET() {
   try {
     const authorization = await authorizeApi();
@@ -161,6 +193,21 @@ export async function POST(request: Request) {
       );
     }
 
+    let createdBy = authorization.profile.id;
+
+    if (authorization.profile.role === "administrador" && "created_by" in body) {
+      const creator = await validateRequestedCreator(body.created_by);
+
+      if (creator.erro) {
+        return NextResponse.json(
+          { sucesso: false, erro: creator.erro },
+          { status: 400 }
+        );
+      }
+
+      createdBy = creator.id || authorization.profile.id;
+    }
+
     const client = await prisma.clients.create({
       data: {
         ...validation.dados,
@@ -168,7 +215,7 @@ export async function POST(request: Request) {
           normalizeProposalStatus(
             body.proposal_status
           ),
-        created_by: authorization.profile.id,
+        created_by: createdBy,
       },
     });
 
@@ -294,17 +341,34 @@ export async function PUT(request: Request) {
       );
     }
 
+    const updateData: Prisma.clientsUpdateInput = {
+      ...validation.dados,
+      proposal_status:
+        normalizeProposalStatus(
+          body.proposal_status
+        ),
+    };
+
+    if (authorization.profile.role === "administrador" && "created_by" in body) {
+      const creator = await validateRequestedCreator(body.created_by);
+
+      if (creator.erro) {
+        return NextResponse.json(
+          { sucesso: false, erro: creator.erro },
+          { status: 400 }
+        );
+      }
+
+      updateData.profiles = creator.id
+        ? { connect: { id: creator.id } }
+        : { disconnect: true };
+    }
+
     const client = await prisma.clients.update({
       where: {
         id,
       },
-      data: {
-        ...validation.dados,
-        proposal_status:
-          normalizeProposalStatus(
-            body.proposal_status
-          ),
-      },
+      data: updateData,
     });
 
     return NextResponse.json({
