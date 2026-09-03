@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Client = {
@@ -12,6 +12,13 @@ type Client = {
     name: string;
     role: string;
   } | null;
+};
+
+type Profile = {
+  id: string;
+  name: string;
+  role: string;
+  status: string;
 };
 
 function digits(value: string | null | undefined) {
@@ -33,7 +40,20 @@ function findClientsSection() {
   return { heading, section };
 }
 
-function ensureHost() {
+function findClientFormGrid() {
+  const heading = Array.from(document.querySelectorAll("h2.card-title")).find(
+    (item) => ["Novo cadastro", "Editar cadastro"].includes(item.textContent?.trim() || "")
+  );
+  const section = heading?.closest("section.card") as HTMLElement | null;
+  if (!section) return null;
+
+  const pageText = document.body.textContent || "";
+  if (!pageText.includes("Clientes com endereço automático por CEP.")) return null;
+
+  return section.querySelector<HTMLElement>(".form-grid");
+}
+
+function ensureFilterHost() {
   const found = findClientsSection();
   if (!found) return null;
 
@@ -47,11 +67,52 @@ function ensureHost() {
   return host;
 }
 
+function ensureFormHost() {
+  const grid = findClientFormGrid();
+  if (!grid) return null;
+
+  let host = grid.querySelector<HTMLDivElement>("#client-creator-form-host");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "client-creator-form-host";
+    host.className = "field";
+    grid.appendChild(host);
+  }
+  return host;
+}
+
+function requestMethod(input: RequestInfo | URL, init?: RequestInit) {
+  if (init?.method) return init.method.toUpperCase();
+  if (typeof Request !== "undefined" && input instanceof Request) return input.method.toUpperCase();
+  return "GET";
+}
+
+function requestUrl(input: RequestInfo | URL) {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
 export default function ClientCreatorFilterEnhancer() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [creatorId, setCreatorId] = useState("");
-  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [formCreatorId, setFormCreatorId] = useState("");
+  const [filterHost, setFilterHost] = useState<HTMLDivElement | null>(null);
+  const [formHost, setFormHost] = useState<HTMLDivElement | null>(null);
+  const formCreatorRef = useRef("");
+
+  useEffect(() => {
+    formCreatorRef.current = formCreatorId;
+  }, [formCreatorId]);
+
+  async function reloadClients() {
+    const clientsResponse = await fetch("/api/clients", { cache: "no-store" });
+    if (!clientsResponse.ok) return;
+    const data = await clientsResponse.json();
+    if (data.sucesso) setClients(data.clients || []);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -66,14 +127,26 @@ export default function ClientCreatorFilterEnhancer() {
         setIsAdmin(admin);
         if (!admin) return;
 
-        const clientsResponse = await fetch("/api/clients", { cache: "no-store" });
-        if (!clientsResponse.ok) return;
-        const data = await clientsResponse.json();
-        if (!cancelled && data.sucesso) {
-          setClients(data.clients || []);
+        const [clientsResponse, profilesResponse] = await Promise.all([
+          fetch("/api/clients", { cache: "no-store" }),
+          fetch("/api/profiles", { cache: "no-store" }),
+        ]);
+
+        if (clientsResponse.ok) {
+          const data = await clientsResponse.json();
+          if (!cancelled && data.sucesso) setClients(data.clients || []);
+        }
+
+        if (profilesResponse.ok) {
+          const data = await profilesResponse.json();
+          if (!cancelled && Array.isArray(data)) {
+            setProfiles(
+              data.filter((item: Profile) => item.status === "approved" && item.name)
+            );
+          }
         }
       } catch (error) {
-        console.error("Erro ao carregar filtro de cadastrador:", error);
+        console.error("Erro ao carregar cadastradores:", error);
       }
     })();
 
@@ -86,8 +159,8 @@ export default function ClientCreatorFilterEnhancer() {
     if (!isAdmin) return;
 
     const sync = () => {
-      const nextHost = ensureHost();
-      setHost((current) => (current === nextHost ? current : nextHost));
+      setFilterHost(ensureFilterHost());
+      setFormHost(ensureFormHost());
     };
 
     sync();
@@ -107,6 +180,11 @@ export default function ClientCreatorFilterEnhancer() {
       a.name.localeCompare(b.name, "pt-BR")
     );
   }, [clients]);
+
+  const availableProfiles = useMemo(
+    () => [...profiles].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    [profiles]
+  );
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -138,11 +216,8 @@ export default function ClientCreatorFilterEnhancer() {
         label.style.color = "#93c5fd";
         label.style.fontWeight = "700";
         const actions = card.querySelector(".form-actions");
-        if (actions) {
-          card.insertBefore(label, actions);
-        } else {
-          card.appendChild(label);
-        }
+        if (actions) card.insertBefore(label, actions);
+        else card.appendChild(label);
       }
     });
 
@@ -152,37 +227,132 @@ export default function ClientCreatorFilterEnhancer() {
         card.querySelector("[data-client-creator-label]")?.remove();
       });
     };
-  }, [isAdmin, clients, creatorId, host]);
+  }, [isAdmin, clients, creatorId, filterHost]);
 
-  if (!isAdmin || !host) return null;
+  useEffect(() => {
+    if (!isAdmin) return;
 
-  return createPortal(
-    <div
-      className="field"
-      style={{
-        maxWidth: 420,
-        padding: 12,
-        border: "1px solid rgba(96,165,250,.24)",
-        borderRadius: 14,
-        background: "rgba(15,23,42,.7)",
-      }}
-    >
-      <label htmlFor="client-creator-filter">Cadastrado por</label>
-      <select
-        id="client-creator-filter"
-        className="input"
-        value={creatorId}
-        onChange={(event) => setCreatorId(event.target.value)}
-      >
-        <option value="">Todos</option>
-        <option value="__none__">Não identificado</option>
-        {creators.map((creator) => (
-          <option key={creator.id} value={creator.id}>
-            {creator.name}
-          </option>
-        ))}
-      </select>
-    </div>,
-    host
+    const onClick = (event: MouseEvent) => {
+      const button = (event.target as HTMLElement | null)?.closest("button");
+      if (!button) return;
+      const text = button.textContent?.trim() || "";
+
+      if (text === "Editar") {
+        const card = button.closest<HTMLElement>(".user-card");
+        if (!card) return;
+        const cardDigits = digits(card.textContent);
+        const client = clients.find((item) => {
+          const doc = digits(item.document);
+          return doc.length >= 11 && cardDigits.includes(doc);
+        });
+        setFormCreatorId(client?.creator?.id || "");
+      }
+
+      if (text === "Cancelar") {
+        setFormCreatorId("");
+      }
+    };
+
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [isAdmin, clients]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const nativeFetch = window.fetch.bind(window);
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(requestUrl(input), window.location.origin);
+      const method = requestMethod(input, init);
+      let nextInit = init;
+
+      if (url.pathname === "/api/clients" && ["POST", "PUT"].includes(method)) {
+        try {
+          const currentBody = init?.body ? JSON.parse(String(init.body)) : {};
+          nextInit = {
+            ...init,
+            body: JSON.stringify({
+              ...currentBody,
+              created_by: formCreatorRef.current || undefined,
+            }),
+          };
+        } catch (error) {
+          console.error("Erro ao incluir cadastrador no cliente:", error);
+        }
+      }
+
+      const response = await nativeFetch(input, nextInit);
+
+      if (url.pathname === "/api/clients" && response.ok && ["POST", "PUT"].includes(method)) {
+        window.setTimeout(() => {
+          void reloadClients();
+        }, 150);
+        if (method === "POST") setFormCreatorId("");
+      }
+
+      return response;
+    };
+
+    return () => {
+      window.fetch = nativeFetch;
+    };
+  }, [isAdmin]);
+
+  if (!isAdmin) return null;
+
+  return (
+    <>
+      {formHost &&
+        createPortal(
+          <>
+            <label htmlFor="client-creator-form">Cadastrado por</label>
+            <select
+              id="client-creator-form"
+              className="input"
+              value={formCreatorId}
+              onChange={(event) => setFormCreatorId(event.target.value)}
+            >
+              <option value="">Usuário atual (administrador)</option>
+              {availableProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.name} — {profile.role}
+                </option>
+              ))}
+            </select>
+          </>,
+          formHost
+        )}
+
+      {filterHost &&
+        createPortal(
+          <div
+            className="field"
+            style={{
+              maxWidth: 420,
+              padding: 12,
+              border: "1px solid rgba(96,165,250,.24)",
+              borderRadius: 14,
+              background: "rgba(15,23,42,.7)",
+            }}
+          >
+            <label htmlFor="client-creator-filter">Cadastrado por</label>
+            <select
+              id="client-creator-filter"
+              className="input"
+              value={creatorId}
+              onChange={(event) => setCreatorId(event.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="__none__">Não identificado</option>
+              {creators.map((creator) => (
+                <option key={creator.id} value={creator.id}>
+                  {creator.name}
+                </option>
+              ))}
+            </select>
+          </div>,
+          filterHost
+        )}
+    </>
   );
 }
