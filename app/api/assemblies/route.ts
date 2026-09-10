@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         create: { equipment_name: equipment, quantity, min_stock: 0, notes: "" },
       });
       return created;
-    });
+    }, { maxWait: 5000, timeout: 20000 });
     return NextResponse.json({ sucesso: true, assembly: toJsonSafe(assembly) }, { status: 201 });
   } catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao registrar montagem." }, { status: 500 }); }
 }
