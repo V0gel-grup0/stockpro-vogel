@@ -8,6 +8,34 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 
+function assemblyErrorResponse(error: unknown) {
+  const message = error instanceof Error ? error.message : "Erro ao registrar montagem.";
+
+  if (message.startsWith("Estoque insuficiente para montar")) {
+    return NextResponse.json({ sucesso: false, erro: message }, { status: 400 });
+  }
+
+  if (message.startsWith("Nenhuma composição cadastrada para")) {
+    return NextResponse.json({ sucesso: false, erro: message }, { status: 400 });
+  }
+
+  if (message.includes("expired transaction") || message.includes("Transaction API error")) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        erro: "A montagem demorou mais que o esperado para ser processada. Nenhuma alteração parcial foi salva. Tente novamente em alguns segundos.",
+      },
+      { status: 503 }
+    );
+  }
+
+  console.error("Erro inesperado ao registrar montagem:", error);
+  return NextResponse.json(
+    { sucesso: false, erro: "Não foi possível registrar a montagem. Tente novamente ou informe o suporte se o problema continuar." },
+    { status: 500 }
+  );
+}
+
 export async function GET() {
   try { const authorization = await authorizeApi(["administrador", "gerente", "tecnico"]); if ("response" in authorization) return authorization.response; const assemblies = await prisma.assemblies.findMany({ orderBy: { created_at: "desc" } }); return NextResponse.json({ sucesso: true, assemblies: toJsonSafe(assemblies) }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao carregar montagens." }, { status: 500 }); }
@@ -37,7 +65,7 @@ export async function POST(request: Request) {
       return created;
     }, { maxWait: 5000, timeout: 20000 });
     return NextResponse.json({ sucesso: true, assembly: toJsonSafe(assembly) }, { status: 201 });
-  } catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao registrar montagem." }, { status: 500 }); }
+  } catch (error) { return assemblyErrorResponse(error); }
 }
 
 export async function PUT(request: Request) {
