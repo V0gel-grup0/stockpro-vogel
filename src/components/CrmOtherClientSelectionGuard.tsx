@@ -3,43 +3,35 @@
 import { useEffect } from "react";
 
 const OTHER_CLIENT_TOKEN = "__crm_other__";
+const PROXY_ID = "crm-client-visible-select";
 
-function findSelectByLabel(labelText: string) {
+function findFieldByLabel(labelText: string) {
   const form = document.getElementById("crm-opportunity-form");
   if (!form) return null;
 
-  const fields = Array.from(form.querySelectorAll<HTMLElement>(".field"));
-  for (const field of fields) {
+  return Array.from(form.querySelectorAll<HTMLElement>(".field")).find((field) => {
     const label = field.querySelector("label")?.textContent?.trim().toLowerCase();
-    if (label !== labelText.trim().toLowerCase()) continue;
-    const select = field.querySelector("select");
-    if (select instanceof HTMLSelectElement) return select;
-  }
+    return label === labelText.trim().toLowerCase();
+  }) || null;
+}
 
-  return null;
+function findClientField() {
+  return findFieldByLabel("Cliente");
 }
 
 function findClientSelect() {
-  return findSelectByLabel("Cliente");
+  const field = findClientField();
+  if (!field) return null;
+  return Array.from(field.querySelectorAll("select")).find(
+    (select) => select.id !== PROXY_ID
+  ) || null;
 }
 
 function findStageSelect() {
-  return findSelectByLabel("Etapa inicial") || findSelectByLabel("Etapa");
-}
-
-function ensureOtherOption(select: HTMLSelectElement) {
-  let option = Array.from(select.options).find(
-    (item) => item.value === OTHER_CLIENT_TOKEN
-  );
-
-  if (!option) {
-    option = document.createElement("option");
-    option.value = OTHER_CLIENT_TOKEN;
-    option.textContent = "Outros";
-    select.appendChild(option);
-  }
-
-  return option;
+  const field = findFieldByLabel("Etapa inicial") || findFieldByLabel("Etapa");
+  if (!field) return null;
+  const select = field.querySelector("select");
+  return select instanceof HTMLSelectElement ? select : null;
 }
 
 function setNativeSelectValue(select: HTMLSelectElement, value: string) {
@@ -47,105 +39,111 @@ function setNativeSelectValue(select: HTMLSelectElement, value: string) {
     HTMLSelectElement.prototype,
     "value"
   )?.set;
-
   if (setter) setter.call(select, value);
   else select.value = value;
 }
 
-function isClientSelect(element: EventTarget | null) {
-  if (!(element instanceof HTMLSelectElement)) return false;
-  return element === findClientSelect();
-}
+function copyClientOptions(source: HTMLSelectElement, proxy: HTMLSelectElement) {
+  const current = proxy.value;
+  proxy.replaceChildren();
 
-function isStageSelect(element: EventTarget | null) {
-  if (!(element instanceof HTMLSelectElement)) return false;
-  return element === findStageSelect();
+  Array.from(source.options).forEach((option) => {
+    if (option.value === OTHER_CLIENT_TOKEN) return;
+    if (option.textContent?.trim() === "__CRM_OUTROS__") return;
+    const clone = document.createElement("option");
+    clone.value = option.value;
+    clone.textContent = option.textContent;
+    proxy.appendChild(clone);
+  });
+
+  const other = document.createElement("option");
+  other.value = OTHER_CLIENT_TOKEN;
+  other.textContent = "Outros";
+  proxy.appendChild(other);
+
+  if (Array.from(proxy.options).some((option) => option.value === current)) {
+    proxy.value = current;
+  }
 }
 
 export default function CrmOtherClientSelectionGuard() {
   useEffect(() => {
-    let keepOtherSelected = false;
-    let reactSynced = false;
     let frame = 0;
-    let resetTimer = 0;
 
-    const sync = () => {
-      const clientSelect = findClientSelect();
+    const ensureProxy = () => {
+      const field = findClientField();
+      const realSelect = findClientSelect();
       const stageSelect = findStageSelect();
+      if (!field || !realSelect) return;
 
-      if (!clientSelect) {
-        window.clearTimeout(resetTimer);
-        resetTimer = window.setTimeout(() => {
-          if (!findClientSelect()) {
-            keepOtherSelected = false;
-            reactSynced = false;
+      let proxy = field.querySelector<HTMLSelectElement>(`#${PROXY_ID}`);
+      if (!proxy) {
+        proxy = document.createElement("select");
+        proxy.id = PROXY_ID;
+        proxy.className = realSelect.className || "input";
+        proxy.style.width = "100%";
+        realSelect.insertAdjacentElement("afterend", proxy);
+
+        proxy.addEventListener("change", () => {
+          const real = findClientSelect();
+          const stage = findStageSelect();
+          if (!real) return;
+
+          if (proxy!.value === OTHER_CLIENT_TOKEN) {
+            if (stage) {
+              let otherStage = Array.from(stage.options).find((option) => option.value === "other");
+              if (!otherStage) {
+                otherStage = document.createElement("option");
+                otherStage.value = "other";
+                otherStage.textContent = "Outros";
+                stage.appendChild(otherStage);
+              }
+              setNativeSelectValue(stage, "other");
+              stage.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            return;
           }
-        }, 250);
-        return;
+
+          setNativeSelectValue(real, proxy!.value);
+          real.dispatchEvent(new Event("change", { bubbles: true }));
+
+          if (stage?.value === "other") {
+            setNativeSelectValue(stage, "lead");
+            stage.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        });
       }
 
-      window.clearTimeout(resetTimer);
-      ensureOtherOption(clientSelect);
+      copyClientOptions(realSelect, proxy);
+      realSelect.style.display = "none";
 
       if (stageSelect?.value === "other") {
-        keepOtherSelected = true;
-      }
-
-      if (!keepOtherSelected) return;
-
-      if (clientSelect.value !== OTHER_CLIENT_TOKEN) {
-        setNativeSelectValue(clientSelect, OTHER_CLIENT_TOKEN);
-      }
-
-      if (!reactSynced) {
-        reactSynced = true;
-        clientSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        proxy.value = OTHER_CLIENT_TOKEN;
+      } else {
+        proxy.value = realSelect.value || "";
       }
     };
 
-    const scheduleSync = () => {
+    const schedule = () => {
       window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(sync);
+      frame = window.requestAnimationFrame(ensureProxy);
     };
 
-    const onChangeCapture = (event: Event) => {
-      const target = event.target;
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true });
 
-      if (isClientSelect(target)) {
-        const clientSelect = target as HTMLSelectElement;
-        keepOtherSelected = clientSelect.value === OTHER_CLIENT_TOKEN;
-        reactSynced = true;
-        scheduleSync();
-        return;
-      }
-
-      if (isStageSelect(target)) {
-        const stageSelect = target as HTMLSelectElement;
-        if (stageSelect.value === "other") {
-          keepOtherSelected = true;
-          reactSynced = false;
-          window.setTimeout(sync, 0);
-          scheduleSync();
-        }
-      }
+    const onChange = (event: Event) => {
+      if (event.target === findStageSelect()) schedule();
     };
+    document.addEventListener("change", onChange, true);
 
-    document.addEventListener("change", onChangeCapture, true);
-
-    const observer = new MutationObserver(scheduleSync);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    const interval = window.setInterval(sync, 120);
-    sync();
+    const interval = window.setInterval(ensureProxy, 150);
+    ensureProxy();
 
     return () => {
-      document.removeEventListener("change", onChangeCapture, true);
       observer.disconnect();
+      document.removeEventListener("change", onChange, true);
       window.clearInterval(interval);
-      window.clearTimeout(resetTimer);
       window.cancelAnimationFrame(frame);
     };
   }, []);
