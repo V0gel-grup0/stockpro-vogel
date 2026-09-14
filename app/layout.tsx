@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
+import CrmOtherTasksEnhancer from "@/components/CrmOtherTasksEnhancer";
 import InstallationForecastEnhancer from "@/components/InstallationForecastEnhancer";
 import ClientCreatorFilterEnhancer from "@/components/ClientCreatorFilterEnhancer";
 import AssemblySubmitGuard from "@/components/AssemblySubmitGuard";
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <CrmAdminFiltersEnhancer />
+        <CrmOtherTasksEnhancer />
         <InstallationForecastEnhancer />
         <ClientCreatorFilterEnhancer />
         <AssemblySubmitGuard />
