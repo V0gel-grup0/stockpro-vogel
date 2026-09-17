@@ -3,6 +3,7 @@ import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
 import CrmOtherTasksEnhancer from "@/components/CrmOtherTasksEnhancer";
 import CrmOtherClientSelectionGuard from "@/components/CrmOtherClientSelectionGuard";
 import CrmOtherSaveGuard from "@/components/CrmOtherSaveGuard";
+import CrmImportanceEnhancer from "@/components/CrmImportanceEnhancer";
 import InstallationForecastEnhancer from "@/components/InstallationForecastEnhancer";
 import ClientCreatorFilterEnhancer from "@/components/ClientCreatorFilterEnhancer";
 import AssemblySubmitGuard from "@/components/AssemblySubmitGuard";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CrmOtherTasksEnhancer />
         <CrmOtherClientSelectionGuard />
         <CrmOtherSaveGuard />
+        <CrmImportanceEnhancer />
         <InstallationForecastEnhancer />
         <ClientCreatorFilterEnhancer />
         <AssemblySubmitGuard />
