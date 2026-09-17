@@ -11,133 +11,82 @@ function findFunnelSection() {
 }
 
 function findFunnelScroller(section: HTMLElement) {
-  return Array.from(section.querySelectorAll<HTMLElement>("div")).find(
-    (element) => element.style.overflowX === "auto"
-  ) || null;
+  return (
+    Array.from(section.querySelectorAll<HTMLElement>("div")).find(
+      (element) => element.style.overflowX === "auto"
+    ) || null
+  );
 }
 
 export default function CrmFunnelTopScrollbar() {
   useEffect(() => {
-    let activeSection: HTMLElement | null = null;
     let activeScroller: HTMLElement | null = null;
-    let topScroller: HTMLDivElement | null = null;
-    let spacer: HTMLDivElement | null = null;
-    let resizeObserver: ResizeObserver | null = null;
-    let syncing = false;
+    let activeInner: HTMLElement | null = null;
     let frame = 0;
 
-    const cleanupCurrent = () => {
-      resizeObserver?.disconnect();
-      resizeObserver = null;
-
+    const cleanup = () => {
       if (activeScroller) {
-        activeScroller.removeEventListener("scroll", syncFromBottom);
-        activeScroller.classList.remove("crm-funnel-bottom-scroll-hidden");
+        activeScroller.classList.remove("crm-funnel-scrollbar-on-top");
       }
-
-      if (topScroller) {
-        topScroller.removeEventListener("scroll", syncFromTop);
-        topScroller.remove();
+      if (activeInner) {
+        activeInner.classList.remove("crm-funnel-scrollbar-content");
       }
-
-      activeSection = null;
       activeScroller = null;
-      topScroller = null;
-      spacer = null;
-    };
-
-    const syncFromTop = () => {
-      if (!topScroller || !activeScroller || syncing) return;
-      syncing = true;
-      activeScroller.scrollLeft = topScroller.scrollLeft;
-      window.requestAnimationFrame(() => {
-        syncing = false;
-      });
-    };
-
-    const syncFromBottom = () => {
-      if (!topScroller || !activeScroller || syncing) return;
-      syncing = true;
-      topScroller.scrollLeft = activeScroller.scrollLeft;
-      window.requestAnimationFrame(() => {
-        syncing = false;
-      });
-    };
-
-    const updateWidth = () => {
-      if (!activeScroller || !spacer || !topScroller) return;
-      spacer.style.width = `${activeScroller.scrollWidth}px`;
-      spacer.style.height = "1px";
-      topScroller.scrollLeft = activeScroller.scrollLeft;
-      topScroller.style.display =
-        activeScroller.scrollWidth > activeScroller.clientWidth ? "block" : "none";
+      activeInner = null;
     };
 
     const mount = () => {
       const section = findFunnelSection();
-      if (!section) {
-        cleanupCurrent();
+      const scroller = section ? findFunnelScroller(section) : null;
+      const inner = scroller?.firstElementChild;
+
+      if (!scroller || !(inner instanceof HTMLElement)) {
+        cleanup();
         return;
       }
 
-      const scroller = findFunnelScroller(section);
-      if (!scroller) {
-        cleanupCurrent();
-        return;
-      }
+      if (scroller === activeScroller && inner === activeInner) return;
 
-      if (section === activeSection && scroller === activeScroller && topScroller?.isConnected) {
-        updateWidth();
-        return;
-      }
-
-      cleanupCurrent();
-
-      activeSection = section;
+      cleanup();
       activeScroller = scroller;
+      activeInner = inner;
 
-      topScroller = document.createElement("div");
-      topScroller.dataset.crmFunnelTopScrollbar = "true";
-      topScroller.style.overflowX = "auto";
-      topScroller.style.overflowY = "hidden";
-      topScroller.style.width = "100%";
-      topScroller.style.height = "18px";
-      topScroller.style.margin = "2px 0 12px";
-      topScroller.style.padding = "0";
-      topScroller.style.scrollbarGutter = "stable";
-      topScroller.setAttribute("aria-label", "Mover funil comercial para os lados");
-
-      spacer = document.createElement("div");
-      spacer.style.height = "1px";
-      topScroller.appendChild(spacer);
-
-      scroller.insertAdjacentElement("beforebegin", topScroller);
-      scroller.classList.add("crm-funnel-bottom-scroll-hidden");
-
-      topScroller.addEventListener("scroll", syncFromTop, { passive: true });
-      scroller.addEventListener("scroll", syncFromBottom, { passive: true });
-
-      resizeObserver = new ResizeObserver(updateWidth);
-      resizeObserver.observe(scroller);
-      const inner = scroller.firstElementChild;
-      if (inner instanceof HTMLElement) resizeObserver.observe(inner);
-
-      updateWidth();
+      scroller.classList.add("crm-funnel-scrollbar-on-top");
+      inner.classList.add("crm-funnel-scrollbar-content");
     };
 
     const style = document.createElement("style");
     style.dataset.crmFunnelTopScrollbarStyle = "true";
     style.textContent = `
-      .crm-funnel-bottom-scroll-hidden {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-      .crm-funnel-bottom-scroll-hidden::-webkit-scrollbar {
-        display: none;
-      }
-      [data-crm-funnel-top-scrollbar="true"] {
+      .crm-funnel-scrollbar-on-top {
+        transform: rotateX(180deg);
+        padding-bottom: 0 !important;
+        padding-top: 10px;
+        scrollbar-color: #64748b #0f172a;
         scrollbar-width: auto;
-        -webkit-overflow-scrolling: touch;
+      }
+
+      .crm-funnel-scrollbar-on-top > .crm-funnel-scrollbar-content {
+        transform: rotateX(180deg);
+      }
+
+      .crm-funnel-scrollbar-on-top::-webkit-scrollbar {
+        height: 12px;
+      }
+
+      .crm-funnel-scrollbar-on-top::-webkit-scrollbar-track {
+        background: #0f172a;
+        border-radius: 999px;
+      }
+
+      .crm-funnel-scrollbar-on-top::-webkit-scrollbar-thumb {
+        background: #64748b;
+        border-radius: 999px;
+        border: 2px solid #0f172a;
+      }
+
+      .crm-funnel-scrollbar-on-top::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
       }
     `;
     document.head.appendChild(style);
@@ -161,7 +110,7 @@ export default function CrmFunnelTopScrollbar() {
       observer.disconnect();
       window.removeEventListener("resize", scheduleMount);
       window.cancelAnimationFrame(frame);
-      cleanupCurrent();
+      cleanup();
       style.remove();
     };
   }, []);
