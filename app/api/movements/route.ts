@@ -9,6 +9,14 @@ export const dynamic = "force-dynamic";
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const num = (value: unknown) => { const n = Number(value ?? 0); return Number.isFinite(n) ? n : NaN; };
 
+function productMovementLabel(product: { name?: string | null; subcategory?: string | null; sku?: string | null }) {
+  const name = text(product.name) || "Produto";
+  const variation = text(product.subcategory);
+  const sku = text(product.sku);
+  const details = [variation, sku ? `SKU ${sku}` : ""].filter(Boolean);
+  return details.length ? `${name} — ${details.join(" • ")}` : name;
+}
+
 function isMissingOrderItemsTable(error: unknown) {
   const candidate = error as { code?: string; meta?: { code?: string }; message?: string };
   return (
@@ -41,7 +49,7 @@ async function manual(body: Record<string, any>, profileId: string) {
     let itemName = "";
     if (itemType === "produto") {
       if (!Number.isInteger(quantity)) throw new Error("A quantidade de produto deve ser inteira.");
-      const item = await tx.products.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Produto não encontrado."); itemName = item.name;
+      const item = await tx.products.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Produto não encontrado."); itemName = productMovementLabel(item);
       const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
       await tx.products.update({ where: { id: itemId }, data: { quantity: next, updated_at: new Date() } });
       return tx.movements.create({ data: { type, item_type: "produto", item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de produto: ${itemName}`, created_by: profileId || null } });
@@ -69,15 +77,75 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
 
     let itemId: string; let itemName: string;
     if (kind === "produto") {
-      itemName = text(nf.produto_nome); if (!itemName) throw new Error("Informe o produto da NF."); if (!Number.isInteger(quantity)) throw new Error("A quantidade de produto deve ser inteira.");
-      let product = await tx.products.findFirst({ where: { name: { equals: itemName, mode: "insensitive" } } });
-      if (product) {
-        product = await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) + quantity, cost_price: unitCost, supplier_id: supplier.id, category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), updated_at: new Date() } });
-      } else {
-        product = await tx.products.create({ data: { name: itemName, sku: "", category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), cost_price: unitCost, sale_price: 0, quantity, min_stock: 0, supplier_id: supplier.id, description: `Produto cadastrado automaticamente pela NF ${text(nf.nf_number) || text(nf.nf_key)}` } });
+      itemName = text(nf.produto_nome);
+      if (!itemName) throw new Error("Informe o produto da NF.");
+      if (!Number.isInteger(quantity)) throw new Error("A quantidade de produto deve ser inteira.");
+
+      const requestedProductId = text(nf.product_id);
+      const category = text(nf.produto_categoria);
+      const subcategory = text(nf.produto_subcategoria);
+      let product = requestedProductId
+        ? await tx.products.findUnique({ where: { id: requestedProductId } })
+        : null;
+
+      if (requestedProductId && !product) {
+        throw new Error("A variação de produto selecionada não foi encontrada.");
       }
+
+      if (!product) {
+        const candidates = await tx.products.findMany({
+          where: {
+            name: { equals: itemName, mode: "insensitive" },
+            ...(subcategory
+              ? { subcategory: { equals: subcategory, mode: "insensitive" } }
+              : {}),
+            ...(category
+              ? { category: { equals: category, mode: "insensitive" } }
+              : {}),
+          },
+          orderBy: { created_at: "asc" },
+          take: 2,
+        });
+
+        if (candidates.length > 1) {
+          throw new Error("Existem várias variações deste produto. Selecione a variação correta no campo Produto / variação.");
+        }
+
+        product = candidates[0] || null;
+      }
+
+      if (product) {
+        product = await tx.products.update({
+          where: { id: product.id },
+          data: {
+            quantity: Number(product.quantity) + quantity,
+            cost_price: unitCost,
+            supplier_id: supplier.id,
+            category: category || product.category,
+            subcategory: subcategory || product.subcategory,
+            updated_at: new Date(),
+          },
+        });
+      } else {
+        product = await tx.products.create({
+          data: {
+            name: itemName,
+            sku: "",
+            category,
+            subcategory,
+            cost_price: unitCost,
+            sale_price: 0,
+            quantity,
+            min_stock: 0,
+            supplier_id: supplier.id,
+            description: `Produto cadastrado automaticamente pela NF ${text(nf.nf_number) || text(nf.nf_key)}`,
+          },
+        });
+      }
+
       itemId = product.id;
-      const movement = await tx.movements.create({ data: { type: "entrada", item_type: "produto", item_kind: "produto", nf_item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(nf.notes) || `Entrada automática pela NF ${text(nf.nf_number) || text(nf.nf_key)}`, created_by: profileId || null, supplier_id: supplier.id, nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), nf_key: text(nf.nf_key), unit_cost: unitCost, total_cost: quantity * unitCost } });
+      itemName = productMovementLabel(product);
+      const movement = await tx.movements.create({ data: { type: "entrada", item_type: "produto", item_kind: "produto", nf_item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(nf.notes) || `Entrada automática pela NF ${text(nf.nf_number) || text(nf.nf_key)} - ${itemName}`, created_by: profileId || null, supplier_id: supplier.id, nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), nf_key: text(nf.nf_key), unit_cost: unitCost, total_cost: quantity * unitCost } });
       return { movement, supplier, item: product };
     }
 
@@ -129,7 +197,8 @@ async function orderExit(body: Record<string, any>, profileId: string) {
           if (!product) throw new Error(`Produto do pedido não encontrado no estoque: ${item.item_name}.`);
           if (Number(product.quantity) < quantity) throw new Error(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity}. Pedido: ${quantity}.`);
           await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) - quantity, updated_at: new Date() } });
-          movements.push(await tx.movements.create({ data: { type: "saida", item_type: "produto", item_kind: "produto", item_id: product.id, product_id: product.id, item_name: product.name, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${product.name}`, created_by: profileId || null, order_id: order.id } }));
+          const productLabel = productMovementLabel(product);
+          movements.push(await tx.movements.create({ data: { type: "saida", item_type: "produto", item_kind: "produto", item_id: product.id, product_id: product.id, item_name: productLabel, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${productLabel}`, created_by: profileId || null, order_id: order.id } }));
           continue;
         }
 
@@ -150,7 +219,7 @@ async function orderExit(body: Record<string, any>, profileId: string) {
     const quantity = Number(order.quantity); const itemType = order.item_type || "produto"; let itemName = order.equipment_name || "Equipamento";
     if (itemType === "produto") {
       if (!order.item_id) throw new Error("Produto do pedido não informado.");
-      const product = await tx.products.findUnique({ where: { id: order.item_id } }); if (!product) throw new Error("Produto do pedido não encontrado no estoque."); itemName = product.name;
+      const product = await tx.products.findUnique({ where: { id: order.item_id } }); if (!product) throw new Error("Produto do pedido não encontrado no estoque."); itemName = productMovementLabel(product);
       if (Number(product.quantity) < quantity) throw new Error(`Estoque insuficiente. Disponível: ${product.quantity}. Pedido: ${quantity}.`);
       await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) - quantity, updated_at: new Date() } });
     } else {
