@@ -2764,6 +2764,7 @@ function Movimentações({ profile }: { profile: Profile }) {
     fornecedor_email: "",
     fornecedor_phone: "",
     item_kind: "produto",
+    product_id: "",
     produto_nome: "",
     produto_categoria: "LAMPADAS",
     produto_subcategoria: "Lâmpada LED dimerizável E27",
@@ -2808,6 +2809,25 @@ function Movimentações({ profile }: { profile: Profile }) {
     setNfForm((atual) => ({
       ...atual,
       [campo]: valor,
+    }));
+  }
+
+  function productOptionLabel(produto: AnyRow) {
+    const nome = String(produto.name || "Produto").trim();
+    const variacao = String(produto.subcategory || "").trim();
+    const sku = String(produto.sku || "").trim();
+    const detalhes = [variacao, sku ? `SKU ${sku}` : ""].filter(Boolean);
+    return detalhes.length ? `${nome} — ${detalhes.join(" • ")}` : nome;
+  }
+
+  function selecionarProdutoNf(productId: string) {
+    const produto = products.find((item) => item.id === productId);
+    setNfForm((atual) => ({
+      ...atual,
+      product_id: productId,
+      produto_nome: produto?.name || "",
+      produto_categoria: produto?.category || "",
+      produto_subcategoria: produto?.subcategory || "",
     }));
   }
 
@@ -3045,6 +3065,14 @@ function Movimentações({ profile }: { profile: Profile }) {
 
         item_kind: atual.item_kind || "produto",
 
+        product_id: (() => {
+          const encontrados = products.filter(
+            (item) =>
+              normalizarComponente(item.name) ===
+              normalizarComponente(nomeProduto || codigoProduto)
+          );
+          return encontrados.length === 1 ? encontrados[0].id : atual.product_id;
+        })(),
         produto_nome: nomeProduto || codigoProduto,
         produto_categoria: atual.produto_categoria || "LAMPADAS",
         produto_subcategoria:
@@ -3163,8 +3191,21 @@ function Movimentações({ profile }: { profile: Profile }) {
 
           {nfForm.item_kind === "produto" && (
             <>
+              <SelectField
+                label="Produto / variação"
+                value={nfForm.product_id}
+                onChange={selecionarProdutoNf}
+              >
+                <option value="">Novo produto / selecionar manualmente</option>
+                {products.map((produto) => (
+                  <option key={produto.id} value={produto.id}>
+                    {productOptionLabel(produto)}
+                  </option>
+                ))}
+              </SelectField>
+
               <Field
-                label="Produto"
+                label="Nome do produto"
                 value={nfForm.produto_nome}
                 onChange={(v) => setNfField("produto_nome", v)}
               />
@@ -3255,8 +3296,18 @@ function Movimentações({ profile }: { profile: Profile }) {
           >
             <option value="">Selecione</option>
             {pedidosParaSaída.map((pedido) => {
+              const itensPedido = Array.isArray(pedido.order_items) ? pedido.order_items : [];
+              const labelsItens = itensPedido.map((item: AnyRow) => {
+                if (item.item_type === "product" && item.product_id) {
+                  const produtoItem = products.find((produto) => produto.id === item.product_id);
+                  return produtoItem ? productOptionLabel(produtoItem) : item.item_name || "Produto";
+                }
+                return item.item_name || "Item";
+              });
               const produto = pedido.item_id ? products.find((item) => item.id === pedido.item_id) : null;
-              const itemNome = pedido.equipment_name || produto?.name || pedido.item_type || "Item";
+              const itemNome = labelsItens.length
+                ? labelsItens.join(" + ")
+                : pedido.equipment_name || (produto ? productOptionLabel(produto) : "") || pedido.item_type || "Item";
               return (
                 <option key={pedido.id} value={pedido.id}>
                   Pedido #{pedido.order_number || String(pedido.id).slice(0, 6)} - {itemNome} - Qtd {pedido.quantity}
@@ -3268,7 +3319,21 @@ function Movimentações({ profile }: { profile: Profile }) {
           <div className="field">
             <label>Item</label>
             <div className="input" style={{ display: "flex", alignItems: "center" }}>
-              {pedidoSelecionado ? pedidoSelecionado.equipment_name || produtoPedidoSelecionado?.name || "Item do pedido" : "Selecione um pedido"}
+              {pedidoSelecionado
+                ? (() => {
+                    const itensPedido = Array.isArray(pedidoSelecionado.order_items) ? pedidoSelecionado.order_items : [];
+                    if (itensPedido.length) {
+                      return itensPedido.map((item: AnyRow) => {
+                        if (item.item_type === "product" && item.product_id) {
+                          const produtoItem = products.find((produto) => produto.id === item.product_id);
+                          return produtoItem ? productOptionLabel(produtoItem) : item.item_name || "Produto";
+                        }
+                        return item.item_name || "Item";
+                      }).join(" + ");
+                    }
+                    return pedidoSelecionado.equipment_name || (produtoPedidoSelecionado ? productOptionLabel(produtoPedidoSelecionado) : "") || "Item do pedido";
+                  })()
+                : "Selecione um pedido"}
             </div>
           </div>
 
@@ -3336,7 +3401,7 @@ function Movimentações({ profile }: { profile: Profile }) {
             <option value="">Selecione</option>
             {(manual.item_type === "componente" ? components : products).map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name}
+                {manual.item_type === "produto" ? productOptionLabel(i) : i.name}
               </option>
             ))}
           </SelectField>
