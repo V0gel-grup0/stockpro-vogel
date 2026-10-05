@@ -53,7 +53,13 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const emptyForm = {
+  const emptyForm: {
+    equipment_name: string;
+    quantity: string;
+    technician_id: string;
+    due_date: string;
+    notes: string;
+  } = {
     equipment_name: EQUIPMENT_CATALOG[0],
     quantity: "1",
     technician_id: "",
