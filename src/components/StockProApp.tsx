@@ -2250,6 +2250,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const [msg, setMsg] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [managedRepresentativeId, setManagedRepresentativeId] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", city: "", role: "funcionario" as Role, status: "approved" });
   const roleList = roles || (role ? [role] : []);
   const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
 
@@ -2371,6 +2373,51 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
     }
   }
 
+  function abrirEdicao(item: Profile) {
+    setEditingProfile(item);
+    setEditForm({
+      name: item.name || "",
+      phone: item.phone || "",
+      city: item.city || "",
+      role: item.role,
+      status: item.status || "approved",
+    });
+    setMsg("");
+  }
+
+  async function salvarEdicao() {
+    if (!editingProfile) return;
+    if (!editForm.name.trim()) return setMsg("Informe o nome do colaborador.");
+
+    try {
+      setLoadingId(editingProfile.id);
+      setMsg("");
+
+      const response = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProfile.id,
+          name: editForm.name,
+          phone: onlyNumbers(editForm.phone),
+          city: editForm.city,
+          role: editForm.role,
+          status: editForm.status,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erro ao editar colaborador.");
+
+      setMsg("Colaborador atualizado com sucesso.");
+      setEditingProfile(null);
+      await carregar();
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Erro ao editar colaborador.");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   async function excluir(id: string) {
     if (!confirm("Excluir este cadastro?")) return;
 
@@ -2434,6 +2481,34 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
 
   return <>
     <Title title={title} desc={desc} />
+
+    {editingProfile && currentUser?.role === "administrador" && <section className="card" style={{ marginBottom: 24 }}>
+      <h2 className="card-title">Editar colaborador</h2>
+      <div className="form-grid">
+        <Field label="Nome" value={editForm.name} onChange={(name) => setEditForm((current) => ({ ...current, name }))} />
+        <Field label="Telefone" value={editForm.phone} onChange={(phone) => setEditForm((current) => ({ ...current, phone: maskPhone(phone) }))} />
+        <Field label="Cidade" value={editForm.city} onChange={(city) => setEditForm((current) => ({ ...current, city }))} />
+        <SelectField label="Tipo" value={editForm.role} onChange={(role) => setEditForm((current) => ({ ...current, role: role as Role }))}>
+          <option value="gerente">Gerente</option>
+          <option value="vendedor">Vendedor</option>
+          <option value="tecnico">Técnico / Montador</option>
+          <option value="funcionario">Funcionário</option>
+          <option value="representante">Representante</option>
+        </SelectField>
+        <SelectField label="Status" value={editForm.status} onChange={(status) => setEditForm((current) => ({ ...current, status }))}>
+          <option value="approved">Aprovado</option>
+          <option value="pending">Pendente</option>
+          <option value="inactive">Inativo</option>
+          <option value="rejected">Rejeitado</option>
+        </SelectField>
+      </div>
+      <div className="form-actions">
+        <button className="btn btn-green" disabled={loadingId === editingProfile.id} onClick={salvarEdicao}>
+          {loadingId === editingProfile.id ? "Salvando..." : "Salvar alterações"}
+        </button>
+        <button className="btn btn-gray" disabled={loadingId === editingProfile.id} onClick={() => setEditingProfile(null)}>Cancelar</button>
+      </div>
+    </section>}
     <section className="card">
       <h2 className="card-title">Cadastrar novo acesso</h2>
       <p style={{ color: "#94a3b8", marginBottom: 20 }}>
@@ -2455,6 +2530,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
           <div className="form-actions">
             {isRepresentante && currentUser && ["administrador", "gerente", "vendedor"].includes(currentUser.role) && <button className="btn btn-blue" onClick={() => setManagedRepresentativeId(item.id)}>Gestão</button>}
+            {currentUser?.role === "administrador" && <button className="btn btn-gray" onClick={() => abrirEdicao(item)}>Editar</button>}
             {podeAvaliar(item) && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
             {podeAvaliar(item) && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
             {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}
