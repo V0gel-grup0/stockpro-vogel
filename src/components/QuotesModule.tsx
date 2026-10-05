@@ -471,7 +471,7 @@ export default function QuotesModule({
                 }))
               }
               style={{ marginTop: 8 }}
-            />              )}
+            />
           </div>
           <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></div>
         </div>
