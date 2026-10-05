@@ -3,6 +3,7 @@
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
+import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
@@ -1865,6 +1866,8 @@ function CRM({
         </div>
       </div>}
     </section>
+
+    <AssemblyWorkFunnel profile={profile} />
   </>;
 }
 
