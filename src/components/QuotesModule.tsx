@@ -442,45 +442,36 @@ export default function QuotesModule({
             <label>Condição de pagamento</label>
             <select
               className="input"
-              value={
-                PAYMENT_TERM_OPTIONS.includes(form.payment_terms)
-                  ? form.payment_terms
-                  : form.payment_terms
-                    ? "__custom__"
-                    : ""
-              }
+              value=""
               onChange={(event) => {
                 const value = event.target.value;
+                if (!value) return;
                 setForm((current) => ({
                   ...current,
-                  payment_terms: value === "__custom__" ? "" : value,
+                  payment_terms: value,
                 }));
               }}
             >
-              <option value="">Selecione</option>
+              <option value="">Usar uma condição pronta...</option>
               {PAYMENT_TERM_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
-              <option value="__custom__">Outra condição</option>
             </select>
-            {!PAYMENT_TERM_OPTIONS.includes(form.payment_terms) &&
-              form.payment_terms !== "" && (
-                <input
-                  className="input"
-                  maxLength={500}
-                  placeholder="Digite a condição"
-                  value={form.payment_terms}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      payment_terms: event.target.value,
-                    }))
-                  }
-                  style={{ marginTop: 8 }}
-                />
-              )}
+            <input
+              className="input"
+              maxLength={500}
+              placeholder="Ou digite a condição de pagamento"
+              value={form.payment_terms}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  payment_terms: event.target.value,
+                }))
+              }
+              style={{ marginTop: 8 }}
+            />              )}
           </div>
           <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></div>
         </div>
