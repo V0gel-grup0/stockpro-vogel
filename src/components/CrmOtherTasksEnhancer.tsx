@@ -101,8 +101,9 @@ function ensureFunnelHost() {
   const grid = findFunnelGrid();
   if (!grid) return null;
 
-  grid.style.gridTemplateColumns = "repeat(8, minmax(270px, 1fr))";
-  grid.style.minWidth = "2260px";
+  const isList = grid.dataset.crmLayout === "list";
+  grid.style.gridTemplateColumns = isList ? "minmax(0, 1fr)" : "repeat(8, minmax(270px, 1fr))";
+  grid.style.minWidth = isList ? "0" : "2260px";
 
   let host = grid.querySelector<HTMLElement>("#crm-other-funnel-host");
   if (!host) {
@@ -344,25 +345,26 @@ export default function CrmOtherTasksEnhancer() {
   if (!host) return null;
 
   return createPortal(
-    <div
+    <details className="crm-stage-list-details"
       style={{
-        minHeight: 260,
+        minHeight: 0,
         borderTop: "3px solid #94a3b8",
         borderRight: "1px solid rgba(148,163,184,.35)",
         borderBottom: "1px solid rgba(148,163,184,.35)",
         borderLeft: "1px solid rgba(148,163,184,.35)",
-        borderRadius: 18,
+        borderRadius: 8,
         background: "rgba(2,6,23,.48)",
-        padding: 14,
+        padding: 0,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+      <summary className="crm-stage-list-summary">
         <strong style={{ color: "#cbd5e1", fontSize: 17 }}>Outros</strong>
         <span style={{ minWidth: 28, borderRadius: 999, background: "rgba(148,163,184,.15)", color: "#cbd5e1", padding: "4px 8px", textAlign: "center", fontSize: 12, fontWeight: 800 }}>
           {pending.length}
         </span>
-      </div>
-      <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 14 }}>Tarefas gerais do CRM</div>
+        <span className="crm-stage-list-total">Tarefas gerais do CRM</span>
+      </summary>
+      <div className="crm-stage-list-content">
 
       {loading && tasks.length === 0 ? (
         <p style={{ color: "#94a3b8", fontSize: 13 }}>Carregando tarefas...</p>
@@ -371,18 +373,20 @@ export default function CrmOtherTasksEnhancer() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {pending.map((task) => (
-            <div key={task.id} className="stat-card user-card" style={{ minHeight: 0, padding: 16, borderRadius: 15 }}>
+            <details key={task.id} className="stat-card user-card crm-record-list-item" style={{ minHeight: 0, padding: 16, borderRadius: 8 }}>
+              <summary className="crm-record-list-summary">
               <strong>{task.title || "Tarefa"}</strong>
               <small>Cliente: {task.clients?.name || "Outros"}</small>
               <small>Responsável: {task.profiles_responsible?.name || "-"}</small>
-              <small>Próxima ação: {task.next_action ? NEXT_ACTION_LABELS[task.next_action] || task.next_action : "-"}</small>
               <small>Data: {taskDate(task.next_action_at)}</small>
+              </summary>
+              <small>Próxima ação: {task.next_action ? NEXT_ACTION_LABELS[task.next_action] || task.next_action : "-"}</small>
               {task.notes && <small>Obs: {task.notes}</small>}
               <div className="form-actions" style={{ marginTop: 12, gap: 8 }}>
                 <button className="btn btn-green" type="button" disabled={busyId === task.id} onClick={() => changeTask(task, "complete")}>{busyId === task.id ? "Salvando..." : "Concluir"}</button>
                 <button className="btn btn-red" type="button" disabled={busyId === task.id} onClick={() => deleteTask(task)}>Excluir</button>
               </div>
-            </div>
+            </details>
           ))}
         </div>
       )}
@@ -392,18 +396,21 @@ export default function CrmOtherTasksEnhancer() {
           <summary style={{ cursor: "pointer", color: "#94a3b8", fontSize: 13, fontWeight: 800 }}>Concluídas ({completed.length})</summary>
           <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
             {completed.map((task) => (
-              <div key={task.id} className="stat-card user-card" style={{ minHeight: 0, padding: 12, opacity: .78 }}>
+              <details key={task.id} className="stat-card user-card crm-record-list-item" style={{ minHeight: 0, padding: 12, opacity: .78 }}>
+                <summary className="crm-record-list-summary">
                 <strong>{task.title || "Tarefa"}</strong>
                 <small>Responsável: {task.profiles_responsible?.name || "-"}</small>
+                </summary>
                 <button className="btn btn-gray" type="button" disabled={busyId === task.id} onClick={() => changeTask(task, "reopen")}>Reabrir</button>
-              </div>
+              </details>
             ))}
           </div>
         </details>
       )}
 
       {message && <p style={{ color: "#93c5fd", fontSize: 13, margin: "12px 0 0" }}>{message}</p>}
-    </div>,
+      </div>
+    </details>,
     host
   );
 }
