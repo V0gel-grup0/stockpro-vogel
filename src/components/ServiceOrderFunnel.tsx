@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Role =
   | "administrador"
@@ -65,7 +65,6 @@ export default function ServiceOrderFunnel({ profile }: { profile: Profile }) {
   const [message, setMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState("");
-  const [draggedId, setDraggedId] = useState("");
 
   const emptyForm = {
     client_id: "",
@@ -255,12 +254,6 @@ export default function ServiceOrderFunnel({ profile }: { profile: Profile }) {
     }
 
     setItems((rows) => rows.filter((item) => item.id !== id));
-  }
-
-  function onDragStart(event: DragEvent<HTMLDivElement>, id: string) {
-    setDraggedId(id);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", id);
   }
 
   if (!canSee) return null;
@@ -456,122 +449,42 @@ export default function ServiceOrderFunnel({ profile }: { profile: Profile }) {
         </div>
       )}
 
-      {loading ? (
-        <p style={{ color: "#94a3b8" }}>Carregando ordens de serviço...</p>
-      ) : (
-        <div style={{ overflowX: "auto", paddingBottom: 10 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(6, minmax(270px, 1fr))",
-              gap: 16,
-              minWidth: 1700,
-              alignItems: "start",
-            }}
-          >
-            {STAGES.map((stage) => (
-              <section
-                key={stage.value}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const id =
-                    event.dataTransfer.getData("text/plain") || draggedId;
-                  if (id) void move(id, stage.value);
-                  setDraggedId("");
-                }}
-                style={{
-                  minHeight: 260,
-                  border: `1px solid ${stage.color}55`,
-                  borderTop: `3px solid ${stage.color}`,
-                  borderRadius: 18,
-                  background: "rgba(2,6,23,.48)",
-                  padding: 14,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    alignItems: "center",
-                    marginBottom: 14,
-                  }}
-                >
-                  <strong style={{ color: stage.color }}>{stage.label}</strong>
-                  <span
-                    style={{
-                      borderRadius: 999,
-                      background: `${stage.color}22`,
-                      color: stage.color,
-                      padding: "4px 8px",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                  >
-                    {grouped[stage.value]?.length || 0}
-                  </span>
+      {loading ? <p style={{ color: "#94a3b8" }}>Carregando ordens de serviço...</p> :
+        <div className="crm-stage-list-grid">
+          {STAGES.map((stage) => <details className="crm-stage-list-details" key={stage.value}>
+            <summary className="crm-stage-list-summary">
+              <strong style={{ color: stage.color }}>{stage.label}</strong>
+              <span className="crm-list-count" style={{ color: stage.color }}>{grouped[stage.value]?.length || 0}</span>
+            </summary>
+            <div className="crm-stage-list-content">
+              {(grouped[stage.value] || []).map((item) => <details key={item.id} className="crm-record-list-item">
+                <summary className="crm-record-list-summary">
+                  <strong>{item.title}</strong>
+                  <small>Cliente: {item.client_name}</small>
+                  <small>Responsável: {item.responsible_name || "Não definido"}</small>
+                  <small>{formatDate(item.scheduled_date)}</small>
+                </summary>
+                <div className="crm-record-list-content">
+                  <p>Cidade: {item.client_city || "-"}</p>
+                  <div className="field">
+                    <label htmlFor={"service-stage-" + item.id}>Etapa da ordem de serviço</label>
+                    <select id={"service-stage-" + item.id} className="input" value={item.stage}
+                      onChange={(event) => void move(item.id, event.target.value)}>
+                      {STAGES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                  </div>
+                  {item.description && <p style={{ whiteSpace: "pre-wrap" }}>Serviço: {item.description}</p>}
+                  {item.notes && <p style={{ whiteSpace: "pre-wrap" }}>Observações: {item.notes}</p>}
+                  <div className="form-actions">
+                    {canCreate && <button type="button" className="btn btn-blue" onClick={() => edit(item)}>Editar</button>}
+                    {canDelete && <button type="button" className="btn btn-red" onClick={() => void remove(item.id)}>Excluir</button>}
+                  </div>
                 </div>
-
-                <div style={{ display: "grid", gap: 12 }}>
-                  {(grouped[stage.value] || []).map((item) => (
-                    <div
-                      key={item.id}
-                      className="stat-card user-card"
-                      draggable
-                      onDragStart={(event) => onDragStart(event, item.id)}
-                      onDragEnd={() => setDraggedId("")}
-                      style={{ cursor: "grab" }}
-                    >
-                      <strong>{item.title}</strong>
-                      <small>Cliente: {item.client_name}</small>
-                      <small>Cidade: {item.client_city || "-"}</small>
-                      <small>
-                        Responsável: {item.responsible_name || "Não definido"}
-                      </small>
-                      <small>Data: {formatDate(item.scheduled_date)}</small>
-                      {item.description && (
-                        <small>Serviço: {item.description}</small>
-                      )}
-                      {item.notes && <small>Obs: {item.notes}</small>}
-
-                      <div className="form-actions">
-                        {canCreate && (
-                          <button
-                            type="button"
-                            className="btn btn-blue"
-                            onClick={() => edit(item)}
-                          >
-                            Editar
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            type="button"
-                            className="btn btn-red"
-                            onClick={() => void remove(item.id)}
-                          >
-                            Excluir
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {(grouped[stage.value] || []).length === 0 && (
-                    <p style={{ color: "#64748b", fontSize: 13 }}>
-                      Nenhuma OS nesta etapa.
-                    </p>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        </div>
-      )}
+              </details>)}
+              {(grouped[stage.value] || []).length === 0 && <p className="muted">Nenhuma OS nesta etapa.</p>}
+            </div>
+          </details>)}
+        </div>}
     </section>
   );
 }
