@@ -5,6 +5,7 @@ import QuotesModule from "@/components/QuotesModule";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
+import InvoiceAttachmentField from "@/components/InvoiceAttachmentField";
 import WeeklyReports from "@/components/WeeklyReports";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
@@ -2922,6 +2923,16 @@ function Movimentações({ profile }: { profile: Profile }) {
   const [movements, setMovements] = useState<AnyRow[]>([]);
   const [msg, setMsg] = useState("");
   const [loadingNf, setLoadingNf] = useState(false);
+  const [exitInvoice, setExitInvoice] = useState<File | null>(null);
+  const [manualInvoice, setManualInvoice] = useState<File | null>(null);
+  const [savingMovement, setSavingMovement] = useState(false);
+  const savingMovementRef = useRef(false);
+
+  function exitRequest(payload: Record<string, unknown>, invoice: File | null): RequestInit {
+    if (!invoice) return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+    const body = new FormData(); body.set("payload", JSON.stringify(payload)); body.set("invoice", invoice);
+    return { method: "POST", body };
+  }
 
   useEffect(() => {
     carregar();
@@ -3056,51 +3067,49 @@ function Movimentações({ profile }: { profile: Profile }) {
 
   const pedidosParaSaída = orders.filter((pedido) => {
     const status = String(pedido.status || "").toLowerCase();
-    return !["cancelado", "recebido", "finalizado"].includes(status);
+    return !["cancelado", "enviado", "recebido", "finalizado"].includes(status);
   });
 
   const pedidoSelecionado = orders.find((pedido) => pedido.id === saídaForm.order_id);
   const produtoPedidoSelecionado = pedidoSelecionado?.item_id ? products.find((produto) => produto.id === pedidoSelecionado.item_id) : null;
 
   async function cadastrarSaídaPedido() {
+    if (savingMovementRef.current) return;
     setMsg("");
     if (!saídaForm.order_id) return setMsg("Selecione o pedido para gerar a saída.");
     if (!saídaForm.approved) return setMsg("Aprove a saída antes de cadastrar a movimentação.");
+    savingMovementRef.current = true; setSavingMovement(true);
     try {
-      const response = await fetch("/api/movements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "order_exit", order_id: saídaForm.order_id, created_by: profile.id, notes: saídaForm.notes }),
-      });
+      const response = await fetch("/api/movements", exitRequest({ action: "order_exit", order_id: saídaForm.order_id, notes: saídaForm.notes }, exitInvoice));
       const data = await response.json();
       if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao cadastrar saída automática.");
       setMsg("Saída automática cadastrada com sucesso.");
       setSaídaForm(emptySaída);
+      setExitInvoice(null);
       await carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao cadastrar saída automática.");
-    }
+    } finally { savingMovementRef.current = false; setSavingMovement(false); }
   }
 
   async function salvarManual() {
+    if (savingMovementRef.current) return;
     setMsg("");
     const qtd = Number(manual.quantity || 0);
     if (!manual.item_id) return setMsg(manual.item_type === "componente" ? "Selecione o componente." : "Selecione o produto.");
     if (qtd <= 0) return setMsg("Informe a quantidade.");
+    savingMovementRef.current = true; setSavingMovement(true);
     try {
-      const response = await fetch("/api/movements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "manual", ...manual, quantity: qtd, created_by: profile.id }),
-      });
+      const response = await fetch("/api/movements", exitRequest({ action: "manual", ...manual, quantity: qtd }, manual.type === "saida" && manual.item_type === "produto" ? manualInvoice : null));
       const data = await response.json();
       if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao salvar movimentação.");
       setMsg("Movimentação manual salva com sucesso.");
       setManual(emptyManual);
+      setManualInvoice(null);
       await carregar();
     } catch (error: any) {
       setMsg(error.message || "Erro ao salvar movimentação.");
-    }
+    } finally { savingMovementRef.current = false; setSavingMovement(false); }
   }
   function pegarTextoDentroNo(no: Element, tag: string) {
     return no.getElementsByTagName(tag)[0]?.textContent?.trim() || "";
@@ -3416,6 +3425,7 @@ function Movimentações({ profile }: { profile: Profile }) {
             </div>
           </div>
 
+          <InvoiceAttachmentField file={exitInvoice} onChange={setExitInvoice} onError={setMsg} disabled={savingMovement} />
           <TextArea
             label="Observações da saída"
             value={saídaForm.notes}
@@ -3430,10 +3440,11 @@ function Movimentações({ profile }: { profile: Profile }) {
           >
             {saídaForm.approved ? "Saída aprovada" : "Aprovar saída"}
           </button>
-          <button className="btn btn-green" onClick={cadastrarSaídaPedido}>
-            Cadastrar saída do pedido
+          <button className="btn btn-green" disabled={savingMovement} onClick={cadastrarSaídaPedido}>
+            {savingMovement ? "Salvando…" : "Cadastrar saída do pedido"}
           </button>
         </div>
+        {msg && <Message text={msg} />}
       </section>
 
       <section className="card" style={{ marginTop: 24 }}>
@@ -3441,7 +3452,7 @@ function Movimentações({ profile }: { profile: Profile }) {
 
         <div className="form-grid">
           <SelectField
-            label="Tipo de colaborador"
+            label="Tipo de movimentação"
             value={manual.type}
             onChange={(v) => setManualField("type", v)}
           >
@@ -3478,6 +3489,7 @@ function Movimentações({ profile }: { profile: Profile }) {
             onChange={(v) => setManualField("quantity", v)}
           />
 
+          {manual.type === "saida" && manual.item_type === "produto" && <InvoiceAttachmentField file={manualInvoice} onChange={setManualInvoice} onError={setMsg} disabled={savingMovement} />}
           <TextArea
             label="Observações"
             value={manual.notes}
@@ -3486,10 +3498,11 @@ function Movimentações({ profile }: { profile: Profile }) {
         </div>
 
         <div className="form-actions">
-          <button className="btn btn-green" onClick={salvarManual}>
-            Salvar movimentação
+          <button className="btn btn-green" disabled={savingMovement} onClick={salvarManual}>
+            {savingMovement ? "Salvando…" : "Salvar movimentação"}
           </button>
         </div>
+        {msg && <Message text={msg} />}
       </section>
 
       <section className="card" style={{ marginTop: 24 }}>
@@ -3511,6 +3524,7 @@ function Movimentações({ profile }: { profile: Profile }) {
               {m.total_cost > 0 && (
                 <small>Total: {money(m.total_cost)}</small>
               )}
+              {m.invoice_file_name && <a className="btn btn-gray" href={`/api/movements/${m.id}/invoice`}>Baixar NF — {m.invoice_file_name}</a>}
               <small>{m.notes}</small>
             </div>
           ))}
