@@ -2580,7 +2580,7 @@ const pendentes = (data as Profile[]).filter(
 
 function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const empty = { item_type: "produto", item_id: "", equipment_name: EQUIPAMENTOS[0], quantity: "1", total_value: "", shipping_value: "", client_id: "", notes: "" };
-  const statuses = ["pendente", "confirmado", "processando", "enviado", "recebido"];
+  const statuses = ["pendente", "confirmado", "processando", "enviado", "recebido", "instalado", "finalizado"];
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(empty);
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
