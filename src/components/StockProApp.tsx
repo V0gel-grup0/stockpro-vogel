@@ -5,6 +5,7 @@ import QuotesModule from "@/components/QuotesModule";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
+import WeeklyReports from "@/components/WeeklyReports";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
@@ -448,10 +449,10 @@ const PRODUTOS_PADRAO = [
 const menuByRole: Record<Role, string[]> = {
   administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Relatórios", "Meu Perfil"],
   gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
-  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Meu Perfil"],
+  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Relatórios", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Minha Gestão", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Minha Gestão", "Relatórios", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -725,6 +726,7 @@ function CRM({
   const [activitiesByOpportunity, setActivitiesByOpportunity] = useState<Record<string, AnyRow[]>>({});
   const [expandedActivityIds, setExpandedActivityIds] = useState<string[]>([]);
   const [expandedOpportunityIds, setExpandedOpportunityIds] = useState<string[]>([]);
+  const [expandedCrmStages, setExpandedCrmStages] = useState<string[]>([]);
   const [activityFormOpportunityId, setActivityFormOpportunityId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState(currentActivityDateTime);
   const [activitySaving, setActivitySaving] = useState(false);
@@ -755,6 +757,11 @@ function CRM({
     }
 
     setHighlightedOpportunityId(navigationTarget.opportunityId);
+    const targetOpportunity = opportunities.find((item) => item.id === navigationTarget.opportunityId);
+    if (targetOpportunity) {
+      setExpandedCrmStages((current) => current.includes(targetOpportunity.stage) ? current : [...current, targetOpportunity.stage]);
+      setExpandedOpportunityIds((current) => current.includes(targetOpportunity.id) ? current : [...current, targetOpportunity.id]);
+    }
 
     const scrollTimer = window.setTimeout(() => {
       document
@@ -1667,8 +1674,8 @@ function CRM({
       <p style={{ color: "#94a3b8", margin: "-4px 0 22px" }}>
         Cobrança é somente acompanhamento manual. Finalizado não significa pagamento confirmado, e Pós-venda mantém o acompanhamento do cliente após a conclusão comercial.
       </p>
-      {loading ? <p style={{ color: "#94a3b8" }}>Carregando oportunidades...</p> : <div style={{ overflowX: "auto", paddingBottom: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(270px, 1fr))", gap: 16, minWidth: 1980, alignItems: "start" }}>
+      {loading ? <p style={{ color: "#94a3b8" }}>Carregando oportunidades...</p> : <div>
+        <div className="crm-stage-list-grid" data-crm-layout="list" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 0, minWidth: 0 }}>
           {CRM_STAGES.map((stage) => {
             const stageOpportunities = filtered.filter(
               (opportunity) => opportunity.stage === stage.value
@@ -1699,7 +1706,7 @@ function CRM({
               onDragOver={(event) => handleStageDragOver(event, stage.value)}
               onDrop={(event) => handleStageDrop(event, stage.value)}
               style={{
-                minHeight: 260,
+                minHeight: 0,
                 borderTopWidth: activeDropColumn ? 5 : 3,
                 borderTopStyle: "solid",
                 borderTopColor: stage.color,
@@ -1712,24 +1719,33 @@ function CRM({
                 borderLeftWidth: sideBorderWidth,
                 borderLeftStyle: sideBorderStyle,
                 borderLeftColor: sideBorderColor,
-                borderRadius: 18,
+                borderRadius: 8,
                 background: activeDropColumn
                   ? `${stage.color}20`
                   : validDropColumn
                     ? `${stage.color}0c`
                     : "rgba(2,6,23,.48)",
-                padding: activeDropColumn ? 13 : 14,
+                padding: 0,
                 transition: "border-color .16s ease, background .16s ease, box-shadow .16s ease",
                 boxShadow: activeDropColumn
                   ? `0 0 0 4px ${stage.color}18`
                   : undefined,
               }}
             >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+              <details className="crm-stage-list-details" open={expandedCrmStages.includes(stage.value)}
+                onToggle={(event) => {
+                  const open = event.currentTarget.open;
+                  setExpandedCrmStages((current) => {
+                    if (current.includes(stage.value) === open) return current;
+                    return open ? [...current, stage.value] : current.filter((value) => value !== stage.value);
+                  });
+                }}>
+              <summary className="crm-stage-list-summary">
                 <strong style={{ color: stage.color, fontSize: 17 }}>{stage.label}</strong>
                 <span style={{ minWidth: 28, borderRadius: 999, background: `${stage.color}22`, color: stage.color, padding: "4px 8px", textAlign: "center", fontSize: 12, fontWeight: 800 }}>{stageOpportunities.length}</span>
-              </div>
-              <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 14 }}>Total estimado: {money(stageTotal)}</div>
+                <span className="crm-stage-list-total">Total estimado: {money(stageTotal)}</span>
+              </summary>
+              <div className="crm-stage-list-content">
               {activeDropColumn && <div style={{ marginBottom: 12, borderRadius: 10, background: `${stage.color}22`, color: stage.color, padding: "8px 10px", textAlign: "center", fontSize: 13, fontWeight: 900 }}>Solte aqui</div>}
 
               {stageOpportunities.length === 0 ? <p style={{ color: "#64748b", fontSize: 13 }}>Nenhuma oportunidade nesta etapa.</p> : <div style={{ display: "grid", gap: 12 }}>
@@ -1761,7 +1777,7 @@ function CRM({
                   return <div
                     id={`crm-opportunity-${opportunity.id}`}
                     key={opportunity.id}
-                    className="stat-card user-card"
+                    className="stat-card user-card crm-list-opportunity"
                     draggable={canManage && updatingStageId === null}
                     aria-grabbed={isDragging}
                     onPointerDownCapture={(event) => {
@@ -1797,13 +1813,14 @@ function CRM({
                       transition: "opacity .16s ease, transform .16s ease, box-shadow .16s ease",
                     }}
                   >
+                    <div className="crm-opportunity-list-row">
                     <strong>{opportunity.title || "Sem título"}</strong>
                     <small>Cliente: {opportunity.clients?.name || "-"}</small>
                     <small>Valor estimado: {money(opportunity.estimated_value)}</small>
                     <button
                       type="button"
                       className="btn btn-gray"
-                      style={{ width: "100%", marginTop: 8 }}
+                      aria-expanded={opportunityExpanded}
                       onClick={(event) => {
                         event.stopPropagation();
                         setExpandedOpportunityIds((current) =>
@@ -1815,6 +1832,7 @@ function CRM({
                     >
                       {opportunityExpanded ? "Recolher oportunidade" : "Abrir oportunidade"}
                     </button>
+                    </div>
 
                     {opportunityExpanded && <>
                     <small>Probabilidade: {Number(opportunity.probability || 0)}%</small>
@@ -1882,6 +1900,8 @@ function CRM({
                   </div>;
                 })}
               </div>}
+              </div>
+              </details>
             </section>;
           })}
         </div>
@@ -4271,6 +4291,14 @@ function EquipamentosMontados({ search }: SearchProps) {
 
 
 function Relatorios({ profile }: { profile: Profile }) {
+  return <>
+    <Title title="Relatórios" desc="Relatórios semanais escritos pela equipe." />
+    <WeeklyReports profile={profile} />
+    {["administrador", "gerente"].includes(profile.role) && <RelatoriosEstoque profile={profile} />}
+  </>;
+}
+
+function RelatoriosEstoque({ profile }: { profile: Profile }) {
   const [products, setProducts] = useState<AnyRow[]>([]);
   const [movements, setMovements] = useState<AnyRow[]>([]);
   const [components, setComponents] = useState<AnyRow[]>([]);
@@ -4373,7 +4401,7 @@ function Relatorios({ profile }: { profile: Profile }) {
   }
 
   return <>
-    <Title title="Relatórios" desc="Resumo geral do estoque, movimentações, produtos e componentes." />
+    <Title title="Indicadores de estoque" desc="Resumo geral do estoque, movimentações, produtos e componentes." />
 
     <section className="card" style={{ marginBottom: 24 }}>
       <h2 className="card-title">Filtros do relatório</h2>
@@ -4396,26 +4424,6 @@ function Relatorios({ profile }: { profile: Profile }) {
       <StatCard label="Componentes cadastrados" value={String(components.length)} />
       <StatCard label="Movimentações" value={String(filteredMovements.length)} />
     </div>
-
-    <section className="card" style={{ marginTop: 24 }}>
-      <h2 className="card-title">Resumo escrito</h2>
-      <div style={{ display: "grid", gap: 10, color: "#cbd5e1", lineHeight: 1.6 }}>
-        <p style={{ margin: 0 }}>
-          No período selecionado foram registrados <strong>{pedidosNoPeriodo} pedido(s)</strong>,
-          com <strong>{entradas} unidade(s) de entrada</strong> e <strong>{saídas} unidade(s) de saída</strong> no estoque.
-        </p>
-        <p style={{ margin: 0 }}>
-          O estoque atual possui <strong>{totalProdutos} unidade(s) de produtos</strong> e <strong>{totalComponentes} unidade(s) de componentes</strong>.
-        </p>
-        <p style={{ margin: 0 }}>
-          O valor estimado do estoque para venda é <strong>{money(valorVenda)}</strong>, enquanto o custo estimado é <strong>{money(valorCusto)}</strong>.
-          A diferença estimada entre venda e custo é <strong>{money(lucro)}</strong>.
-        </p>
-        <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
-          Este resumo acompanha os filtros de data aplicados acima.
-        </p>
-      </div>
-    </section>
 
     <section className="card" style={{ marginTop: 24 }}>
       <h2 className="card-title">Gerar relatório</h2>

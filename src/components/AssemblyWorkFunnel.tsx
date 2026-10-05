@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 
 type Role = "administrador" | "gerente" | "vendedor" | "funcionario" | "tecnico" | "representante";
@@ -49,7 +49,6 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
   const [technicians, setTechnicians] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [draggedId, setDraggedId] = useState("");
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -208,12 +207,6 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
     setItems((rows) => rows.filter((item) => item.id !== id));
   }
 
-  function onDragStart(event: DragEvent<HTMLDivElement>, id: string) {
-    setDraggedId(id);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", id);
-  }
-
   if (!canSee) return null;
 
   return (
@@ -365,126 +358,45 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
         </div>
       )}
 
-      {loading ? (
-        <p style={{ color: "#94a3b8" }}>Carregando montagens...</p>
-      ) : (
-        <div style={{ overflowX: "auto", paddingBottom: 10 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(270px, 1fr))",
-              gap: 16,
-              minWidth: 1120,
-              alignItems: "start",
-            }}
-          >
-            {STAGES.map((stage) => (
-              <section
-                key={stage.value}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const id = event.dataTransfer.getData("text/plain") || draggedId;
-                  if (id) void move(id, stage.value);
-                  setDraggedId("");
-                }}
-                style={{
-                  minHeight: 260,
-                  border: `1px solid ${stage.color}55`,
-                  borderTop: `3px solid ${stage.color}`,
-                  borderRadius: 18,
-                  background: "rgba(2,6,23,.48)",
-                  padding: 14,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    alignItems: "center",
-                    marginBottom: 14,
-                  }}
-                >
-                  <strong style={{ color: stage.color }}>{stage.label}</strong>
-                  <span
-                    style={{
-                      borderRadius: 999,
-                      background: `${stage.color}22`,
-                      color: stage.color,
-                      padding: "4px 8px",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                  >
-                    {grouped[stage.value]?.length || 0}
-                  </span>
-                </div>
-
-                <div style={{ display: "grid", gap: 12 }}>
-                  {(grouped[stage.value] || []).map((item) => {
-                    const overdue = isOverdue(item);
-                    return (
-                      <div
-                        key={item.id}
-                        className="stat-card user-card"
-                        draggable
-                        onDragStart={(event) => onDragStart(event, item.id)}
-                        onDragEnd={() => setDraggedId("")}
-                        style={{
-                          cursor: "grab",
-                          border: overdue ? "1px solid rgba(248,113,113,.62)" : undefined,
-                          background: overdue ? "rgba(127,29,29,.18)" : undefined,
-                        }}
-                      >
-                        <strong>{item.equipment_name}</strong>
-                        <small>Quantidade: {item.quantity}</small>
-                        <small>Montador: {item.technician_name}</small>
-                        <small
-                          style={overdue ? { color: "#fca5a5", fontWeight: 800 } : undefined}
-                        >
-                          {overdue ? "ATRASADA — " : ""}
-                          {formatDate(item.due_date)}
-                        </small>
-                        {item.notes && <small>Obs: {item.notes}</small>}
-
-                        <div className="form-actions">
-                          {canAdmin && (
-                            <button
-                              className="btn btn-blue"
-                              type="button"
-                              onClick={() => edit(item)}
-                            >
-                              Editar
-                            </button>
-                          )}
-                          {canAdmin && (
-                            <button
-                              className="btn btn-red"
-                              type="button"
-                              onClick={() => void remove(item.id)}
-                            >
-                              Excluir
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(grouped[stage.value] || []).length === 0 && (
-                    <p style={{ color: "#64748b", fontSize: 13 }}>
-                      Nenhuma montagem nesta etapa.
-                    </p>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        </div>
-      )}
+      {loading ? <p style={{ color: "#94a3b8" }}>Carregando montagens...</p> :
+        <div className="crm-stage-list-grid">
+          {STAGES.map((stage) => <details className="crm-stage-list-details" key={stage.value}>
+            <summary className="crm-stage-list-summary">
+              <strong style={{ color: stage.color }}>{stage.label}</strong>
+              <span className="crm-list-count" style={{ color: stage.color }}>{grouped[stage.value]?.length || 0}</span>
+            </summary>
+            <div className="crm-stage-list-content">
+              {(grouped[stage.value] || []).map((item) => {
+                const overdue = isOverdue(item);
+                return <details key={item.id} className="crm-record-list-item">
+                  <summary className="crm-record-list-summary">
+                    <strong>{item.equipment_name}</strong>
+                    <small>Qtd: {item.quantity}</small>
+                    <small>Montador: {item.technician_name}</small>
+                    <small style={overdue ? { color: "#fca5a5", fontWeight: 800 } : undefined}>
+                      {overdue ? "ATRASADA — " : ""}{formatDate(item.due_date)}
+                    </small>
+                  </summary>
+                  <div className="crm-record-list-content">
+                    <div className="field">
+                      <label htmlFor={"assembly-stage-" + item.id}>Etapa da montagem</label>
+                      <select id={"assembly-stage-" + item.id} className="input" value={item.stage}
+                        onChange={(event) => void move(item.id, event.target.value)}>
+                        {STAGES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
+                    {item.notes && <p style={{ whiteSpace: "pre-wrap" }}>Observações: {item.notes}</p>}
+                    {canAdmin && <div className="form-actions">
+                      <button className="btn btn-blue" type="button" onClick={() => edit(item)}>Editar</button>
+                      <button className="btn btn-red" type="button" onClick={() => void remove(item.id)}>Excluir</button>
+                    </div>}
+                  </div>
+                </details>;
+              })}
+              {(grouped[stage.value] || []).length === 0 && <p className="muted">Nenhuma montagem nesta etapa.</p>}
+            </div>
+          </details>)}
+        </div>}
     </section>
   );
 }
