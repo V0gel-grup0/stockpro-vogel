@@ -100,7 +100,7 @@ export async function GET() {
 
     return NextResponse.json({
       sucesso: true,
-      products,
+      products: products.filter((product) => String(product.name || "").trim()),
     });
   } catch (error) {
     console.error(error);
