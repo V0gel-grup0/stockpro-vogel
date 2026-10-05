@@ -6,6 +6,8 @@ import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
 import InvoiceAttachmentField from "@/components/InvoiceAttachmentField";
+import MobileNavigation, { AppIcon } from "@/components/MobileNavigation";
+import { mobilePageLabel } from "@/lib/mobile-navigation";
 import WeeklyReports from "@/components/WeeklyReports";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
@@ -30,7 +32,7 @@ function getSaleCode(order: any) {
 }
 
 
-import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 type Role = AppRole;
@@ -462,6 +464,10 @@ export default function StockProApp() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [page, setPage] = useState("Dashboard");
   const [menuOpen, setMenuOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
   const [search, setSearch] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [crmNotifications, setCrmNotifications] = useState<CrmNotifications>(EMPTY_CRM_NOTIFICATIONS);
@@ -561,7 +567,7 @@ export default function StockProApp() {
       opportunityId: item.opportunity_id,
       requestId: Date.now(),
     });
-    setPage("CRM");
+    navigateToPage("CRM");
     setNotificationsOpen(false);
   }
 
@@ -571,7 +577,20 @@ export default function StockProApp() {
       opportunityId: opportunity.id,
       requestId: Date.now(),
     });
-    setPage("Orçamentos");
+    navigateToPage("Orçamentos");
+  }
+
+  function navigateToPage(nextPage: string) {
+    if (!profile || !menuByRole[profile.role]?.includes(nextPage)) return;
+    setPage(nextPage);
+    setMobileMenuOpen(false);
+    setNotificationsOpen(false);
+    setSearch("");
+    setMobileSearchOpen(false);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      mainRef.current?.focus({ preventScroll: true });
+    });
   }
 
   async function logout() {
@@ -600,17 +619,20 @@ export default function StockProApp() {
   const menus = menuByRole[profile.role] || ["Meu Perfil"];
 
   return (
-    <div className={`app-shell ${!menuOpen ? "sidebar-closed" : ""}`}>
+    <div className={`app-shell ${!menuOpen ? "sidebar-closed" : ""}`} data-mobile-search={mobileSearchOpen ? "open" : "closed"}>
       <header className="topbar">
         <div className="topbar-inner">
-          <button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)}>{menuOpen ? "×" : "☰"}</button>
+          <button type="button" className="menu-toggle desktop-menu-trigger" aria-label={menuOpen ? "Recolher menu" : "Abrir menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>{menuOpen ? "×" : "☰"}</button>
+          <button type="button" className="mobile-menu-trigger mobile-icon-control" aria-label="Abrir todos os módulos" aria-haspopup="dialog" aria-expanded={mobileMenuOpen} aria-controls="mobile-module-menu" onClick={() => setMobileMenuOpen(true)}><AppIcon name="menu" /></button>
+          <div className="mobile-page-brand"><small>STOCKPRO VOGEL</small><strong>{mobilePageLabel(page)}</strong></div>
+          <button type="button" className="mobile-search-trigger mobile-icon-control" aria-label={mobileSearchOpen ? "Fechar pesquisa" : "Pesquisar neste módulo"} aria-expanded={mobileSearchOpen} aria-controls="module-search" onClick={() => { setMobileSearchOpen((value) => !value); if (mobileSearchOpen) setSearch(""); else window.requestAnimationFrame(() => document.getElementById("module-search")?.focus()); }}><AppIcon name={mobileSearchOpen ? "close" : "search"} /></button>
           <div className="search-wrap">
-            <input className="input search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar no módulo atual..." />
+            <input id="module-search" type="search" aria-label={`Pesquisar em ${page}`} className="input search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar neste módulo…" />
           </div>
           <div style={{ position: "relative" }}>
-            <button className="icon-button" style={{ width: "auto", minWidth: 52, padding: "0 13px" }} aria-label="Abrir atividades do CRM" onClick={() => setNotificationsOpen((v) => !v)}>🔔{crmNotifications.resumo.total_atencao > 0 ? ` ${crmNotifications.resumo.total_atencao}` : ""}</button>
+            <button type="button" className="icon-button notification-trigger" style={{ width: "auto", minWidth: 52, padding: "0 13px" }} aria-label={`Atividades do CRM: ${crmNotifications.resumo.total_atencao} pendentes`} aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((v) => !v)}><AppIcon name="bell" />{crmNotifications.resumo.total_atencao > 0 && <span className="notification-count">{crmNotifications.resumo.total_atencao > 99 ? "99+" : crmNotifications.resumo.total_atencao}</span>}</button>
             {notificationsOpen && <div className="notifications-panel" style={{ width: "min(430px, 92vw)", maxHeight: "min(680px, calc(100vh - 90px))", overflowY: "auto" }}>
-              <strong style={{ fontSize: 17 }}>CRM — Atividades</strong>
+              <div className="notification-heading"><strong style={{ fontSize: 17 }}>CRM — Atividades</strong><button type="button" className="mobile-icon-control" aria-label="Fechar atividades" onClick={() => setNotificationsOpen(false)}><AppIcon name="close" /></button></div>
               <CrmNotificationSection title="ATRASADAS" items={crmNotifications.atrasadas} tone="overdue" onView={viewCrmNotification} />
               <CrmNotificationSection title="HOJE" items={crmNotifications.hoje} tone="today" onView={viewCrmNotification} />
               <CrmNotificationSection title="PRÓXIMOS 7 DIAS" items={crmNotifications.proximas} tone="upcoming" onView={viewCrmNotification} />
@@ -622,7 +644,7 @@ export default function StockProApp() {
       <div className={`layout-grid ${!menuOpen ? "menu-collapsed" : ""}`}>
         {menuOpen && <aside className="sidebar">
           <div className="brand"><img src="/logo-vogel.png" alt="Grupo Vogel" className="brand-logo" /><div className="brand-text"><strong>StockPro</strong><small>Grupo Vogel Brasil</small></div></div>
-          <nav className="menu-list">{menus.map((item) => <button key={item} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => setPage(item)}>{item}</button>)}</nav>
+          <nav className="menu-list">{menus.map((item) => <button key={item} aria-current={page === item ? "page" : undefined} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => navigateToPage(item)}>{item}</button>)}</nav>
           <div className="sidebar-footer">
             <div className="account-details">
               <strong className="account-name">{profile.name || "Colaborador"}</strong>
@@ -633,7 +655,7 @@ export default function StockProApp() {
             <button className="btn btn-gray account-logout" onClick={logout}>Sair</button>
           </div>
         </aside>}
-        <main className="main-content">
+        <main ref={mainRef} className="main-content" tabIndex={-1} aria-label={page}>
           {page === "Dashboard" && <Dashboard profile={profile} />}
           {page === "Produtos" && <Produtos search={search} profile={profile} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
@@ -653,6 +675,7 @@ export default function StockProApp() {
           {page === "Meu Perfil" && <MeuPerfil profile={profile} onUpdated={carregarSessao} />}
         </main>
       </div>
+      <MobileNavigation menus={menus} page={page} open={mobileMenuOpen} onOpen={() => setMobileMenuOpen(true)} onClose={closeMobileMenu} onNavigate={navigateToPage} name={profile.name || "Colaborador"} role={formatRole(profile.role)} onLogout={logout} />
     </div>
   );
 }

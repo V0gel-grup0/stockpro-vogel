@@ -523,7 +523,7 @@ function QuoteDetail({ quote, profile, manageable, onBack, onEdit, onStatus, onD
     {quote.crm_opportunities && <div className="quote-linked-opportunity"><small>Oportunidade CRM</small><strong>{quote.crm_opportunities.title || "Sem título"}</strong></div>}
     <div className="quote-items-table">
       <div className="quote-items-head"><span>Item</span><span>Qtd.</span><span>Unitário</span><span>Desconto</span><span>Total</span></div>
-      {(quote.quote_items || []).map((item: Row) => <div className="quote-items-row" key={item.id}><span><strong>{item.item_name}</strong><small>{ITEM_LABELS[item.item_type]}{item.description ? ` — ${item.description}` : ""}</small></span><span>{Number(item.quantity).toLocaleString("pt-BR")}</span><span>{money(item.unit_price)}</span><span>{money(item.discount_value)}</span><span><strong>{money(item.total_value)}</strong></span></div>)}
+      {(quote.quote_items || []).map((item: Row) => <div className="quote-items-row" key={item.id}><span><strong>{item.item_name}</strong><small>{ITEM_LABELS[item.item_type]}{item.description ? ` — ${item.description}` : ""}</small></span><span data-label="Quantidade">{Number(item.quantity).toLocaleString("pt-BR")}</span><span data-label="Valor unitário">{money(item.unit_price)}</span><span data-label="Desconto">{money(item.discount_value)}</span><span data-label="Total"><strong>{money(item.total_value)}</strong></span></div>)}
     </div>
     <div className="quote-document-footer">
       <div><small>Condição de pagamento</small><p>{quote.payment_terms || "Não informada."}</p><small>Observações</small><p>{quote.notes || "Sem observações."}</p></div>
