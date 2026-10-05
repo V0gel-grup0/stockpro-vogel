@@ -724,6 +724,7 @@ function CRM({
   const [highlightedOpportunityId, setHighlightedOpportunityId] = useState("");
   const [activitiesByOpportunity, setActivitiesByOpportunity] = useState<Record<string, AnyRow[]>>({});
   const [expandedActivityIds, setExpandedActivityIds] = useState<string[]>([]);
+  const [expandedOpportunityIds, setExpandedOpportunityIds] = useState<string[]>([]);
   const [activityFormOpportunityId, setActivityFormOpportunityId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState(currentActivityDateTime);
   const [activitySaving, setActivitySaving] = useState(false);
@@ -1755,6 +1756,7 @@ function CRM({
                   const activityLoading = activityLoadingId === opportunity.id;
                   const isDragging = draggedOpportunityId === opportunity.id;
                   const opportunityQuotes = crmQuotes.filter((quote) => quote.opportunity_id === opportunity.id);
+                  const opportunityExpanded = expandedOpportunityIds.includes(opportunity.id);
 
                   return <div
                     id={`crm-opportunity-${opportunity.id}`}
@@ -1798,6 +1800,23 @@ function CRM({
                     <strong>{opportunity.title || "Sem título"}</strong>
                     <small>Cliente: {opportunity.clients?.name || "-"}</small>
                     <small>Valor estimado: {money(opportunity.estimated_value)}</small>
+                    <button
+                      type="button"
+                      className="btn btn-gray"
+                      style={{ width: "100%", marginTop: 8 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExpandedOpportunityIds((current) =>
+                          current.includes(opportunity.id)
+                            ? current.filter((id) => id !== opportunity.id)
+                            : [...current, opportunity.id]
+                        );
+                      }}
+                    >
+                      {opportunityExpanded ? "Recolher oportunidade" : "Abrir oportunidade"}
+                    </button>
+
+                    {opportunityExpanded && <>
                     <small>Probabilidade: {Number(opportunity.probability || 0)}%</small>
                     <small style={isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>Responsável: {opportunity.profiles_responsible?.name || "-"}</small>
                     <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
@@ -1859,6 +1878,7 @@ function CRM({
                         </div>)}
                       </div>}
                     </div>}
+                    </>}
                   </div>;
                 })}
               </div>}
