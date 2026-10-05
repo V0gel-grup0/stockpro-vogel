@@ -4,6 +4,7 @@ import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
+import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
@@ -1868,6 +1869,7 @@ function CRM({
     </section>
 
     <AssemblyWorkFunnel profile={profile} />
+    <ServiceOrderFunnel profile={profile} />
   </>;
 }
 
