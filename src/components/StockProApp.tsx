@@ -4296,6 +4296,26 @@ function Relatorios({ profile }: { profile: Profile }) {
     </div>
 
     <section className="card" style={{ marginTop: 24 }}>
+      <h2 className="card-title">Resumo escrito</h2>
+      <div style={{ display: "grid", gap: 10, color: "#cbd5e1", lineHeight: 1.6 }}>
+        <p style={{ margin: 0 }}>
+          No período selecionado foram registrados <strong>{pedidosNoPeriodo} pedido(s)</strong>,
+          com <strong>{entradas} unidade(s) de entrada</strong> e <strong>{saídas} unidade(s) de saída</strong> no estoque.
+        </p>
+        <p style={{ margin: 0 }}>
+          O estoque atual possui <strong>{totalProdutos} unidade(s) de produtos</strong> e <strong>{totalComponentes} unidade(s) de componentes</strong>.
+        </p>
+        <p style={{ margin: 0 }}>
+          O valor estimado do estoque para venda é <strong>{money(valorVenda)}</strong>, enquanto o custo estimado é <strong>{money(valorCusto)}</strong>.
+          A diferença estimada entre venda e custo é <strong>{money(lucro)}</strong>.
+        </p>
+        <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+          Este resumo acompanha os filtros de data aplicados acima.
+        </p>
+      </div>
+    </section>
+
+    <section className="card" style={{ marginTop: 24 }}>
       <h2 className="card-title">Gerar relatório</h2>
       <p style={{ color: "#94a3b8", marginBottom: 20 }}>Gere um relatório em PDF com o resumo do período selecionado.</p>
       <button className="btn btn-blue" onClick={exportarPdf}>Gerar relatório PDF</button>
