@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
     if ("response" in authorization) return authorization.response;
 
     const body = await request.json();
-    const { id, status, permissions } = body;
+    const { id, status, permissions, role } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
@@ -135,6 +135,17 @@ export async function PUT(request: NextRequest) {
         );
       }
       data.permissions = permissions;
+    }
+
+    if (isAdministrator && role !== undefined) {
+      const allowedRoles = ["gerente", "vendedor", "tecnico", "funcionario", "representante"];
+      if (!allowedRoles.includes(String(role))) {
+        return NextResponse.json(
+          { error: "Tipo de colaborador inválido." },
+          { status: 400 }
+        );
+      }
+      data.role = String(role);
     }
     for (const field of allowed) {
       if (field in body) data[field] = field === "no_number" ? Boolean(body[field]) : String(body[field] ?? "").trim();

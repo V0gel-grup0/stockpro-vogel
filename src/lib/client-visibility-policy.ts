@@ -40,7 +40,7 @@ export type ClientVisibilityPolicy =
 export function getClientVisibilityPolicy(
   profile: ClientVisibilityProfile
 ): ClientVisibilityPolicy {
-  if (profile.role === "administrador") {
+  if (profile.role === "administrador" || profile.role === "gerente") {
     return { mode: "all" };
   }
 

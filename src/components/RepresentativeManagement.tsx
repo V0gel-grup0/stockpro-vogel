@@ -16,9 +16,10 @@ type ManagementData = {
   collections: Row[];
   contracts: Row[];
   invoices: Row[];
+  commissions: Row[];
 };
 
-const TABS = ["Resumo", "Metas", "Compras", "Financeiro", "Cobranças", "Contratos", "Notas Fiscais"] as const;
+const TABS = ["Resumo", "Metas", "Compras", "Financeiro", "Comissões", "Cobranças", "Contratos", "Notas Fiscais"] as const;
 const today = () => new Date().toISOString().slice(0, 10);
 const month = () => new Date().toISOString().slice(0, 7);
 const nowLocal = () => {
@@ -73,6 +74,7 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
   const [collectionForm, setCollectionForm] = useState({ receivable_id: "", contact_date: nowLocal(), contact_type: "whatsapp", notes: "", payment_promise: "", promised_date: "", next_contact_at: "" });
   const [contractForm, setContractForm] = useState({ contract_number: "", contract_type: "representacao", start_date: today(), end_date: today(), region: "", exclusive: false, status: "ativo", notes: "" });
   const [invoiceForm, setInvoiceForm] = useState({ invoice_number: "", issued_at: today(), amount: "0", purchase_id: "", notes: "" });
+  const [commissionForm, setCommissionForm] = useState({ reference: "", amount: "", due_date: today(), notes: "" });
   const [contractPdf, setContractPdf] = useState<File | null>(null);
   const [invoicePdf, setInvoicePdf] = useState<File | null>(null);
 
@@ -310,7 +312,7 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
     </>}
 
     {activeTab === "Financeiro" && <>
-      <div className="reports-grid representative-summary-grid"><SummaryCard label="A receber" value={money(summary.total_receivable)} tone="#facc15" /><SummaryCard label="Vencido" value={money(summary.total_overdue)} tone="#f87171" /><SummaryCard label="Recebido no mês" value={money(summary.received_this_month)} tone="#4ade80" /><SummaryCard label="Total comprado" value={money(summary.total_purchased)} /><SummaryCard label="Total recebido" value={money(summary.total_received)} /></div>
+      <div className="reports-grid representative-summary-grid"><SummaryCard label="A receber" value={money(summary.total_receivable)} tone="#facc15" /><SummaryCard label="Comissão a pagar" value={money(summary.commission_to_pay)} tone="#fb923c" /><SummaryCard label="Vencido" value={money(summary.total_overdue)} tone="#f87171" /><SummaryCard label="Recebido no mês" value={money(summary.received_this_month)} tone="#4ade80" /><SummaryCard label="Total comprado" value={money(summary.total_purchased)} /><SummaryCard label="Total recebido" value={money(summary.total_received)} /></div>
       {capabilities.can_manage_financials && <section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Registrar recebimento</h2>
         <div className="form-grid">
           <FormSelect label="Parcela" value={paymentForm.receivable_id} onChange={(receivable_id) => setPaymentForm((current) => ({ ...current, receivable_id }))}><option value="">Selecione</option>{openReceivables.map((item) => <option key={item.id} value={item.id}>{item.purchase?.item_name} • Parcela {item.installment_number} • Saldo {money(item.remaining_amount)}</option>)}</FormSelect>
@@ -322,6 +324,63 @@ export default function RepresentativeManagement({ representativeId, onBack }: {
       </section>}
       <section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Parcelas e vencimentos</h2>{data.receivables.length === 0 ? <p className="muted">Nenhuma parcela registrada.</p> : <div className="product-list-grid">{data.receivables.map((item) => <article className="stat-card user-card" key={item.id}><strong>{item.purchase?.item_name || "Compra"} • Parcela {item.installment_number}</strong><small>Vencimento: {dateLabel(item.due_date)}</small><small>Original: {money(item.original_amount)} • Recebido: {money(item.received_amount)}</small><small>Saldo: <b>{money(item.remaining_amount)}</b></small><small>Status: <b className={`status-${item.effective_status}`}>{statusLabel(item.effective_status)}</b></small></article>)}</div>}</section>
       <section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Histórico de pagamentos</h2>{data.payments.length === 0 ? <p className="muted">Nenhum pagamento registrado.</p> : <div className="product-list-grid">{data.payments.map((payment) => <article className="stat-card user-card" key={payment.id}><strong>{money(payment.amount)}</strong><small>{dateLabel(payment.payment_date)} • {statusLabel(payment.payment_method)}</small>{payment.notes && <small>{payment.notes}</small>}</article>)}</div>}</section>
+    </>}
+
+    {activeTab === "Comissões" && <>
+      <div className="reports-grid representative-summary-grid">
+        <SummaryCard label="Comissão a pagar" value={money(summary.commission_to_pay)} tone="#fb923c" />
+        <SummaryCard label="Comissões pagas" value={money(summary.commissions_paid)} tone="#4ade80" />
+      </div>
+
+      {capabilities.can_manage_financials && <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Lançar comissão</h2>
+        <div className="form-grid">
+          <FormField label="Referência" value={commissionForm.reference} onChange={(reference) => setCommissionForm((current) => ({ ...current, reference }))} />
+          <FormField label="Valor da comissão" type="number" min="0" step="0.01" value={commissionForm.amount} onChange={(amount) => setCommissionForm((current) => ({ ...current, amount }))} />
+          <FormField label="Vencimento" type="date" value={commissionForm.due_date} onChange={(due_date) => setCommissionForm((current) => ({ ...current, due_date }))} />
+          <FormArea label="Observações" value={commissionForm.notes} onChange={(notes) => setCommissionForm((current) => ({ ...current, notes }))} />
+        </div>
+        <div className="form-actions">
+          <button
+            className="btn btn-green"
+            disabled={saving || !commissionForm.reference || !commissionForm.amount}
+            onClick={async () => {
+              if (await submit("commission", commissionForm, "Comissão lançada com sucesso.")) {
+                setCommissionForm({ reference: "", amount: "", due_date: today(), notes: "" });
+              }
+            }}
+          >
+            Lançar comissão
+          </button>
+        </div>
+      </section>}
+
+      <section className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Comissões do representante</h2>
+        {!data.commissions?.length ? <p className="muted">Nenhuma comissão lançada.</p> : <div className="product-list-grid">
+          {data.commissions.map((commission) => <article className="stat-card user-card" key={commission.id}>
+            <strong>{commission.reference}</strong>
+            <small>Valor: <b>{money(commission.amount)}</b></small>
+            <small>Vencimento: {dateLabel(commission.due_date)}</small>
+            <small>Status: <b>{statusLabel(commission.status)}</b></small>
+            {commission.paid_at && <small>Pago em: {dateLabel(commission.paid_at)}</small>}
+            {commission.notes && <small>Obs: {commission.notes}</small>}
+            {capabilities.can_manage_financials && commission.status === "pendente" && <div className="form-actions">
+              <button
+                className="btn btn-green"
+                disabled={saving}
+                onClick={() => submit(
+                  "commission_paid",
+                  { commission_id: commission.id, paid_at: today() },
+                  "Comissão marcada como paga."
+                )}
+              >
+                Marcar como paga
+              </button>
+            </div>}
+          </article>)}
+        </div>}
+      </section>
     </>}
 
     {activeTab === "Cobranças" && <>

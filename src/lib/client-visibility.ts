@@ -65,7 +65,7 @@ export function buildAccessibleClientWhere(
 function buildOwnCrmOpportunityWhere(
   profile: ClientVisibilityProfile
 ): Prisma.crm_opportunitiesWhereInput | undefined {
-  if (profile.role === "administrador") return undefined;
+  if (profile.role === "administrador" || profile.role === "gerente") return undefined;
 
   return {
     OR: [
@@ -90,7 +90,7 @@ export function buildOpportunityManagementWhere(
 export function buildActivityVisibilityWhere(
   profile: ClientVisibilityProfile
 ): Prisma.crm_activitiesWhereInput | undefined {
-  if (profile.role === "administrador") return undefined;
+  if (profile.role === "administrador" || profile.role === "gerente") return undefined;
 
   const opportunityVisibility = buildOwnCrmOpportunityWhere(profile);
 

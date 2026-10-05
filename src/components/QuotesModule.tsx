@@ -167,7 +167,11 @@ export default function QuotesModule({
   }, []);
 
   useEffect(() => {
-    loadQuotes();
+    const timer = window.setTimeout(() => {
+      void loadQuotes();
+    }, 300);
+
+    return () => window.clearTimeout(timer);
   }, [search, statusFilter, responsibleFilter, dateFrom, dateTo]);
 
   useEffect(() => {
@@ -203,10 +207,25 @@ export default function QuotesModule({
         readJson(profileResponse),
         readJson(opportunityResponse),
       ]);
-      setClients((clientData.clients || []).sort((a: Row, b: Row) => String(a.name).localeCompare(String(b.name))));
-      setProducts(productData.products || []);
-      setProfiles(Array.isArray(profileData) ? profileData : []);
-      setOpportunities(opportunityData.opportunities || []);
+      const nextClients = Array.isArray(clientData.clients) ? clientData.clients : [];
+      const nextProducts = Array.isArray(productData.products) ? productData.products : [];
+      const nextProfiles = Array.isArray(profileData) ? profileData : [];
+      const nextOpportunities = Array.isArray(opportunityData.opportunities)
+        ? opportunityData.opportunities
+        : [];
+
+      setClients(
+        nextClients
+          .filter((item: Row | null) => item && typeof item === "object")
+          .sort((a: Row, b: Row) =>
+            String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
+          )
+      );
+      setProducts(nextProducts.filter((item: Row | null) => item && typeof item === "object"));
+      setProfiles(nextProfiles.filter((item: Row | null) => item && typeof item === "object"));
+      setOpportunities(
+        nextOpportunities.filter((item: Row | null) => item && typeof item === "object")
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao carregar dados do orçamento.");
     }
@@ -421,11 +440,29 @@ export default function QuotesModule({
           <div className="field"><label>Validade *</label><input className="input" type="date" value={form.valid_until} onChange={(event) => setForm((current) => ({ ...current, valid_until: event.target.value }))} /></div>
           <div className="field">
             <label>Condição de pagamento</label>
+            <select
+              className="input"
+              value=""
+              onChange={(event) => {
+                const value = event.target.value;
+                if (!value) return;
+                setForm((current) => ({
+                  ...current,
+                  payment_terms: value,
+                }));
+              }}
+            >
+              <option value="">Usar uma condição pronta...</option>
+              {PAYMENT_TERM_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <input
               className="input"
-              list="quote-payment-options"
               maxLength={500}
-              placeholder="Selecione ou digite uma condição"
+              placeholder="Ou digite a condição de pagamento"
               value={form.payment_terms}
               onChange={(event) =>
                 setForm((current) => ({
@@ -433,12 +470,8 @@ export default function QuotesModule({
                   payment_terms: event.target.value,
                 }))
               }
+              style={{ marginTop: 8 }}
             />
-            <datalist id="quote-payment-options">
-              {PAYMENT_TERM_OPTIONS.map((option) => (
-                <option key={option} value={option} />
-              ))}
-            </datalist>
           </div>
           <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></div>
         </div>

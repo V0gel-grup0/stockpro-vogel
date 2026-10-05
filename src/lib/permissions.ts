@@ -48,6 +48,14 @@ export const ORDER_ROLES = [
   "representante",
 ] as const satisfies readonly AppRole[];
 
+export const ORDER_EDIT_ROLES = [
+  "administrador",
+  "gerente",
+  "vendedor",
+  "funcionario",
+  "representante",
+] as const satisfies readonly AppRole[];
+
 export const ORDER_STATUS_ROLES = [
   "administrador",
   "gerente",
@@ -94,6 +102,8 @@ export const canReadSuppliers = (role: string) =>
   roleAllowed(role, SUPPLIER_READ_ROLES);
 export const canWriteSuppliers = (role: string) =>
   roleAllowed(role, SUPPLIER_WRITE_ROLES);
+export const canEditOrder = (role: string) =>
+  roleAllowed(role, ORDER_EDIT_ROLES);
 export const canUpdateOrderStatus = (role: string) =>
   roleAllowed(role, ORDER_STATUS_ROLES);
 export const canDeleteOrder = (role: string) =>

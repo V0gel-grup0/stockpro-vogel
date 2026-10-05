@@ -3,11 +3,14 @@
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
+import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
+import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import {
   canDeleteAssembly,
   canDeleteComponent,
   canDeleteOrder,
+  canEditOrder,
   canDeleteProducts,
   canManageOpportunityRecord,
   canReviewRepresentative,
@@ -721,6 +724,7 @@ function CRM({
   const [highlightedOpportunityId, setHighlightedOpportunityId] = useState("");
   const [activitiesByOpportunity, setActivitiesByOpportunity] = useState<Record<string, AnyRow[]>>({});
   const [expandedActivityIds, setExpandedActivityIds] = useState<string[]>([]);
+  const [expandedOpportunityIds, setExpandedOpportunityIds] = useState<string[]>([]);
   const [activityFormOpportunityId, setActivityFormOpportunityId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState(currentActivityDateTime);
   const [activitySaving, setActivitySaving] = useState(false);
@@ -1080,6 +1084,7 @@ function CRM({
   }
 
   async function salvar() {
+    if (saving) return;
     setMsg("");
 
     if (!form.client_id) {
@@ -1751,6 +1756,7 @@ function CRM({
                   const activityLoading = activityLoadingId === opportunity.id;
                   const isDragging = draggedOpportunityId === opportunity.id;
                   const opportunityQuotes = crmQuotes.filter((quote) => quote.opportunity_id === opportunity.id);
+                  const opportunityExpanded = expandedOpportunityIds.includes(opportunity.id);
 
                   return <div
                     id={`crm-opportunity-${opportunity.id}`}
@@ -1794,6 +1800,23 @@ function CRM({
                     <strong>{opportunity.title || "Sem título"}</strong>
                     <small>Cliente: {opportunity.clients?.name || "-"}</small>
                     <small>Valor estimado: {money(opportunity.estimated_value)}</small>
+                    <button
+                      type="button"
+                      className="btn btn-gray"
+                      style={{ width: "100%", marginTop: 8 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExpandedOpportunityIds((current) =>
+                          current.includes(opportunity.id)
+                            ? current.filter((id) => id !== opportunity.id)
+                            : [...current, opportunity.id]
+                        );
+                      }}
+                    >
+                      {opportunityExpanded ? "Recolher oportunidade" : "Abrir oportunidade"}
+                    </button>
+
+                    {opportunityExpanded && <>
                     <small>Probabilidade: {Number(opportunity.probability || 0)}%</small>
                     <small style={isBillingStage ? { color: "#fdba74", fontWeight: 800 } : undefined}>Responsável: {opportunity.profiles_responsible?.name || "-"}</small>
                     <small style={(isBillingStage || isPostSaleStage) && opportunity.next_action ? { color: isBillingStage ? "#fdba74" : "#f9a8d4", fontWeight: 800 } : undefined}>Próxima ação: {opportunity.next_action ? crmNextActionLabel(opportunity.next_action) : "-"}</small>
@@ -1855,6 +1878,7 @@ function CRM({
                         </div>)}
                       </div>}
                     </div>}
+                    </>}
                   </div>;
                 })}
               </div>}
@@ -1863,6 +1887,9 @@ function CRM({
         </div>
       </div>}
     </section>
+
+    <AssemblyWorkFunnel profile={profile} />
+    <ServiceOrderFunnel profile={profile} />
   </>;
 }
 
@@ -2243,6 +2270,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const [msg, setMsg] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [managedRepresentativeId, setManagedRepresentativeId] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", city: "", role: "funcionario" as Role, status: "approved" });
   const roleList = roles || (role ? [role] : []);
   const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
 
@@ -2364,6 +2393,51 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
     }
   }
 
+  function abrirEdicao(item: Profile) {
+    setEditingProfile(item);
+    setEditForm({
+      name: item.name || "",
+      phone: item.phone || "",
+      city: item.city || "",
+      role: item.role,
+      status: item.status || "approved",
+    });
+    setMsg("");
+  }
+
+  async function salvarEdicao() {
+    if (!editingProfile) return;
+    if (!editForm.name.trim()) return setMsg("Informe o nome do colaborador.");
+
+    try {
+      setLoadingId(editingProfile.id);
+      setMsg("");
+
+      const response = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProfile.id,
+          name: editForm.name,
+          phone: onlyNumbers(editForm.phone),
+          city: editForm.city,
+          role: editForm.role,
+          status: editForm.status,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erro ao editar colaborador.");
+
+      setMsg("Colaborador atualizado com sucesso.");
+      setEditingProfile(null);
+      await carregar();
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Erro ao editar colaborador.");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   async function excluir(id: string) {
     if (!confirm("Excluir este cadastro?")) return;
 
@@ -2427,6 +2501,34 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
 
   return <>
     <Title title={title} desc={desc} />
+
+    {editingProfile && currentUser?.role === "administrador" && <section className="card" style={{ marginBottom: 24 }}>
+      <h2 className="card-title">Editar colaborador</h2>
+      <div className="form-grid">
+        <Field label="Nome" value={editForm.name} onChange={(name) => setEditForm((current) => ({ ...current, name }))} />
+        <Field label="Telefone" value={editForm.phone} onChange={(phone) => setEditForm((current) => ({ ...current, phone: maskPhone(phone) }))} />
+        <Field label="Cidade" value={editForm.city} onChange={(city) => setEditForm((current) => ({ ...current, city }))} />
+        <SelectField label="Tipo" value={editForm.role} onChange={(role) => setEditForm((current) => ({ ...current, role: role as Role }))}>
+          <option value="gerente">Gerente</option>
+          <option value="vendedor">Vendedor</option>
+          <option value="tecnico">Técnico / Montador</option>
+          <option value="funcionario">Funcionário</option>
+          <option value="representante">Representante</option>
+        </SelectField>
+        <SelectField label="Status" value={editForm.status} onChange={(status) => setEditForm((current) => ({ ...current, status }))}>
+          <option value="approved">Aprovado</option>
+          <option value="pending">Pendente</option>
+          <option value="inactive">Inativo</option>
+          <option value="rejected">Rejeitado</option>
+        </SelectField>
+      </div>
+      <div className="form-actions">
+        <button className="btn btn-green" disabled={loadingId === editingProfile.id} onClick={salvarEdicao}>
+          {loadingId === editingProfile.id ? "Salvando..." : "Salvar alterações"}
+        </button>
+        <button className="btn btn-gray" disabled={loadingId === editingProfile.id} onClick={() => setEditingProfile(null)}>Cancelar</button>
+      </div>
+    </section>}
     <section className="card">
       <h2 className="card-title">Cadastrar novo acesso</h2>
       <p style={{ color: "#94a3b8", marginBottom: 20 }}>
@@ -2448,6 +2550,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           {item.responsible_seller_id && <small>Vendedor vinculado: {item.responsible_seller_id}</small>}
           <div className="form-actions">
             {isRepresentante && currentUser && ["administrador", "gerente", "vendedor"].includes(currentUser.role) && <button className="btn btn-blue" onClick={() => setManagedRepresentativeId(item.id)}>Gestão</button>}
+            {currentUser?.role === "administrador" && <button className="btn btn-gray" onClick={() => abrirEdicao(item)}>Editar</button>}
             {podeAvaliar(item) && item.status !== "approved" && <button className="btn btn-green" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "approved")}>{loadingId === item.id ? "Avaliando..." : "Aprovar"}</button>}
             {podeAvaliar(item) && item.status !== "rejected" && <button className="btn btn-red" disabled={loadingId === item.id} onClick={() => avaliar(item.id, "rejected")}>Reprovar</button>}
             {currentUser?.role === "administrador" && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}
@@ -2573,7 +2676,7 @@ const pendentes = (data as Profile[]).filter(
 
 function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const empty = { item_type: "produto", item_id: "", equipment_name: EQUIPAMENTOS[0], quantity: "1", total_value: "", shipping_value: "", client_id: "", notes: "" };
-  const statuses = ["pendente", "confirmado", "processando", "enviado", "recebido"];
+  const statuses = ["pendente", "confirmado", "processando", "enviado", "recebido", "instalado", "finalizado"];
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(empty);
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
@@ -2583,6 +2686,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [statusView, setStatusView] = useState("todos");
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => { carregar(); }, []);
 
@@ -2632,6 +2736,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   async function salvar() {
     setMsg("");
     const qtd = Number(form.quantity || 1);
+    if (savingOrder) return;
     if (!form.client_id) return setMsg("Selecione o cliente do pedido.");
     if (qtd <= 0) return setMsg("Informe uma quantidade válida.");
     if (form.item_type === "produto" && !form.item_id) return setMsg("Selecione o produto.");
@@ -2647,6 +2752,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       notes: form.notes,
     } as AnyRow;
 
+    setSavingOrder(true);
     try {
       if (editing) {
         const payload = { ...basePayload, id: editing, item_id: form.item_type === "produto" ? form.item_id || null : null, equipment_name: form.item_type === "equipamento" ? (selectedEquipments[0] || form.equipment_name) : "" };
@@ -2665,6 +2771,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       }
       setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); await carregar();
     } catch (error: any) { setMsg(error.message || "Erro ao salvar pedido."); }
+    finally { setSavingOrder(false); }
   }
 
   async function mudarStatus(id: string, status: string) {
@@ -2683,6 +2790,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setMsg("Pedido excluído com sucesso.");
   }
 
+  const canEdit = canEditOrder(profile.role);
   const canManage = canUpdateOrderStatus(profile.role);
   const canDelete = canDeleteOrder(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
@@ -2716,7 +2824,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           <TextArea label="Observações" value={form.notes} onChange={(v) => set("notes", v)} />
         </div>
         {form.item_type === "equipamento" && selectedEquipments.length > 0 && <p style={{ color: "#94a3b8", marginTop: 16 }}>{selectedEquipments.length} equipamento(s) selecionado(s). Ao salvar, será criado um pedido para cada equipamento.</p>}
-        <div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); }}>Cancelar</button></div>
+        <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={savingOrder}>{savingOrder ? "Salvando..." : editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" disabled={savingOrder} onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); }}>Cancelar</button></div>
       </>}
       {msg && <Message text={msg} />}
     </section>
@@ -2732,13 +2840,15 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           return <div key={o.id} className="stat-card user-card order-list-card">
             <strong>{getSaleCode(o)} - Pedido #{o.order_number || o.id.slice(0, 6)}</strong>
             <small>Código da venda: {getSaleCode(o)}</small>
-            <small>Cliente: {cliente?.name || "-"}</small>
+            <small>Cliente: {cliente?.name || o.clients?.name || "-"}</small>
+            <small>Cidade: {cliente?.city || o.clients?.city || "-"}</small>
+            <small>Vendedor: {o.profiles?.name || "-"}</small>
             <small>Item: {o.equipment_name || produto?.name || o.item_type}</small>
             <small>Qtd: {o.quantity}</small>
             <small>Total: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+            <div className="form-actions">{canEdit && <button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>}{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
         })}
       </div>
@@ -4286,6 +4396,26 @@ function Relatorios({ profile }: { profile: Profile }) {
       <StatCard label="Componentes cadastrados" value={String(components.length)} />
       <StatCard label="Movimentações" value={String(filteredMovements.length)} />
     </div>
+
+    <section className="card" style={{ marginTop: 24 }}>
+      <h2 className="card-title">Resumo escrito</h2>
+      <div style={{ display: "grid", gap: 10, color: "#cbd5e1", lineHeight: 1.6 }}>
+        <p style={{ margin: 0 }}>
+          No período selecionado foram registrados <strong>{pedidosNoPeriodo} pedido(s)</strong>,
+          com <strong>{entradas} unidade(s) de entrada</strong> e <strong>{saídas} unidade(s) de saída</strong> no estoque.
+        </p>
+        <p style={{ margin: 0 }}>
+          O estoque atual possui <strong>{totalProdutos} unidade(s) de produtos</strong> e <strong>{totalComponentes} unidade(s) de componentes</strong>.
+        </p>
+        <p style={{ margin: 0 }}>
+          O valor estimado do estoque para venda é <strong>{money(valorVenda)}</strong>, enquanto o custo estimado é <strong>{money(valorCusto)}</strong>.
+          A diferença estimada entre venda e custo é <strong>{money(lucro)}</strong>.
+        </p>
+        <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
+          Este resumo acompanha os filtros de data aplicados acima.
+        </p>
+      </div>
+    </section>
 
     <section className="card" style={{ marginTop: 24 }}>
       <h2 className="card-title">Gerar relatório</h2>

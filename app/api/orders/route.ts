@@ -129,6 +129,14 @@ export async function GET() {
         role: authorization.profile.role as AppRole,
       }),
       orderBy: { created_at: "desc" },
+      include: {
+        clients: {
+          select: { id: true, name: true, city: true },
+        },
+        profiles: {
+          select: { id: true, name: true, role: true },
+        },
+      },
     });
     const orderItems = await loadOrderItems(orders.map((order) => order.id));
     const itemsByOrder = new Map<string, Array<Record<string, unknown>>>();
@@ -159,6 +167,36 @@ export async function POST(request: Request) {
       id: authorization.profile.id,
       role: authorization.profile.role as AppRole,
     };
+
+    const duplicateWindowStart = new Date(Date.now() - 15_000);
+    for (const raw of rawOrders) {
+      const itemType = text(raw.item_type) || "produto";
+      const duplicate = await prisma.orders.findFirst({
+        where: {
+          created_by: authorization.profile.id,
+          client_id: text(raw.client_id) || null,
+          item_type: itemType,
+          item_id: itemType === "produto" ? text(raw.item_id) || null : null,
+          equipment_name: itemType === "equipamento" ? text(raw.equipment_name) : "",
+          quantity: Math.max(1, Math.trunc(number(raw.quantity, 1))),
+          total_value: number(raw.total_value),
+          shipping_value: number(raw.shipping_value),
+          notes: text(raw.notes),
+          created_at: { gte: duplicateWindowStart },
+        },
+        select: { id: true, order_number: true },
+      });
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro: `Este pedido já foi cadastrado há poucos segundos (Pedido #${duplicate.order_number}).`,
+            duplicate_order_id: duplicate.id,
+          },
+          { status: 409 }
+        );
+      }
+    }
     const canAccessClients = await canAccessEveryClient(
       profile,
       rawOrders.map((raw: Record<string, any>) => text(raw.client_id))
@@ -241,7 +279,7 @@ export async function PATCH(request: Request) {
         );
       }
       const status = text(body.status);
-      const allowedStatuses = ["pendente", "confirmado", "processando", "enviado", "recebido"];
+      const allowedStatuses = ["pendente", "confirmado", "processando", "enviado", "recebido", "instalado", "finalizado"];
       if (!allowedStatuses.includes(status)) {
         return NextResponse.json(
           { sucesso: false, erro: "Status do pedido inválido." },

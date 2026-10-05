@@ -47,6 +47,31 @@ function amount(value: unknown) {
   return Number(value || 0);
 }
 
+async function ensureRepresentativeCommissionTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS representative_commissions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      representative_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      reference TEXT NOT NULL DEFAULT '',
+      amount NUMERIC(14,2) NOT NULL CHECK (amount >= 0),
+      due_date DATE,
+      status TEXT NOT NULL DEFAULT 'pendente',
+      paid_at DATE,
+      notes TEXT NOT NULL DEFAULT '',
+      created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT representative_commissions_status_check
+        CHECK (status IN ('pendente','paga','cancelada'))
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS representative_commissions_rep_idx
+      ON representative_commissions(representative_id, status, due_date)
+  `);
+}
+
 function apiError(error: unknown, fallback: string) {
   if (representativeStructureMissing(error)) {
     return NextResponse.json(
@@ -94,7 +119,9 @@ export async function GET(_request: Request, context: RouteContext) {
     const inSevenDays = new Date(now.getTime() + 7 * 86_400_000);
     const inThirtyDays = new Date(now.getTime() + 30 * 86_400_000);
 
-    const [goals, purchases, receivables, payments, collections, contracts, invoices] =
+    await ensureRepresentativeCommissionTable();
+
+    const [goals, purchases, receivables, payments, collections, contracts, invoices, commissions] =
       await Promise.all([
         prisma.representative_goals.findMany({
           where: { representative_id: id },
@@ -157,6 +184,18 @@ export async function GET(_request: Request, context: RouteContext) {
           },
           orderBy: [{ issued_at: "desc" }, { created_at: "desc" }],
         }),
+        prisma.$queryRawUnsafe<any[]>(
+          `
+          SELECT id, representative_id, reference, amount, due_date, status, paid_at, notes, created_by, created_at, updated_at
+            FROM representative_commissions
+           WHERE representative_id = $1::uuid
+        ORDER BY
+          CASE status WHEN 'pendente' THEN 1 WHEN 'paga' THEN 2 ELSE 3 END,
+          due_date ASC NULLS LAST,
+          created_at DESC
+          `,
+          id
+        ),
       ]);
 
     const visiblePurchases = purchases.filter((purchase) => purchase.status !== "cancelada");
@@ -200,6 +239,15 @@ export async function GET(_request: Request, context: RouteContext) {
     const receivedThisMonth = payments
       .filter((payment) => payment.payment_date >= start && payment.payment_date < end)
       .reduce((sum, payment) => sum + amount(payment.amount), 0);
+
+    const pendingCommissions = commissions.filter((item) => item.status === "pendente");
+    const commissionToPay = pendingCommissions.reduce(
+      (sum, item) => sum + amount(item.amount),
+      0
+    );
+    const commissionsPaid = commissions
+      .filter((item) => item.status === "paga")
+      .reduce((sum, item) => sum + amount(item.amount), 0);
     const contractsWithStatus = contracts.map((contract) => ({
       ...contract,
       effective_status:
@@ -285,6 +333,8 @@ export async function GET(_request: Request, context: RouteContext) {
         total_receivable: openReceivables.reduce((sum, item) => sum + amount(item.remaining_amount), 0).toFixed(2),
         total_overdue: overdueReceivables.reduce((sum, item) => sum + amount(item.remaining_amount), 0).toFixed(2),
         received_this_month: receivedThisMonth.toFixed(2),
+        commission_to_pay: commissionToPay.toFixed(2),
+        commissions_paid: commissionsPaid.toFixed(2),
         next_due_date: nextReceivable?.due_date || null,
         contract_status: activeContract?.effective_status || "sem contrato",
         goal_progress: goalProgress,
@@ -316,6 +366,7 @@ export async function GET(_request: Request, context: RouteContext) {
       collections: toJsonSafe(collections),
       contracts: toJsonSafe(contractsWithStatus),
       invoices: toJsonSafe(invoices),
+      commissions: toJsonSafe(commissions),
     });
   } catch (error) {
     return apiError(error, "Erro ao carregar a gestão do representante.");
@@ -339,6 +390,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const body = await request.json() as Record<string, unknown>;
     const action = text(body.action, 50);
+    await ensureRepresentativeCommissionTable();
     const canManage = canManageRepresentativeFinancials(actor.role);
     if (action !== "collection" && !canManage) {
       return NextResponse.json({ sucesso: false, erro: "Seu perfil possui acesso somente para consulta." }, { status: 403 });
@@ -446,6 +498,89 @@ export async function POST(request: Request, context: RouteContext) {
         return created;
       });
       return NextResponse.json({ sucesso: true, purchase: toJsonSafe(purchase) }, { status: 201 });
+    }
+
+    if (action === "commission") {
+      const reference = text(body.reference, 200);
+      const dueDate = body.due_date ? text(body.due_date, 10) : "";
+      const notes = text(body.notes, 2000);
+      const commissionAmount = centsToMoney(
+        moneyToCents(body.amount, "Valor da comissão")
+      );
+
+      if (!reference) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Informe a referência da comissão." },
+          { status: 400 }
+        );
+      }
+      if (dueDate && !isDateOnly(dueDate)) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Data de vencimento da comissão inválida." },
+          { status: 400 }
+        );
+      }
+
+      const rows = await prisma.$queryRawUnsafe<any[]>(
+        `
+        INSERT INTO representative_commissions
+          (representative_id, reference, amount, due_date, status, notes, created_by)
+        VALUES
+          ($1::uuid, $2, $3::numeric, NULLIF($4, '')::date, 'pendente', $5, $6::uuid)
+        RETURNING *
+        `,
+        id,
+        reference,
+        commissionAmount,
+        dueDate,
+        notes,
+        actor.id
+      );
+
+      return NextResponse.json(
+        { sucesso: true, commission: toJsonSafe(rows[0]) },
+        { status: 201 }
+      );
+    }
+
+    if (action === "commission_paid") {
+      const commissionId = text(body.commission_id, 40);
+      const paidAt = text(body.paid_at, 10);
+
+      if (!isUuid(commissionId) || !isDateOnly(paidAt)) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Comissão ou data de pagamento inválida." },
+          { status: 400 }
+        );
+      }
+
+      const rows = await prisma.$queryRawUnsafe<any[]>(
+        `
+        UPDATE representative_commissions
+           SET status = 'paga',
+               paid_at = $3::date,
+               updated_at = now()
+         WHERE id = $1::uuid
+           AND representative_id = $2::uuid
+           AND status = 'pendente'
+        RETURNING *
+        `,
+        commissionId,
+        id,
+        paidAt
+      );
+
+      if (!rows.length) {
+        return NextResponse.json(
+          { sucesso: false, erro: "Comissão pendente não encontrada." },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        sucesso: true,
+        commission: toJsonSafe(rows[0]),
+      });
     }
 
     if (action === "payment") {
