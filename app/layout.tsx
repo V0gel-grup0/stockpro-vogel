@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
 import CrmOtherTasksEnhancer from "@/components/CrmOtherTasksEnhancer";
 import CrmOtherClientSelectionGuard from "@/components/CrmOtherClientSelectionGuard";
@@ -14,6 +14,14 @@ import "./globals.css";
 import "./field-fixes.css";
 import "./mobile.css";
 import "./mobile-menu.css";
+import "./app-mobile.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0b1324",
+};
 
 export const metadata: Metadata = {
   title: "StockPro Vogel",
