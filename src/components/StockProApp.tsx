@@ -8,6 +8,7 @@ import {
   canDeleteAssembly,
   canDeleteComponent,
   canDeleteOrder,
+  canEditOrder,
   canDeleteProducts,
   canManageOpportunityRecord,
   canReviewRepresentative,
@@ -1080,6 +1081,7 @@ function CRM({
   }
 
   async function salvar() {
+    if (savingOrder) return;
     setMsg("");
 
     if (!form.client_id) {
@@ -2583,6 +2585,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [statusView, setStatusView] = useState("todos");
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => { carregar(); }, []);
 
@@ -2647,6 +2650,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       notes: form.notes,
     } as AnyRow;
 
+    setSavingOrder(true);
     try {
       if (editing) {
         const payload = { ...basePayload, id: editing, item_id: form.item_type === "produto" ? form.item_id || null : null, equipment_name: form.item_type === "equipamento" ? (selectedEquipments[0] || form.equipment_name) : "" };
@@ -2665,6 +2669,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       }
       setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); await carregar();
     } catch (error: any) { setMsg(error.message || "Erro ao salvar pedido."); }
+    finally { setSavingOrder(false); }
   }
 
   async function mudarStatus(id: string, status: string) {
@@ -2683,6 +2688,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setMsg("Pedido excluído com sucesso.");
   }
 
+  const canEdit = canEditOrder(profile.role);
   const canManage = canUpdateOrderStatus(profile.role);
   const canDelete = canDeleteOrder(profile.role);
   const filtered = orders.filter((o) => textMatch({ ...o, client: clients.find((c) => c.id === o.client_id)?.name, product: products.find((p) => p.id === o.item_id)?.name }, search));
@@ -2716,7 +2722,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           <TextArea label="Observações" value={form.notes} onChange={(v) => set("notes", v)} />
         </div>
         {form.item_type === "equipamento" && selectedEquipments.length > 0 && <p style={{ color: "#94a3b8", marginTop: 16 }}>{selectedEquipments.length} equipamento(s) selecionado(s). Ao salvar, será criado um pedido para cada equipamento.</p>}
-        <div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); }}>Cancelar</button></div>
+        <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={savingOrder}>{savingOrder ? "Salvando..." : editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" disabled={savingOrder} onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); }}>Cancelar</button></div>
       </>}
       {msg && <Message text={msg} />}
     </section>
@@ -2732,13 +2738,15 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           return <div key={o.id} className="stat-card user-card order-list-card">
             <strong>{getSaleCode(o)} - Pedido #{o.order_number || o.id.slice(0, 6)}</strong>
             <small>Código da venda: {getSaleCode(o)}</small>
-            <small>Cliente: {cliente?.name || "-"}</small>
+            <small>Cliente: {cliente?.name || o.clients?.name || "-"}</small>
+            <small>Cidade: {cliente?.city || o.clients?.city || "-"}</small>
+            <small>Vendedor: {o.profiles?.name || "-"}</small>
             <small>Item: {o.equipment_name || produto?.name || o.item_type}</small>
             <small>Qtd: {o.quantity}</small>
             <small>Total: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
-            <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
+            <div className="form-actions">{canEdit && <button className="btn btn-blue" onClick={() => editar(o)}>Editar</button>}{canDelete && <button className="btn btn-red" onClick={() => excluir(o.id)}>Excluir</button>}</div>
           </div>;
         })}
       </div>
