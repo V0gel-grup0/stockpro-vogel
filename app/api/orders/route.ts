@@ -279,7 +279,7 @@ export async function PATCH(request: Request) {
         );
       }
       const status = text(body.status);
-      const allowedStatuses = ["pendente", "confirmado", "processando", "enviado", "recebido"];
+      const allowedStatuses = ["pendente", "confirmado", "processando", "enviado", "recebido", "instalado", "finalizado"];
       if (!allowedStatuses.includes(status)) {
         return NextResponse.json(
           { sucesso: false, erro: "Status do pedido inválido." },
