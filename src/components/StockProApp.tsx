@@ -1084,7 +1084,7 @@ function CRM({
   }
 
   async function salvar() {
-    if (savingOrder) return;
+    if (saving) return;
     setMsg("");
 
     if (!form.client_id) {
@@ -2736,6 +2736,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   async function salvar() {
     setMsg("");
     const qtd = Number(form.quantity || 1);
+    if (savingOrder) return;
     if (!form.client_id) return setMsg("Selecione o cliente do pedido.");
     if (qtd <= 0) return setMsg("Informe uma quantidade válida.");
     if (form.item_type === "produto" && !form.item_id) return setMsg("Selecione o produto.");
