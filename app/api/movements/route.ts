@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { validateMovementInvoice } from "@/lib/movement-invoice-policy";
+import { ensureMovementInvoices, saveMovementInvoice, type MovementInvoice } from "@/lib/movement-invoice-server";
 import { toJsonSafe } from "@/lib/prisma-json";
 
 export const runtime = "nodejs";
@@ -26,14 +28,17 @@ export async function GET() {
     ]);
     if ("response" in authorization) return authorization.response;
 
+    await ensureMovementInvoices();
     const movements = await prisma.movements.findMany({ orderBy: { created_at: "desc" } });
-    return NextResponse.json({ sucesso: true, movements: toJsonSafe(movements) });
+    const files = await prisma.$queryRaw<{ movement_id: string; file_name: string }[]>`SELECT l.movement_id, f.file_name FROM movement_invoice_links l JOIN movement_invoice_files f ON f.id = l.invoice_id`;
+    const names = new Map(files.map((file) => [file.movement_id, file.file_name]));
+    return NextResponse.json({ sucesso: true, movements: toJsonSafe(movements.map((movement) => ({ ...movement, invoice_file_name: names.get(movement.id) || null }))) }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao carregar movimentações." }, { status: 500 });
   }
 }
 
-async function manual(body: Record<string, any>, profileId: string) {
+async function manual(body: Record<string, any>, profileId: string, invoice: MovementInvoice | null) {
   const type = text(body.type); const itemType = text(body.item_type); const itemId = text(body.item_id); const quantity = num(body.quantity);
   if (!itemId || !["entrada", "saida"].includes(type) || !["produto", "componente"].includes(itemType) || !Number.isFinite(quantity) || quantity <= 0) throw new Error("Dados da movimentação manual são inválidos.");
 
@@ -44,7 +49,9 @@ async function manual(body: Record<string, any>, profileId: string) {
       const item = await tx.products.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Produto não encontrado."); itemName = item.name;
       const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
       await tx.products.update({ where: { id: itemId }, data: { quantity: next, updated_at: new Date() } });
-      return tx.movements.create({ data: { type, item_type: "produto", item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de produto: ${itemName}`, created_by: profileId || null } });
+      const movement = await tx.movements.create({ data: { type, item_type: "produto", item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de produto: ${itemName}`, created_by: profileId || null } });
+      await saveMovementInvoice(tx, invoice, profileId, [movement]);
+      return movement;
     }
     const item = await tx.components.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Componente não encontrado."); itemName = item.name;
     const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
@@ -89,7 +96,7 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
   });
 }
 
-async function orderExit(body: Record<string, any>, profileId: string) {
+async function orderExit(body: Record<string, any>, profileId: string, invoice: MovementInvoice | null) {
   const orderId = text(body.order_id); if (!orderId) throw new Error("Selecione o pedido para gerar a saída.");
   return prisma.$transaction(async (tx) => {
     const order = await tx.orders.findUnique({ where: { id: orderId } }); if (!order) throw new Error("Pedido não encontrado.");
@@ -144,6 +151,7 @@ async function orderExit(body: Record<string, any>, profileId: string) {
       }
 
       await tx.orders.update({ where: { id: order.id }, data: { status: "enviado", updated_at: new Date() } });
+      await saveMovementInvoice(tx, invoice, profileId, movements);
       return { movements, ignored_custom_items: orderItems.filter((item) => item.item_type === "custom").length };
     }
 
@@ -160,6 +168,7 @@ async function orderExit(body: Record<string, any>, profileId: string) {
     }
     const movement = await tx.movements.create({ data: { type: "saida", item_type: itemType === "produto" ? "produto" : "equipamento", item_kind: itemType, item_id: itemType === "produto" ? order.item_id : null, product_id: itemType === "produto" ? order.item_id : null, item_name: itemName, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${itemName}`, created_by: profileId || null, order_id: order.id } });
     await tx.orders.update({ where: { id: order.id }, data: { status: "enviado", updated_at: new Date() } });
+    await saveMovementInvoice(tx, invoice, profileId, [movement]);
     return movement;
   });
 }
@@ -173,12 +182,28 @@ export async function POST(request: Request) {
     ]);
     if ("response" in authorization) return authorization.response;
 
-    const body = await request.json(); const action = text(body.action) || "manual";
+    let body: Record<string, any>;
+    let invoice: MovementInvoice | null = null;
+    if (request.headers.get("content-type")?.includes("multipart/form-data")) {
+      const form = await request.formData();
+      try { body = JSON.parse(String(form.get("payload") || "{}")); } catch { return NextResponse.json({ sucesso: false, erro: "Dados da saída inválidos." }, { status: 400 }); }
+      const file = form.get("invoice");
+      if (file instanceof File) {
+        if (file.size > 3_000_000) return NextResponse.json({ sucesso: false, erro: "Selecione uma NF de até 3 MB." }, { status: 400 });
+        const bytes = Buffer.from(await file.arrayBuffer());
+        try { invoice = { ...validateMovementInvoice(file.name, bytes), bytes }; } catch (error) { return NextResponse.json({ sucesso: false, erro: (error as Error).message }, { status: 400 }); }
+      }
+    } else body = await request.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ sucesso: false, erro: "Dados da movimentação inválidos." }, { status: 400 });
+    const action = text(body.action) || "manual";
+    if (invoice && action !== "order_exit" && !(action === "manual" && body.type === "saida" && body.item_type === "produto")) return NextResponse.json({ sucesso: false, erro: "Anexe a NF em uma saída de equipamentos ou produtos." }, { status: 400 });
+    if (invoice) await ensureMovementInvoices();
     const profileId = authorization.profile.id;
-    const result = action === "manual" ? await manual(body, profileId) : action === "nf_entry" ? await nfEntry(body, profileId) : action === "order_exit" ? await orderExit(body, profileId) : null;
+    const result = action === "manual" ? await manual(body, profileId, invoice) : action === "nf_entry" ? await nfEntry(body, profileId) : action === "order_exit" ? await orderExit(body, profileId, invoice) : null;
     if (!result) return NextResponse.json({ sucesso: false, erro: "Ação de movimentação não reconhecida." }, { status: 400 });
     return NextResponse.json({ sucesso: true, result: toJsonSafe(result) }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao salvar movimentação." }, { status: 500 });
   }
 }
+
