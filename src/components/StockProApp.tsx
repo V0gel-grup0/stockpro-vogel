@@ -2063,11 +2063,13 @@ function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
  return <><Title title="Produtos" desc="Produtos para revenda: iluminação, dimmer, soquetes e eletrônicos gerais." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
 }
 
-function Pessoas({ title, table, kind, search, profile }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile } & SearchProps) {
+function Pessoas({ title, table, kind, search, profile, onCreated, onCancel, onBusyChange }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile; onCreated?: (client: AnyRow) => void; onCancel?: () => void; onBusyChange?: (busy: boolean) => void } & SearchProps) {
+  const embedded = Boolean(onCreated);
+  const savingClientRef = useRef(false);
   const empty = { name: "", document: "", phone: "", email: "", cep: "", city: "", street: "", number: "", no_number: false, neighborhood: "", proposal_status: "Lead Frio", products: [] as string[], invoice_number: "", federal_invoice_number: "" };
   const [form, setForm] = useState(empty); const [items, setItems] = useState<AnyRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [msg, setMsg] = useState(""); const [loading, setLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<{ id: string; text: string } | null>(null);
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { if (!embedded) carregar(); }, [embedded]);
   function set(c: string, v: any) { setForm((a) => ({ ...a, [c]: v })); }
   async function carregar() {
     try {
@@ -2202,6 +2204,9 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
     }
   }
   async function salvar() {
+    if (savingClientRef.current) return;
+    savingClientRef.current = true;
+    onBusyChange?.(true);
     setLoading(true);
     setMsg("");
 
@@ -2248,11 +2253,16 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
 
         const result = await response.json();
 
-        if (!response.ok) {
+        if (!response.ok || !result.sucesso) {
           throw new Error(
             result.erro ||
               "Erro ao salvar cliente."
           );
+        }
+        if (!editing && onCreated) {
+          if (!result.client?.id) throw new Error("O cadastro não retornou o cliente. Atualize a lista antes de tentar novamente.");
+          onCreated(result.client);
+          return;
         }
       } else {
         const supplierPayload = {
@@ -2305,12 +2315,14 @@ function Pessoas({ title, table, kind, search, profile }: { title: string; table
           : "Erro ao salvar cadastro."
       );
     } finally {
+      savingClientRef.current = false;
+      onBusyChange?.(false);
       setLoading(false);
     }
   }
   function toggleProduct(p: string) { set("products", form.products.includes(p) ? form.products.filter((x) => x !== p) : [...form.products, p]); }
   const filtered = items.filter((i) => textMatch(i, search));
-  return <><Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} /><section className="card"><h2 className="card-title">{editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} />{kind === "cliente" && <div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>}{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section><section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small>{kind === "cliente" && <small>Proposta: {item.proposal_status || "Lead Frio"}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>{deleteError?.id === item.id && <div style={{ width: "100%", marginTop: 10, padding: 12, borderRadius: 12, border: "1px solid rgba(248,113,113,.35)", background: "rgba(127,29,29,.22)", color: "#fca5a5", fontWeight: 700, lineHeight: 1.5, whiteSpace: "pre-line" }}>{deleteError.text}</div>}</div>)}</div>}</section></>;
+  return <>{!embedded && <Title title={title} desc={kind === "cliente" ? "Clientes com endereço automático por CEP." : "Fornecedores com CNPJ e produtos/componentes padrão fornecidos."} />}<section className="card"><h2 className="card-title">{embedded ? "Cadastrar cliente para o pedido" : editing ? "Editar cadastro" : "Novo cadastro"}</h2><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} />{kind === "fornecedor" && <><Field label="E-mail" type="email" value={form.email} onChange={(v) => set("email", v)} /></>}<Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPorValor(c); }} onBlur={() => buscarCepPorValor(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><div className="field"><label>Número</label><input className="input" value={form.number} disabled={form.no_number} onChange={(e) => set("number", e.target.value)} /><button type="button" className={form.no_number ? "btn btn-blue" : "btn btn-gray"} style={{ marginTop: 10, minHeight: 38, padding: "8px 14px" }} onClick={() => { const nv = !form.no_number; set("no_number", nv); if (nv) set("number", ""); }}>{form.no_number ? "Sem número marcado" : "Sem número"}</button></div><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} />{kind === "cliente" && <div className="field"><label>Proposta</label><select className="input" value={form.proposal_status} onChange={(e) => set("proposal_status", e.target.value)}>{PROPOSTA_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>}{kind === "fornecedor" && <div className="field full-field"><label>Produtos/componentes padrão fornecidos</label><div className="mini-grid">{[...PRODUTOS_PADRAO.map((p) => p.name), ...EQUIPAMENTOS].map((p) => <label key={p} className="check-row"><input type="checkbox" checked={form.products.includes(p)} onChange={() => toggleProduct(p)} /> {p}</label>)}</div></div>}</div><div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={loading}>{loading ? "Salvando..." : editing ? "Salvar alterações" : kind === "cliente" ? "Salvar cliente" : "Salvar fornecedor"}</button><button type="button" className="btn btn-gray" disabled={loading} onClick={() => { if (embedded) onCancel?.(); else { setForm(empty); setEditing(null); } }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>{!embedded && <section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Cadastros lançados</h2>{filtered.length === 0 ? <p style={{ color: "#94a3b8" }}>Nenhum cadastro lançado.</p> : <div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{maskCpfCnpj(item.document || "")}</small><small>{maskPhone(item.phone || "")}</small><small>{item.city} - {item.neighborhood}</small>{kind === "cliente" && <small>Proposta: {item.proposal_status || "Lead Frio"}</small>}<div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{(kind !== "cliente" || profile.role === "administrador") && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>{deleteError?.id === item.id && <div style={{ width: "100%", marginTop: 10, padding: 12, borderRadius: 12, border: "1px solid rgba(248,113,113,.35)", background: "rgba(127,29,29,.22)", color: "#fca5a5", fontWeight: 700, lineHeight: 1.5, whiteSpace: "pre-line" }}>{deleteError.text}</div>}</div>)}</div>}</section>}</>;
 }
 
 function Colaboradores({ role, roles, title, currentUser, search }: { role?: Role; roles?: Role[]; title: string; currentUser?: Profile } & SearchProps) {
@@ -2735,6 +2747,17 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const [editing, setEditing] = useState<string | null>(null);
   const [statusView, setStatusView] = useState("todos");
   const [savingOrder, setSavingOrder] = useState(false);
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+
+  function clientCreated(client: AnyRow) {
+    setClients((current) => [...current.filter((item) => item.id !== client.id), client].sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR")));
+    setForm((current) => ({ ...current, client_id: client.id }));
+    setShowClientForm(false);
+    setCreatingClient(false);
+    setMsg("Cliente cadastrado com sucesso e selecionado. Confira os dados e salve o pedido.");
+    window.requestAnimationFrame(() => document.getElementById("order-client-select")?.focus({ preventScroll: true }));
+  }
 
   useEffect(() => { carregar(); }, []);
 
@@ -2766,6 +2789,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   }
 
   function editar(o: AnyRow) {
+    if (creatingClient || savingOrder) return;
+    setShowClientForm(false);
     setEditing(o.id);
     setShowForm(true);
     setSelectedEquipments(o.equipment_name ? [o.equipment_name] : []);
@@ -2785,6 +2810,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     setMsg("");
     const qtd = Number(form.quantity || 1);
     if (savingOrder) return;
+    if (showClientForm || creatingClient) return setMsg("Conclua ou cancele o cadastro do cliente antes de salvar o pedido.");
     if (!form.client_id) return setMsg("Selecione o cliente do pedido.");
     if (qtd <= 0) return setMsg("Informe uma quantidade válida.");
     if (form.item_type === "produto" && !form.item_id) return setMsg("Selecione o produto.");
@@ -2856,13 +2882,14 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
 
     <section className="card">
       <div className="form-actions" style={{ marginTop: 0 }}>
-        <button className="btn btn-blue" onClick={() => { setShowForm((v) => !v); if (showForm) { setEditing(null); setForm(empty); setSelectedEquipments([]); } }}>{showForm ? "Fechar pedido" : "Cadastrar pedido"}</button>
+        <button className="btn btn-blue" disabled={savingOrder || creatingClient} onClick={() => { setShowForm((v) => !v); setShowClientForm(false); if (showForm) { setEditing(null); setForm(empty); setSelectedEquipments([]); } }}>{showForm ? "Fechar pedido" : "Cadastrar pedido"}</button>
       </div>
 
       {showForm && <>
         <h2 className="card-title" style={{ marginTop: 26 }}>{editing ? "Editar pedido" : "Novo pedido"}</h2>
         <div className="form-grid">
-          <SelectField label="Cliente" value={form.client_id} onChange={(v) => set("client_id", v)}><option value="">Selecione</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</SelectField>
+          <div className="field"><label htmlFor="order-client-select">Cliente</label><select id="order-client-select" className="input" value={form.client_id} onChange={(event) => set("client_id", event.target.value)}><option value="">Selecione</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select><button type="button" className="btn btn-blue" style={{ marginTop: 10 }} disabled={savingOrder || creatingClient} aria-expanded={showClientForm} aria-controls="order-new-client" onClick={() => { setShowClientForm((current) => !current); setMsg(""); }}> {showClientForm ? "Fechar cadastro de cliente" : "+ Cadastrar cliente"}</button></div>
+          {showClientForm && <div className="full-field" id="order-new-client"><p style={{ color: "#94a3b8", lineHeight: 1.5 }}>Cadastre o cliente aqui. Os dados do pedido serão mantidos e o cliente ficará selecionado após salvar.</p><Pessoas title="Cadastrar cliente" table="clients" kind="cliente" search="" profile={profile} onCreated={clientCreated} onCancel={() => setShowClientForm(false)} onBusyChange={setCreatingClient} /></div>}
           <SelectField label="Tipo de item" value={form.item_type} onChange={(v) => { set("item_type", v); setSelectedEquipments([]); }}><option value="produto">Produto</option><option value="equipamento">Equipamento</option></SelectField>
           {form.item_type === "produto" ? <SelectField label="Produto" value={form.item_id} onChange={(v) => set("item_id", v)}><option value="">Selecione</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</SelectField> : <div className="field full-field"><label>Equipamentos selecionáveis</label><div className="mini-grid">{EQUIPAMENTOS.map((e) => <label key={e} className="check-row"><input type="checkbox" checked={selectedEquipments.includes(e)} onChange={() => toggleEquipment(e)} />{e}</label>)}</div></div>}
           <Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} />
@@ -2872,7 +2899,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           <TextArea label="Observações" value={form.notes} onChange={(v) => set("notes", v)} />
         </div>
         {form.item_type === "equipamento" && selectedEquipments.length > 0 && <p style={{ color: "#94a3b8", marginTop: 16 }}>{selectedEquipments.length} equipamento(s) selecionado(s). Ao salvar, será criado um pedido para cada equipamento.</p>}
-        <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={savingOrder}>{savingOrder ? "Salvando..." : editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" disabled={savingOrder} onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowForm(false); }}>Cancelar</button></div>
+        <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={savingOrder || showClientForm || creatingClient}>{savingOrder ? "Salvando..." : editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" disabled={savingOrder || creatingClient} onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowClientForm(false); setShowForm(false); }}>Cancelar</button></div>
       </>}
       {msg && <Message text={msg} />}
     </section>
