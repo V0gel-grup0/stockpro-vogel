@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 import {
   canWriteWeeklyReport, validateWeeklyReport, weeklyReportScope, WEEKLY_REPORT_READ_ROLES,
+  weeklyReportPeriod,
 } from "@/lib/weekly-report-policy";
+import { buildWeeklyReportsXml } from "@/lib/weekly-report-xml";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,11 +32,24 @@ async function ensureTable() {
   `);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const authorization = await authorizeApi(WEEKLY_REPORT_READ_ROLES);
     if ("response" in authorization) return authorization.response;
     const scope = weeklyReportScope(authorization.profile)!;
+    const params = new URL(request.url).searchParams;
+    const xml = params.get("format") === "xml";
+    const id = xml ? params.get("id") : null;
+    const author = xml ? params.get("author") : null;
+    const week = xml ? params.get("week") : null;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (id !== null && !uuid.test(id) || author !== null && !uuid.test(author)) {
+      return NextResponse.json({ sucesso: false, erro: "Filtro de relatório inválido." }, { status: 400 });
+    }
+    if (week !== null) {
+      try { if (weeklyReportPeriod(week).weekStart !== week) throw new Error(); }
+      catch { return NextResponse.json({ sucesso: false, erro: "Semana inválida." }, { status: 400 }); }
+    }
     await ensureTable();
     const rows = await prisma.$queryRawUnsafe<any[]>(
       `SELECT r.id, r.author_id, r.week_start, r.week_end, r.content, r.status,
@@ -44,10 +59,22 @@ export async function GET() {
          JOIN profiles p ON p.id = r.author_id
         WHERE ($1::uuid IS NULL OR r.author_id = $1::uuid)
           AND ($2::boolean = false OR r.status = 'submitted')
+          AND ($3::uuid IS NULL OR r.id = $3::uuid)
+          AND ($4::uuid IS NULL OR r.author_id = $4::uuid)
+          AND ($5::date IS NULL OR r.week_start = $5::date)
         ORDER BY r.week_start DESC, r.updated_at DESC
         LIMIT 200`,
-      scope.authorId, scope.submittedOnly
+      scope.authorId, scope.submittedOnly, id, author, week
     );
+    if (xml) {
+      if (id && !rows.length) return NextResponse.json({ sucesso: false, erro: "Relatório não encontrado ou sem permissão." }, { status: 404 });
+      const filename = id ? `relatorio-semanal-${id}.xml` : `relatorios-semanais${week ? "-" + week : ""}.xml`;
+      return new Response(buildWeeklyReportsXml(rows), { headers: {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+      } });
+    }
     return NextResponse.json({ sucesso: true, reports: toJsonSafe(rows) },
       { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
@@ -94,4 +121,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ sucesso: false, erro: "Não foi possível salvar o relatório semanal." }, { status: 500 });
   }
 }
-

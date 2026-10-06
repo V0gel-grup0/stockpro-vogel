@@ -30,6 +30,9 @@ export default function WeeklyReports({ profile }: { profile: Profile }) {
   const [loadError, setLoadError] = useState("");
   const [filterWeek, setFilterWeek] = useState("");
   const [filterAuthor, setFilterAuthor] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
+  const downloadingRef = useRef(false);
   const savingRef = useRef(false);
   const dirtyRef = useRef(false);
   const weekRef = useRef(weekStart);
@@ -109,6 +112,39 @@ export default function WeeklyReports({ profile }: { profile: Profile }) {
     }
   }
 
+  async function downloadXml(reportId?: string) {
+    if (downloadingRef.current) return;
+    downloadingRef.current = true;
+    setDownloading(true);
+    setDownloadMessage("");
+    try {
+      const params = new URLSearchParams({ format: "xml" });
+      if (reportId) params.set("id", reportId);
+      else {
+        if (filterWeek) params.set("week", filterWeek);
+        if (filterAuthor) params.set("author", filterAuthor);
+      }
+      const response = await fetch(`/api/weekly-reports?${params}`, { cache: "no-store" });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.erro || "Não foi possível baixar o XML.");
+      }
+      if (!response.headers.get("Content-Type")?.includes("application/xml")) throw new Error("Resposta inválida. Entre novamente no sistema e tente baixar o XML.");
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = reportId ? `relatorio-semanal-${reportId}.xml` : `relatorios-semanais${filterWeek ? "-" + filterWeek : ""}.xml`;
+      document.body.appendChild(anchor);
+      try { anchor.click(); } finally { anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 30_000); }
+      setDownloadMessage("XML gerado. Confira os downloads do seu navegador.");
+    } catch (error) {
+      setDownloadMessage(error instanceof Error ? error.message : "Não foi possível baixar o XML.");
+    } finally {
+      downloadingRef.current = false;
+      setDownloading(false);
+    }
+  }
+
   const authors = Array.from(new Map(reports.map((report) =>
     [report.author_id, report.author_name])).entries())
     .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
@@ -174,6 +210,11 @@ export default function WeeklyReports({ profile }: { profile: Profile }) {
             onClick={() => { setFilterWeek(""); setFilterAuthor(""); }}>Limpar filtros</button>
         </div>
       </div>
+      <div className="form-actions" style={{ marginBottom: 16 }}>
+        <button type="button" className="btn btn-blue" disabled={loading || Boolean(loadError) || downloading || visibleReports.length === 0}
+          onClick={() => void downloadXml()}>{downloading ? "Gerando XML..." : "Baixar XML da lista"}</button>
+      </div>
+      {downloadMessage && <p role="status">{downloadMessage}</p>}
       {loading && <p role="status">Carregando relatórios...</p>}
       {loadError && <div role="alert"><p>{loadError}</p><button type="button" className="btn btn-gray" onClick={() => load()}>Tentar novamente</button></div>}
       {!loading && !loadError && visibleReports.length === 0 && <p className="muted">Nenhum relatório encontrado.</p>}
@@ -192,6 +233,9 @@ export default function WeeklyReports({ profile }: { profile: Profile }) {
           <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", lineHeight: 1.7 }}>
             {report.content || "Rascunho ainda sem texto."}
           </p>
+          <div className="form-actions"><button type="button" className="btn btn-blue" disabled={downloading || Boolean(saving)}
+            aria-label={`Baixar XML do relatório de ${report.author_name}, semana de ${dateLabel(report.week_start)}`}
+            onClick={() => void downloadXml(report.id)}>Baixar XML</button></div>
           {report.status === "draft" && report.author_id === profile.id &&
             <button type="button" className="btn btn-blue" disabled={Boolean(saving)}
               onClick={() => selectWeek(dateOnly(report.week_start))}>Continuar rascunho</button>}
@@ -201,4 +245,3 @@ export default function WeeklyReports({ profile }: { profile: Profile }) {
     </section>
   </>;
 }
-
