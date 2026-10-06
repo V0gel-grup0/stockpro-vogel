@@ -16,8 +16,11 @@ type Item = {
   id: string;
   equipment_name: string;
   quantity: number;
-  technician_id: string;
-  technician_name: string;
+  technician_id: string | null;
+  technician_name: string | null;
+  source_order_id?: string | null;
+  order_number?: string | number | null;
+  client_name?: string | null;
   stage: string;
   due_date?: string | null;
   notes?: string | null;
@@ -123,7 +126,7 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
     setForm({
       equipment_name: item.equipment_name,
       quantity: String(item.quantity || 1),
-      technician_id: item.technician_id,
+      technician_id: item.technician_id || "",
       due_date: item.due_date ? String(item.due_date).slice(0, 10) : "",
       notes: item.notes || "",
     });
@@ -225,7 +228,7 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
           <p style={{ color: "#94a3b8", margin: "-4px 0 16px" }}>
             {profile.role === "tecnico"
               ? "Aqui aparecem somente as montagens designadas para você."
-              : "Distribua as montagens entre os montadores e acompanhe o andamento."}
+              : "Pedidos CELT entram automaticamente em A fazer. Defina o montador e acompanhe o andamento."}
           </p>
         </div>
         {canAdmin && (
@@ -372,7 +375,8 @@ export default function AssemblyWorkFunnel({ profile }: { profile: Profile }) {
                   <summary className="crm-record-list-summary">
                     <strong>{item.equipment_name}</strong>
                     <small>Qtd: {item.quantity}</small>
-                    <small>Montador: {item.technician_name}</small>
+                    <small>Montador: {item.technician_name || "A definir"}</small>
+                    {item.source_order_id && <small>Pedido #{item.order_number || "—"} · {item.client_name || "Cliente"}</small>}
                     <small style={overdue ? { color: "#fca5a5", fontWeight: 800 } : undefined}>
                       {overdue ? "ATRASADA — " : ""}{formatDate(item.due_date)}
                     </small>
