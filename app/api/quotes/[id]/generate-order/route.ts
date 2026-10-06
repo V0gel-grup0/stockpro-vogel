@@ -6,6 +6,7 @@ import { QUOTE_ROLES, canGenerateOrder, isQuoteStatus } from "@/lib/quote-policy
 import { QuoteRequestError, UUID_PATTERN, quoteIdWhere } from "@/lib/quote-server";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
+import { ensureOrderWorkflowTables, syncOrderWorkflow, OrderWorkflowError } from "@/lib/order-workflow-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,6 +97,7 @@ export async function POST(_request: Request, context: Context) {
       : `${quote.quote_items.length} itens`;
     const legacyQuantity = singleItem && Number.isInteger(firstQuantity) ? firstQuantity : 1;
 
+    await ensureOrderWorkflowTables();
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.orders.create({
         data: {
@@ -156,12 +158,17 @@ export async function POST(_request: Request, context: Context) {
           metadata: { order_id: created.id, order_number: String(created.order_number), item_count: quote.quote_items.length },
         },
       });
+      await syncOrderWorkflow(tx, created, {
+        opportunityId: quote.opportunity_id,
+        items: quote.quote_items.map((item) => ({ key: item.id, item_type: item.item_type, item_name: item.item_name, quantity: Number(item.quantity) })),
+      });
       return created;
-    });
+    }, { timeout: 30_000 });
 
     return NextResponse.json({ sucesso: true, order: toJsonSafe(order) }, { status: 201 });
   } catch (error) {
     if (error instanceof QuoteRequestError) return errorResponse(error.message, error.status);
+    if (error instanceof OrderWorkflowError) return errorResponse(error.message, error.status);
     console.error("Erro ao gerar pedido pelo orçamento:", error);
     return errorResponse("Erro ao gerar pedido pelo orçamento.", 500);
   }
