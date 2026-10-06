@@ -3,6 +3,7 @@ import { getAuthenticatedProfile } from "@/lib/auth";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
+import { ensureAssemblyWorkTable as ensureTable } from "@/lib/assembly-work-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,30 +25,6 @@ function text(value: unknown) {
 function parseStage(value: unknown): Stage | null {
   const stage = text(value) as Stage;
   return STAGES.includes(stage) ? stage : null;
-}
-
-async function ensureTable() {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS crm_assembly_work (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      equipment_name TEXT NOT NULL,
-      quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-      technician_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
-      stage TEXT NOT NULL DEFAULT 'todo',
-      due_date DATE,
-      notes TEXT NOT NULL DEFAULT '',
-      created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      CONSTRAINT crm_assembly_work_stage_check
-        CHECK (stage IN ('todo','assembling','waiting_parts','done'))
-    )
-  `);
-
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS crm_assembly_work_technician_idx
-      ON crm_assembly_work(technician_id, stage, due_date)
-  `);
 }
 
 async function technicianExists(id: string) {
@@ -78,10 +55,13 @@ export async function GET() {
       ? await prisma.$queryRawUnsafe<any[]>(`
           SELECT w.*,
                  p.name AS technician_name,
-                 c.name AS created_by_name
+                 c.name AS created_by_name,
+                 o.order_number, cl.name AS client_name
             FROM crm_assembly_work w
-            JOIN profiles p ON p.id = w.technician_id
+       LEFT JOIN profiles p ON p.id = w.technician_id
        LEFT JOIN profiles c ON c.id = w.created_by
+       LEFT JOIN orders o ON o.id = w.source_order_id
+       LEFT JOIN clients cl ON cl.id = o.client_id
         ORDER BY
           CASE w.stage
             WHEN 'todo' THEN 1
@@ -97,10 +77,13 @@ export async function GET() {
           `
           SELECT w.*,
                  p.name AS technician_name,
-                 c.name AS created_by_name
+                 c.name AS created_by_name,
+                 o.order_number, cl.name AS client_name
             FROM crm_assembly_work w
-            JOIN profiles p ON p.id = w.technician_id
+       LEFT JOIN profiles p ON p.id = w.technician_id
        LEFT JOIN profiles c ON c.id = w.created_by
+       LEFT JOIN orders o ON o.id = w.source_order_id
+       LEFT JOIN clients cl ON cl.id = o.client_id
            WHERE w.technician_id = $1::uuid
         ORDER BY
           CASE w.stage
@@ -193,6 +176,10 @@ export async function PATCH(request: Request) {
     if (!UUID_RE.test(id) || !stage) {
       return errorResponse("Montagem ou etapa inválida.", 400);
     }
+    if (stage !== "todo") {
+      const unassigned = await prisma.$queryRawUnsafe<any[]>(`SELECT id FROM crm_assembly_work WHERE id = $1::uuid AND technician_id IS NULL`, id);
+      if (unassigned.length) return errorResponse("Defina o montador antes de iniciar a montagem.", 400);
+    }
 
     const rows = canAdministrate(profile.role)
       ? await prisma.$queryRawUnsafe<any[]>(
@@ -250,6 +237,10 @@ export async function PUT(request: Request) {
     const notes = text(body?.notes);
 
     if (!UUID_RE.test(id)) return errorResponse("Montagem inválida.", 400);
+    const linked = await prisma.$queryRawUnsafe<any[]>(`SELECT equipment_name, quantity FROM crm_assembly_work WHERE id = $1::uuid AND source_order_id IS NOT NULL`, id);
+    if (linked.length && (linked[0].equipment_name !== equipmentName || linked[0].quantity !== quantity)) {
+      return errorResponse("Altere equipamento e quantidade pelo pedido de origem. Aqui você pode definir montador, data e observações.", 409);
+    }
     if (!EQUIPMENT_CATALOG.includes(equipmentName as (typeof EQUIPMENT_CATALOG)[number])) {
       return errorResponse("Equipamento inválido.", 400);
     }
