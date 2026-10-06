@@ -11,6 +11,7 @@ import { mobilePageLabel } from "@/lib/mobile-navigation";
 import WeeklyReports from "@/components/WeeklyReports";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import { calculateOrderValues } from "@/lib/order-pricing";
+import { isLowStockProduct } from "@/lib/dashboard-navigation";
 import {
   canDeleteAssembly,
   canDeleteComponent,
@@ -468,6 +469,7 @@ export default function StockProApp() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [page, setPage] = useState("Dashboard");
+  const [productsLowStockOnly, setProductsLowStockOnly] = useState(false);
   const [menuOpen, setMenuOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -585,9 +587,10 @@ export default function StockProApp() {
     navigateToPage("Orçamentos");
   }
 
-  function navigateToPage(nextPage: string) {
+  function navigateToPage(nextPage: string, options?: { lowStockOnly?: boolean }) {
     if (!profile || !menuByRole[profile.role]?.includes(nextPage)) return;
     setPage(nextPage);
+    setProductsLowStockOnly(nextPage === "Produtos" && Boolean(options?.lowStockOnly));
     setMobileMenuOpen(false);
     setNotificationsOpen(false);
     setSearch("");
@@ -661,8 +664,8 @@ export default function StockProApp() {
           </div>
         </aside>}
         <main ref={mainRef} className="main-content" tabIndex={-1} aria-label={page}>
-          {page === "Dashboard" && <Dashboard profile={profile} />}
-          {page === "Produtos" && <Produtos search={search} profile={profile} />}
+          {page === "Dashboard" && <Dashboard profile={profile} onNavigate={navigateToPage} />}
+          {page === "Produtos" && <Produtos search={search} profile={profile} lowStockOnly={productsLowStockOnly} onLowStockChange={setProductsLowStockOnly} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} />}
@@ -691,9 +694,12 @@ function Field({ label, value, onChange, type = "text", onBlur, disabled = false
 function SelectField({ label, value, onChange, children }: { label: string; value: string; children?: ReactNode; onChange: (value: string) => void }) { return <div className="field"><label>{label}</label><select className="input" value={value} onChange={(e) => onChange(e.target.value)}>{children}</select></div>; }
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <div className="field full-field"><label>{label}</label><textarea className="input" value={value} onChange={(e) => onChange(e.target.value)} /></div>; }
 function Message({ text }: { text: string }) { const success = text.toLowerCase().includes("sucesso") || text.toLowerCase().includes("excluído") || text.toLowerCase().includes("atualizado"); return <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: "#020617", color: success ? "#4ade80" : "#f87171", fontWeight: 800, border: "1px solid rgba(148,163,184,.25)" }}>{text}</div>; }
-function StatCard({ label, value, color }: { label: string; value: string; color?: string; key?: any }) { return <div className="stat-card"><span>{label}</span><strong style={{ color }}>{value}</strong></div>; }
+function StatCard({ label, value, color, onClick, destination }: { label: string; value: string; color?: string; key?: any; onClick?: () => void; destination?: string }) {
+  const content = <><span>{label}</span><strong style={{ color }}>{value}</strong>{onClick && <small className="stat-card-action">Abrir {destination || label} →</small>}</>;
+  return onClick ? <button type="button" className="stat-card stat-card-link" onClick={onClick} aria-label={`${label}: ${value}. Abrir ${destination || label}`}>{content}</button> : <div className="stat-card">{content}</div>;
+}
 
-function Dashboard({ profile }: { profile: Profile }) {
+function Dashboard({ profile, onNavigate }: { profile: Profile; onNavigate: (page: string, options?: { lowStockOnly?: boolean }) => void }) {
   const [counts, setCounts] = useState({ products: 0, clients: 0, orders: 0, pending: 0, low: 0 });
   useEffect(() => { (async () => {
     try {
@@ -704,7 +710,16 @@ function Dashboard({ profile }: { profile: Profile }) {
       console.error("Erro ao carregar dashboard:", error);
     }
   })(); }, []);
-  return <><Title title="Dashboard" desc={`Resumo geral do sistema. Bem-vindo, ${profile.name || "usuário"}.`} /><div className="reports-grid"><StatCard label="Produtos" value={String(counts.products)} /><StatCard label="Clientes" value={String(counts.clients)} /><StatCard label="Pedidos" value={String(counts.orders)} /><StatCard label="Cadastros pendentes" value={String(counts.pending)} color="#facc15" /><StatCard label="Estoque baixo" value={String(counts.low)} color="#f87171" /><StatCard label="Acesso" value={formatRole(profile.role)} /></div></>;
+  const cards = [
+    { label: "Produtos", value: String(counts.products), destination: "Produtos" },
+    { label: "Clientes", value: String(counts.clients), destination: "Clientes" },
+    { label: "Pedidos", value: String(counts.orders), destination: "Pedidos" },
+    { label: "Cadastros pendentes", value: String(counts.pending), destination: "Análise de Cadastros", color: "#facc15" },
+    { label: "Estoque baixo", value: String(counts.low), destination: "Produtos", color: "#f87171", lowStockOnly: true },
+    { label: "Acesso", value: formatRole(profile.role), destination: "Meu Perfil" },
+  ];
+  return <><Title title="Dashboard" desc={`Resumo geral do sistema. Bem-vindo, ${profile.name || "usuário"}. Clique nos indicadores para abrir a área correspondente.`} /><div className="reports-grid">{cards.map((card) => <StatCard key={card.label} label={card.label} value={card.value} color={card.color} destination={card.destination}
+    onClick={menuByRole[profile.role]?.includes(card.destination) ? () => onNavigate(card.destination, { lowStockOnly: Boolean(card.lowStockOnly) }) : undefined} />)}</div></>;
 }
 
 function CRM({
@@ -1942,7 +1957,7 @@ function CRM({
   </>;
 }
 
-function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
+function Produtos({ search, profile, lowStockOnly, onLowStockChange }: SearchProps & { profile: Profile; lowStockOnly: boolean; onLowStockChange: (value: boolean) => void }) {
   const empty = { name: "", sku: "", category: "Lâmpadas dimerizáveis", subcategory: "E27", cost_price: "", sale_price: "", quantity: "", min_stock: "", supplier_id: "", description: "" };
   const [form, setForm] = useState(empty);
   const [items, setItems] = useState<AnyRow[]>([]);
@@ -2059,9 +2074,9 @@ function Produtos({ search, profile }: SearchProps & { profile: Profile }) {
     setMsg("Produto excluído com sucesso.");
   }
   const subcats = CATEGORIAS_REVENDA.find((c) => c.category === form.category)?.subcategories || [];
-  const filtered = items.filter((i) => textMatch(i, search));
+  const filtered = items.filter((i) => textMatch(i, search) && (!lowStockOnly || isLowStockProduct(i)));
  
- return <><Title title="Produtos" desc="Produtos para revenda: iluminação, dimmer, soquetes e eletrônicos gerais." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">Produtos cadastrados</h2><div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
+ return <><Title title="Produtos" desc="Produtos para revenda: iluminação, dimmer, soquetes e eletrônicos gerais." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">{lowStockOnly ? "Produtos com estoque baixo" : "Produtos cadastrados"}</h2><SelectField label="Ver estoque" value={lowStockOnly ? "baixo" : "todos"} onChange={(value) => onLowStockChange(value === "baixo")}><option value="todos">Todos os produtos</option><option value="baixo">No mínimo ou abaixo do mínimo</option></SelectField>{filtered.length === 0 && <p className="muted">Nenhum produto encontrado neste filtro.</p>}<div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
 }
 
 function Pessoas({ title, table, kind, search, profile, onCreated, onCancel, onBusyChange }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile; onCreated?: (client: AnyRow) => void; onCancel?: () => void; onBusyChange?: (busy: boolean) => void } & SearchProps) {
