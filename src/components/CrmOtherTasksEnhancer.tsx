@@ -119,7 +119,10 @@ function hideInternalOtherClient() {
   document.querySelectorAll<HTMLSelectElement>("select").forEach((select) => {
     Array.from(select.options).forEach((option) => {
       if (option.textContent?.trim() === INTERNAL_OTHER_CLIENT) {
-        option.remove();
+        // React owns these options. Removing one breaks reconciliation when
+        // the quote's client search filters the list on the next keystroke.
+        option.hidden = true;
+        option.disabled = true;
       }
     });
   });
@@ -238,7 +241,10 @@ export default function CrmOtherTasksEnhancer() {
         if (clientSelect) {
           ensureOption(clientSelect, OTHER_CLIENT_TOKEN, "Outros");
           Array.from(clientSelect.options).forEach((option) => {
-            if (option.textContent?.trim() === INTERNAL_OTHER_CLIENT) option.remove();
+            if (option.textContent?.trim() === INTERNAL_OTHER_CLIENT) {
+              option.hidden = true;
+              option.disabled = true;
+            }
           });
 
           if (!clientSelect.dataset.crmOtherBound) {
