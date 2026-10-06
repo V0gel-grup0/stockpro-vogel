@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 
 type Profile = { id: string; role: string; name?: string; email?: string };
@@ -115,11 +116,13 @@ export default function QuotesModule({
   search,
   initialContext,
   onContextConsumed,
+  renderClientRegistration,
 }: {
   profile: Profile;
   search: string;
   initialContext: QuoteContext;
   onContextConsumed: () => void;
+  renderClientRegistration?: (callbacks: { onCreated: (client: Row) => void; onCancel: () => void; onBusyChange: (busy: boolean) => void }) => ReactNode;
 }) {
   const [quotes, setQuotes] = useState<Row[]>([]);
   const [clients, setClients] = useState<Row[]>([]);
@@ -138,6 +141,8 @@ export default function QuotesModule({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
 
   const responsibleOptions = useMemo(
     () =>
@@ -153,6 +158,7 @@ export default function QuotesModule({
     const query = clientSearch.trim().toLowerCase();
     return clients
       .filter((client) => UUID_RE.test(String(client.id || "")))
+      .filter((client) => client.name !== "__CRM_OUTROS__")
       .filter((client) => !query || String(client.name || "").toLowerCase().includes(query) || String(client.document || "").includes(query))
       .slice(0, 50);
   }, [clients, clientSearch]);
@@ -254,6 +260,8 @@ export default function QuotesModule({
   }
 
   function openNew() {
+    if (creatingClient || saving) return;
+    setShowClientForm(false);
     setSelected(null);
     setEditingId(null);
     setForm(emptyForm(profile.id));
@@ -263,6 +271,8 @@ export default function QuotesModule({
   }
 
   function openEdit(quote: Row) {
+    if (creatingClient || saving) return;
+    setShowClientForm(false);
     setEditingId(quote.id);
     setForm({
       client_id: quote.client_id || "",
@@ -286,6 +296,19 @@ export default function QuotesModule({
     setFormOpen(true);
     setSelected(null);
     setMessage("");
+  }
+
+  function updateFormField(field: Exclude<keyof ReturnType<typeof emptyForm>, "items">, value: string) {
+    setForm((current) => ({ ...current, [field]: value, ...(field === "client_id" ? { opportunity_id: "" } : {}) }));
+  }
+
+  function clientCreated(client: Row) {
+    setClients((current) => [...current.filter((item) => item.id !== client.id), client]
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")));
+    updateFormField("client_id", String(client.id));
+    setClientSearch("");
+    setShowClientForm(false);
+    setMessage("Cliente cadastrado e selecionado. Os dados do orçamento foram mantidos.");
   }
 
   function updateItem(index: number, field: keyof ItemForm, value: string) {
@@ -313,6 +336,7 @@ export default function QuotesModule({
   }
 
   async function save() {
+    if (saving || showClientForm || creatingClient) return;
     setSaving(true);
     setMessage("");
     try {
@@ -431,13 +455,14 @@ export default function QuotesModule({
       </>}
 
       {formOpen && <section className="card quote-form no-print">
-        <div className="quote-section-heading"><h2 className="card-title">{editingId ? "Editar orçamento" : "Novo orçamento"}</h2><button className="btn btn-gray" onClick={() => { setFormOpen(false); setEditingId(null); }}>Cancelar</button></div>
+        <div className="quote-section-heading"><h2 className="card-title">{editingId ? "Editar orçamento" : "Novo orçamento"}</h2><button className="btn btn-gray" disabled={saving || creatingClient} onClick={() => { setFormOpen(false); setEditingId(null); setShowClientForm(false); }}>Cancelar</button></div>
         <div className="form-grid">
           <div className="field full-field"><label>Pesquisar cliente</label><input className="input" placeholder="Nome ou documento" value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} /></div>
-          <div className="field"><label>Cliente *</label><select className="input" value={form.client_id} onChange={(event) => setForm((current) => ({ ...current, client_id: event.target.value, opportunity_id: "" }))}><option value="">Selecione</option>{clientOptions.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></div>
-          <div className="field"><label>Oportunidade CRM</label><select className="input" value={form.opportunity_id} onChange={(event) => setForm((current) => ({ ...current, opportunity_id: event.target.value }))}><option value="">Sem oportunidade</option>{clientOpportunities.map((item) => <option key={item.id} value={item.id}>{item.title || "Sem título"}</option>)}</select></div>
-          <div className="field"><label>Responsável *</label><select className="input" value={form.responsible_id} onChange={(event) => setForm((current) => ({ ...current, responsible_id: event.target.value }))}><option value="">Selecione</option>{responsibleOptions.map((item) => <option key={item.id} value={item.id}>{item.name || item.email} — {item.role}</option>)}</select></div>
-          <div className="field"><label>Validade *</label><input className="input" type="date" value={form.valid_until} onChange={(event) => setForm((current) => ({ ...current, valid_until: event.target.value }))} /></div>
+          <div className="field"><label>Cliente *</label><select className="input" value={form.client_id} onChange={(event) => updateFormField("client_id", event.currentTarget.value)}><option value="">Selecione</option>{clientOptions.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select>{renderClientRegistration && <button type="button" className="btn btn-blue" style={{ marginTop: 10 }} disabled={saving || creatingClient} aria-expanded={showClientForm} aria-controls="quote-new-client" onClick={() => setShowClientForm((current) => !current)}>{showClientForm ? "Fechar cadastro de cliente" : "+ Cadastrar cliente"}</button>}</div>
+          {showClientForm && renderClientRegistration && <div className="full-field" id="quote-new-client"><p>Cadastre o cliente aqui. Os dados do orçamento serão mantidos e o cliente ficará selecionado após salvar.</p>{renderClientRegistration({ onCreated: clientCreated, onCancel: () => setShowClientForm(false), onBusyChange: setCreatingClient })}</div>}
+          <div className="field"><label>Oportunidade CRM</label><select className="input" value={form.opportunity_id} onChange={(event) => updateFormField("opportunity_id", event.currentTarget.value)}><option value="">Sem oportunidade</option>{clientOpportunities.map((item) => <option key={item.id} value={item.id}>{item.title || "Sem título"}</option>)}</select></div>
+          <div className="field"><label>Responsável *</label><select className="input" value={form.responsible_id} onChange={(event) => updateFormField("responsible_id", event.currentTarget.value)}><option value="">Selecione</option>{responsibleOptions.map((item) => <option key={item.id} value={item.id}>{item.name || item.email} — {item.role}</option>)}</select></div>
+          <div className="field"><label>Validade *</label><input className="input" type="date" value={form.valid_until} onChange={(event) => updateFormField("valid_until", event.currentTarget.value)} /></div>
           <div className="field">
             <label>Condição de pagamento</label>
             <select
@@ -464,16 +489,11 @@ export default function QuotesModule({
               maxLength={500}
               placeholder="Ou digite a condição de pagamento"
               value={form.payment_terms}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  payment_terms: event.target.value,
-                }))
-              }
+              onChange={(event) => updateFormField("payment_terms", event.currentTarget.value)}
               style={{ marginTop: 8 }}
             />
           </div>
-          <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></div>
+          <div className="field full-field"><label>Observações</label><textarea className="input" maxLength={5000} value={form.notes} onChange={(event) => updateFormField("notes", event.currentTarget.value)} /></div>
         </div>
         <div className="quote-section-heading"><h3>Itens do orçamento</h3><button className="btn btn-blue" type="button" onClick={() => setForm((current) => ({ ...current, items: [...current.items, emptyItem()] }))}>+ Adicionar item</button></div>
         <div className="quote-items-editor">
@@ -491,12 +511,12 @@ export default function QuotesModule({
           </article>)}
         </div>
         <div className="quote-financial-editor">
-          <div className="field"><label>Desconto geral</label><input className="input" type="number" min="0" step="0.01" value={form.discount_value} onChange={(event) => setForm((current) => ({ ...current, discount_value: event.target.value }))} /></div>
-          <div className="field"><label>Frete</label><input className="input" type="number" min="0" step="0.01" value={form.shipping_value} onChange={(event) => setForm((current) => ({ ...current, shipping_value: event.target.value }))} /></div>
+          <div className="field"><label>Desconto geral</label><input className="input" type="number" min="0" step="0.01" value={form.discount_value} onChange={(event) => updateFormField("discount_value", event.currentTarget.value)} /></div>
+          <div className="field"><label>Frete</label><input className="input" type="number" min="0" step="0.01" value={form.shipping_value} onChange={(event) => updateFormField("shipping_value", event.currentTarget.value)} /></div>
           <div><small>Subtotal estimado</small><strong>{money(totals.subtotal)}</strong></div>
           <div className="quote-grand-total"><small>TOTAL</small><strong>{money(totals.total)}</strong></div>
         </div>
-        <div className="form-actions"><button className="btn btn-green" disabled={saving} onClick={save}>{saving ? "Salvando..." : "Salvar orçamento"}</button></div>
+        <div className="form-actions"><button className="btn btn-green" disabled={saving || showClientForm || creatingClient} onClick={save}>{saving ? "Salvando..." : "Salvar orçamento"}</button></div>
       </section>}
 
       {selected && <QuoteDetail quote={selected} profile={profile} manageable={canManage(selected)} onBack={() => setSelected(null)} onEdit={() => openEdit(selected)} onStatus={(status) => changeStatus(selected, status)} onDelete={() => deleteQuote(selected)} onGenerateOrder={() => generateOrder(selected)} />}
