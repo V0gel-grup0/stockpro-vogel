@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { validateMovementInvoice } from "@/lib/movement-invoice-policy";
 import { ensureMovementInvoices, saveMovementInvoice, type MovementInvoice } from "@/lib/movement-invoice-server";
 import { toJsonSafe } from "@/lib/prisma-json";
+import { exitMountedEquipment } from "@/lib/equipment-exit-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,6 +100,8 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
 async function orderExit(body: Record<string, any>, profileId: string, invoice: MovementInvoice | null) {
   const orderId = text(body.order_id); if (!orderId) throw new Error("Selecione o pedido para gerar a saída.");
   return prisma.$transaction(async (tx) => {
+    // Serialize exits for the same order before checking its current status.
+    await tx.$queryRaw`SELECT id FROM orders WHERE id = ${orderId}::uuid FOR UPDATE`;
     const order = await tx.orders.findUnique({ where: { id: orderId } }); if (!order) throw new Error("Pedido não encontrado.");
     if (["enviado", "recebido", "finalizado", "cancelado"].includes(String(order.status || "").toLowerCase())) {
       throw new Error("Este pedido não está disponível para uma nova saída de estoque.");
@@ -142,11 +145,7 @@ async function orderExit(body: Record<string, any>, profileId: string, invoice: 
 
         if (item.item_type === "equipment") {
           if (!Number.isInteger(quantity)) throw new Error(`A quantidade do equipamento ${item.item_name} deve ser inteira.`);
-          const mounted = await tx.mounted_equipments.findUnique({ where: { equipment_name: item.item_name } });
-          const available = Number(mounted?.quantity || 0);
-          if (!mounted || available < quantity) throw new Error(`Estoque insuficiente de equipamento montado: ${item.item_name}. Disponível: ${available}. Necessário: ${quantity}.`);
-          await tx.mounted_equipments.update({ where: { id: mounted.id }, data: { quantity: available - quantity, updated_at: new Date() } });
-          movements.push(await tx.movements.create({ data: { type: "saida", item_type: "equipamento", item_kind: "equipamento", item_id: null, product_id: null, item_name: item.item_name, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${item.item_name}`, created_by: profileId || null, order_id: order.id } }));
+          movements.push(...await exitMountedEquipment(tx, item.item_name, quantity, { orderId: order.id, orderNumber: order.order_number, profileId, notes: text(body.notes) }));
         }
       }
 
@@ -162,9 +161,10 @@ async function orderExit(body: Record<string, any>, profileId: string, invoice: 
       if (Number(product.quantity) < quantity) throw new Error(`Estoque insuficiente. Disponível: ${product.quantity}. Pedido: ${quantity}.`);
       await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) - quantity, updated_at: new Date() } });
     } else {
-      const mounted = await tx.mounted_equipments.findUnique({ where: { equipment_name: order.equipment_name } });
-      const available = Number(mounted?.quantity || 0); if (!mounted || available < quantity) throw new Error(`Estoque insuficiente de equipamento montado: ${order.equipment_name}. Disponível: ${available}. Necessário: ${quantity}.`);
-      await tx.mounted_equipments.update({ where: { id: mounted.id }, data: { quantity: available - quantity, updated_at: new Date() } });
+      const movements = await exitMountedEquipment(tx, order.equipment_name || "", quantity, { orderId: order.id, orderNumber: order.order_number, profileId, notes: text(body.notes) });
+      await tx.orders.update({ where: { id: order.id }, data: { status: "enviado", updated_at: new Date() } });
+      await saveMovementInvoice(tx, invoice, profileId, movements);
+      return { ...movements[0], movements };
     }
     const movement = await tx.movements.create({ data: { type: "saida", item_type: itemType === "produto" ? "produto" : "equipamento", item_kind: itemType, item_id: itemType === "produto" ? order.item_id : null, product_id: itemType === "produto" ? order.item_id : null, item_name: itemName, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${itemName}`, created_by: profileId || null, order_id: order.id } });
     await tx.orders.update({ where: { id: order.id }, data: { status: "enviado", updated_at: new Date() } });
@@ -206,4 +206,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao salvar movimentação." }, { status: 500 });
   }
 }
-
