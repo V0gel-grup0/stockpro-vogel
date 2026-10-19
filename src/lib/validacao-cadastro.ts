@@ -203,7 +203,7 @@ export function validarCadastroPessoa(
   const no_number = Boolean(input.no_number);
   const neighborhood = normalizarTexto(input.neighborhood);
 
-  // Bloqueios mantidos: nome, telefone e cidade.
+  // Bloqueios mantidos: nome e telefone. Endereço é opcional.
   if (!validarNomeCompleto(name, document)) {
     return {
       valido: false,
@@ -221,14 +221,7 @@ export function validarCadastroPessoa(
     };
   }
 
-  if (!textoValido(city, 2)) {
-    return {
-      valido: false,
-      erro: "Informe uma cidade válida.",
-    };
-  }
-
-  // CPF/CNPJ, CEP, rua, bairro e número ficam informativos e não bloqueiam.
+  // CPF/CNPJ e todos os campos de endereço ficam informativos e não bloqueiam.
   return {
     valido: true,
     dados: {
@@ -244,3 +237,4 @@ export function validarCadastroPessoa(
     },
   };
 }
+
