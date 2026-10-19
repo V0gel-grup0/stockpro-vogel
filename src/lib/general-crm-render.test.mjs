@@ -25,8 +25,8 @@ function harness(search = "") {
 test("CRM geral tem acesso próprio para todos os perfis sem remover CRM anterior", () => {
   const app = readFileSync(new URL("../components/StockProApp.tsx", import.meta.url), "utf8");
   for (const role of policy.GENERAL_CRM_ROLES) assert.match(app, new RegExp(role + ": \\[[^\\n]*\"CRM\", \"CRM geral\""));
-  assert.ok(app.includes('page === "CRM geral" && <GeneralCrm'));
-  assert.ok(app.includes('page === "CRM" && <CRM'));
+  assert.ok(app.includes('page === "CRM geral" && canAccessCrm(profile.role, "internal") && <GeneralCrm'));
+  assert.ok(app.includes('canAccessCrm(profile.role, "commercial") ? <CRM'));
 });
 test("etapas renderizam verticalmente em lista e não possuem os seletores dos complementos comerciais", () => {
   const h = harness(); const html = renderToStaticMarkup(h.render());
