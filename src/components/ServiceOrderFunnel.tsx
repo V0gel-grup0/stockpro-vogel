@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { canAccessCrm } from "@/lib/crm-access";
 
 type Role =
   | "administrador"
@@ -54,8 +55,8 @@ function formatDate(value?: string | null) {
 }
 
 export default function ServiceOrderFunnel({ profile }: { profile: Profile }) {
-  const canSee = ["administrador", "gerente", "vendedor", "representante", "tecnico"].includes(profile.role);
-  const canCreate = ["administrador", "gerente", "vendedor", "representante"].includes(profile.role);
+  const canSee = canAccessCrm(profile.role, "service");
+  const canCreate = canSee;
   const canDelete = ["administrador", "gerente"].includes(profile.role);
   const [items, setItems] = useState<ServiceOrder[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -488,3 +489,4 @@ export default function ServiceOrderFunnel({ profile }: { profile: Profile }) {
     </section>
   );
 }
+

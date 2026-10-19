@@ -1,4 +1,4 @@
-export const GENERAL_CRM_ROLES = ["administrador", "gerente", "vendedor", "representante", "funcionario", "tecnico"] as const;
+export const GENERAL_CRM_ROLES = ["administrador", "gerente", "vendedor", "funcionario", "tecnico"] as const;
 export const GENERAL_CRM_STAGES = [
   { value: "new", label: "Nova" },
   { value: "in_progress", label: "Em andamento" },

@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
@@ -43,6 +44,7 @@ function canAdministrate(role: string) {
 export async function GET() {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "assembly")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
 
     if (!["administrador", "gerente", "tecnico"].includes(profile.role)) {
@@ -109,6 +111,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "assembly")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canAdministrate(profile.role)) {
       return errorResponse("Somente administrador ou gerente pode criar montagens a fazer.", 403);
@@ -162,6 +165,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "assembly")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!["administrador", "gerente", "tecnico"].includes(profile.role)) {
       return errorResponse("Sem permissão.", 403);
@@ -221,6 +225,7 @@ export async function PATCH(request: Request) {
 export async function PUT(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "assembly")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canAdministrate(profile.role)) {
       return errorResponse("Somente administrador ou gerente pode editar a montagem.", 403);
@@ -285,6 +290,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "assembly")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canAdministrate(profile.role)) {
       return errorResponse("Somente administrador ou gerente pode excluir a montagem.", 403);
@@ -307,3 +313,4 @@ export async function DELETE(request: Request) {
     return errorResponse("Erro ao excluir montagem a fazer.", 500);
   }
 }
+

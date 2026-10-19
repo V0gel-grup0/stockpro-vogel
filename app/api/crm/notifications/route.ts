@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { buildOpportunityVisibilityWhere } from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
@@ -141,6 +142,7 @@ function errorResponse(erro: string, status: number) {
 export async function GET() {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -210,6 +212,7 @@ export async function GET() {
       }),
       prisma.crm_tasks.findMany({
         where: {
+          ...(!canAccessCrm(authenticatedProfile.role, "internal") ? { id: "00000000-0000-0000-0000-000000000000" } : {}),
           opportunity_id: null,
           status: { not: "completed" },
           due_at: {
@@ -344,3 +347,4 @@ export async function GET() {
     return errorResponse("Erro ao carregar notificações do CRM.", 500);
   }
 }
+

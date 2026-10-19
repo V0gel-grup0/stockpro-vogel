@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -102,6 +103,7 @@ async function validResponsible(id: string) {
 export async function GET() {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "service")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canUse(profile.role)) {
       return NextResponse.json({ sucesso: true, items: [] });
@@ -159,6 +161,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "service")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canCreate(profile.role)) {
       return errorResponse("Sem permissão para criar ordem de serviço.", 403);
@@ -213,6 +216,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "service")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canUse(profile.role)) return errorResponse("Sem permissão.", 403);
 
@@ -264,6 +268,7 @@ export async function PATCH(request: Request) {
 export async function PUT(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "service")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canCreate(profile.role)) {
       return errorResponse("Sem permissão para editar ordem de serviço.", 403);
@@ -335,6 +340,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "service")) return errorResponse("Sem permissão para acessar este CRM.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!canAdministrate(profile.role)) {
       return errorResponse("Somente administrador ou gerente pode excluir ordens de serviço.", 403);
@@ -357,3 +363,4 @@ export async function DELETE(request: Request) {
     return errorResponse("Erro ao excluir ordem de serviço.", 500);
   }
 }
+

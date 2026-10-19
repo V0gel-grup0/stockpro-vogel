@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { buildOpportunityManagementWhere } from "@/lib/client-visibility";
@@ -15,6 +16,7 @@ const opportunityRoles = new Set([
   "administrador",
   "gerente",
   "vendedor",
+  "funcionario",
   "representante",
 ]);
 
@@ -88,6 +90,7 @@ async function getOpportunityId(context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -350,6 +353,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -431,3 +435,4 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return errorResponse("Erro ao excluir oportunidade do CRM.", 500);
   }
 }
+

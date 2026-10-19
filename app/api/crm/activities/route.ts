@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import {
@@ -19,6 +20,7 @@ const activityRoles = new Set([
   "administrador",
   "gerente",
   "vendedor",
+  "funcionario",
   "representante",
 ]);
 
@@ -64,6 +66,7 @@ function errorResponse(erro: string, status: number) {
 export async function GET(request: Request) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -112,6 +115,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -301,3 +305,4 @@ export async function POST(request: Request) {
     return errorResponse("Erro ao registrar atividade do CRM.", 500);
   }
 }
+

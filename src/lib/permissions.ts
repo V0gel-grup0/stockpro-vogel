@@ -127,7 +127,7 @@ export function canManageOpportunityRecord(
   }
 
   return (
-    (profile.role === "vendedor" || profile.role === "representante") &&
+    (profile.role === "vendedor" || profile.role === "funcionario" || profile.role === "representante") &&
     (opportunity.created_by === profile.id ||
       opportunity.responsible_id === profile.id)
   );
@@ -152,3 +152,4 @@ export function canReviewRepresentative(
     representative.responsible_seller_id === reviewer.id
   );
 }
+

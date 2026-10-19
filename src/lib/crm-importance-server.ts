@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { buildOpportunityManagementWhere, buildOpportunityVisibilityWhere } from "@/lib/client-visibility";
 import type { AppRole } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -57,6 +58,7 @@ export async function accessibleImportanceOpportunityIds(profile: {
   id: string;
   role: AppRole;
 }) {
+  if (!canAccessCrm(profile.role, "commercial")) return [];
   const where = buildOpportunityVisibilityWhere(profile);
   const rows = await prisma.crm_opportunities.findMany({
     where,
@@ -69,6 +71,7 @@ export async function accessibleImportanceTaskIds(profile: {
   id: string;
   role: AppRole;
 }) {
+  if (!canAccessCrm(profile.role, "internal")) return [];
   const rows = await prisma.crm_tasks.findMany({
     where:
       profile.role === "administrador"
@@ -89,6 +92,7 @@ export async function canManageImportanceOpportunity(
   profile: { id: string; role: AppRole },
   opportunityId: string
 ) {
+  if (!canAccessCrm(profile.role, "commercial")) return false;
   const visibility = buildOpportunityManagementWhere(profile);
   const row = await prisma.crm_opportunities.findFirst({
     where: visibility
@@ -103,6 +107,7 @@ export async function canManageImportanceTask(
   profile: { id: string; role: AppRole },
   taskId: string
 ) {
+  if (!canAccessCrm(profile.role, "internal")) return false;
   const row = await prisma.crm_tasks.findFirst({
     where:
       profile.role === "administrador"
@@ -119,3 +124,4 @@ export async function canManageImportanceTask(
   });
   return Boolean(row);
 }
+

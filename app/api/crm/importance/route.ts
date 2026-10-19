@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -84,6 +85,8 @@ export async function PUT(request: Request) {
       return errorResponse("Informe oportunidade ou tarefa, mas não ambas.", 400);
     }
 
+    if (!canAccessCrm(profile.role, opportunityId ? "commercial" : "internal")) return errorResponse("Sem permissão para acessar este CRM.", 403);
+
     const recordId = opportunityId || taskId;
     if (!CRM_IMPORTANCE_UUID.test(recordId)) {
       return errorResponse("Registro inválido.", 400);
@@ -145,3 +148,4 @@ export async function PUT(request: Request) {
     return errorResponse("Erro ao salvar importância do CRM.", 500);
   }
 }
+

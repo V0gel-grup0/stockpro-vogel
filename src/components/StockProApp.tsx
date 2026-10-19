@@ -3,6 +3,7 @@
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
 import GeneralCrm from "@/components/GeneralCrm";
+import { canAccessCrm } from "@/lib/crm-access";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
@@ -105,7 +106,7 @@ function money(value: number | string | null | undefined) {
 }
 const PROPOSTA_STATUS = ["Lead Frio", "Lead Morno", "Venda", "Pós-Venda"];
 const COLABORADOR_ROLES: Role[] = ["gerente", "vendedor", "tecnico", "funcionario"];
-const CRM_CREATOR_ROLES: Role[] = ["administrador", "gerente", "vendedor", "representante"];
+const CRM_CREATOR_ROLES: Role[] = ["administrador", "gerente", "vendedor", "funcionario", "representante"];
 const CRM_STAGES = [
   { value: "lead", label: "Lead", color: "#60a5fa" },
   { value: "proposal", label: "Proposta", color: "#a78bfa" },
@@ -462,7 +463,7 @@ const menuByRole: Record<Role, string[]> = {
   vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Representantes", "Relatórios", "Meu Perfil"],
   funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Pedidos", "Meu Perfil"],
   tecnico: ["Dashboard", "CRM", "CRM geral", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Minha Gestão", "Relatórios", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Minha Gestão", "Relatórios", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -550,6 +551,10 @@ export default function StockProApp() {
   }
 
   async function carregarNotificacoes() {
+    if (!profile || !canAccessCrm(profile.role, "commercial")) {
+      setCrmNotifications(EMPTY_CRM_NOTIFICATIONS);
+      return;
+    }
     try {
       const response = await fetch("/api/crm/notifications", { cache: "no-store" });
       const data = await response.json();
@@ -628,17 +633,17 @@ export default function StockProApp() {
   const menus = menuByRole[profile.role] || ["Meu Perfil"];
 
   return (
-    <div className={`app-shell ${!menuOpen ? "sidebar-closed" : ""}`} data-mobile-search={mobileSearchOpen ? "open" : "closed"}>
+    <div className={`app-shell ${!menuOpen ? "sidebar-closed" : ""}`} data-mobile-search={mobileSearchOpen ? "open" : "closed"} data-crm-internal={canAccessCrm(profile.role, "internal") ? "true" : "false"}>
       <header className="topbar">
         <div className="topbar-inner">
           <button type="button" className="menu-toggle desktop-menu-trigger" aria-label={menuOpen ? "Recolher menu" : "Abrir menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>{menuOpen ? "×" : "☰"}</button>
           <button type="button" className="mobile-menu-trigger mobile-icon-control" aria-label="Abrir todos os módulos" aria-haspopup="dialog" aria-expanded={mobileMenuOpen} aria-controls="mobile-module-menu" onClick={() => setMobileMenuOpen(true)}><AppIcon name="menu" /></button>
-          <div className="mobile-page-brand"><small>STOCKPRO VOGEL</small><strong>{mobilePageLabel(page)}</strong></div>
+          <div className="mobile-page-brand"><small>STOCKPRO VOGEL</small><strong>{page === "CRM" ? canAccessCrm(profile.role, "commercial") ? "CRM comercial" : "CRM montagens" : mobilePageLabel(page)}</strong></div>
           <button type="button" className="mobile-search-trigger mobile-icon-control" aria-label={mobileSearchOpen ? "Fechar pesquisa" : "Pesquisar neste módulo"} aria-expanded={mobileSearchOpen} aria-controls="module-search" onClick={() => { setMobileSearchOpen((value) => !value); if (mobileSearchOpen) setSearch(""); else window.requestAnimationFrame(() => document.getElementById("module-search")?.focus()); }}><AppIcon name={mobileSearchOpen ? "close" : "search"} /></button>
           <div className="search-wrap">
             <input id="module-search" type="search" aria-label={`Pesquisar em ${page}`} className="input search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar neste módulo…" />
           </div>
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", display: canAccessCrm(profile.role, "commercial") ? undefined : "none" }}>
             <button type="button" className="icon-button notification-trigger" style={{ width: "auto", minWidth: 52, padding: "0 13px" }} aria-label={`Atividades do CRM: ${crmNotifications.resumo.total_atencao} pendentes`} aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((v) => !v)}><AppIcon name="bell" />{crmNotifications.resumo.total_atencao > 0 && <span className="notification-count">{crmNotifications.resumo.total_atencao > 99 ? "99+" : crmNotifications.resumo.total_atencao}</span>}</button>
             {notificationsOpen && <div className="notifications-panel" style={{ width: "min(430px, 92vw)", maxHeight: "min(680px, calc(100vh - 90px))", overflowY: "auto" }}>
               <div className="notification-heading"><strong style={{ fontSize: 17 }}>CRM — Atividades</strong><button type="button" className="mobile-icon-control" aria-label="Fechar atividades" onClick={() => setNotificationsOpen(false)}><AppIcon name="close" /></button></div>
@@ -653,7 +658,7 @@ export default function StockProApp() {
       <div className={`layout-grid ${!menuOpen ? "menu-collapsed" : ""}`}>
         {menuOpen && <aside className="sidebar">
           <div className="brand"><img src="/logo-vogel.png" alt="Grupo Vogel" className="brand-logo" /><div className="brand-text"><strong>StockPro</strong><small>Grupo Vogel Brasil</small></div></div>
-          <nav className="menu-list">{menus.map((item) => <button key={item} aria-current={page === item ? "page" : undefined} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => navigateToPage(item)}>{item}</button>)}</nav>
+          <nav className="menu-list">{menus.map((item) => <button key={item} aria-current={page === item ? "page" : undefined} className={`menu-button ${page === item ? "active" : ""}`} onClick={() => navigateToPage(item)}>{item === "CRM" ? canAccessCrm(profile.role, "commercial") ? "CRM comercial" : "CRM montagens" : item}</button>)}</nav>
           <div className="sidebar-footer">
             <div className="account-details">
               <strong className="account-name">{profile.name || "Colaborador"}</strong>
@@ -669,8 +674,8 @@ export default function StockProApp() {
           {page === "Produtos" && <Produtos search={search} profile={profile} lowStockOnly={productsLowStockOnly} onLowStockChange={setProductsLowStockOnly} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
-          {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} />}
-          {page === "CRM geral" && <GeneralCrm profile={profile} search={search} />}
+          {page === "CRM" && (canAccessCrm(profile.role, "commercial") ? <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} /> : canAccessCrm(profile.role, "assembly") ? <><Title title="CRM montagens" desc="Acompanhamento das montagens atribuídas a você." /><AssemblyWorkFunnel profile={profile} /></> : null)}
+          {page === "CRM geral" && canAccessCrm(profile.role, "internal") && <GeneralCrm profile={profile} search={search} />}
           {page === "Orçamentos" && <QuotesModule profile={profile} search={search} initialContext={quoteNavigationTarget} onContextConsumed={() => setQuoteNavigationTarget(null)} renderClientRegistration={(callbacks) => <Pessoas title="Cadastrar cliente" embeddedTitle="Cadastrar cliente para o orçamento" table="clients" kind="cliente" search="" profile={profile} {...callbacks} />} /> }
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
@@ -685,7 +690,7 @@ export default function StockProApp() {
           {page === "Meu Perfil" && <MeuPerfil profile={profile} onUpdated={carregarSessao} />}
         </main>
       </div>
-      <MobileNavigation menus={menus} page={page} open={mobileMenuOpen} onOpen={() => setMobileMenuOpen(true)} onClose={closeMobileMenu} onNavigate={navigateToPage} name={profile.name || "Colaborador"} role={formatRole(profile.role)} onLogout={logout} />
+      <MobileNavigation crmLabel={canAccessCrm(profile.role, "commercial") ? "CRM comercial" : "CRM montagens"} menus={menus} page={page} open={mobileMenuOpen} onOpen={() => setMobileMenuOpen(true)} onClose={closeMobileMenu} onNavigate={navigateToPage} name={profile.name || "Colaborador"} role={formatRole(profile.role)} onLogout={logout} />
     </div>
   );
 }
@@ -1954,8 +1959,8 @@ function CRM({
       </div>}
     </section>
 
-    <AssemblyWorkFunnel profile={profile} />
-    <ServiceOrderFunnel profile={profile} />
+    {canAccessCrm(profile.role, "assembly") && <AssemblyWorkFunnel profile={profile} />}
+    {canAccessCrm(profile.role, "service") && <ServiceOrderFunnel profile={profile} />}
   </>;
 }
 
