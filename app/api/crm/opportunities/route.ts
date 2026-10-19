@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import {
@@ -18,6 +19,7 @@ const opportunityRoles = new Set([
   "administrador",
   "gerente",
   "vendedor",
+  "funcionario",
   "representante",
 ]);
 
@@ -103,6 +105,7 @@ function optionalUuid(
 export async function GET() {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -134,6 +137,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -395,3 +399,4 @@ export async function POST(request: Request) {
     return errorResponse("Erro ao criar oportunidade do CRM.", 500);
   }
 }
+
