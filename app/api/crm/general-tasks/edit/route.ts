@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const META_PREFIX = "__CRM_GENERAL_TASK__";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const allowedRoles = new Set(["administrador", "gerente", "vendedor", "representante"]);
+const allowedRoles = new Set(["administrador", "gerente", "vendedor", "funcionario", "tecnico"]);
 
 function errorResponse(erro: string, status: number) {
   return NextResponse.json({ sucesso: false, erro }, { status });
@@ -38,6 +39,7 @@ function encodeDescription(notes: string, nextAction: string) {
 export async function PATCH(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "internal")) return errorResponse("Sem permissão para acessar demandas internas.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!allowedRoles.has(profile.role)) {
       return errorResponse("Sem permissão para editar tarefas do CRM.", 403);
@@ -106,3 +108,4 @@ export async function PATCH(request: Request) {
     return errorResponse("Erro ao editar tarefa geral do CRM.", 500);
   }
 }
+
