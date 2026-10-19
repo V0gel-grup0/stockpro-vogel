@@ -22,9 +22,10 @@ export function AppIcon({ name }: { name: string }) {
   return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.Produtos} /></svg>;
 }
 
-export default function MobileNavigation({ menus, page, open, onOpen, onClose, onNavigate, name, role, onLogout }: {
+export default function MobileNavigation({ menus, page, open, onOpen, onClose, onNavigate, name, role, onLogout, crmLabel = "CRM" }: {
   menus: string[]; page: string; open: boolean; onOpen: () => void; onClose: () => void;
   onNavigate: (page: string) => void; name: string; role: string; onLogout: () => void;
+  crmLabel?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -57,13 +58,13 @@ export default function MobileNavigation({ menus, page, open, onOpen, onClose, o
 
   return <>
     <nav className="mobile-tabbar no-print" data-keyboard-open={keyboardOpen ? "true" : "false"} aria-label="Navegação principal no celular">
-      {tabs.map((item) => <button key={item} type="button" aria-current={page === item ? "page" : undefined} className={page === item && !open ? "active" : ""} onClick={() => onNavigate(item)}><AppIcon name={item} /><span>{mobilePageLabel(item)}</span></button>)}
+      {tabs.map((item) => <button key={item} type="button" aria-current={page === item ? "page" : undefined} className={page === item && !open ? "active" : ""} onClick={() => onNavigate(item)}><AppIcon name={item} /><span>{item === "CRM" ? crmLabel : mobilePageLabel(item)}</span></button>)}
       <button type="button" className={open || !tabs.includes(page) ? "active" : ""} aria-haspopup="dialog" aria-expanded={open} aria-controls="mobile-module-menu" onClick={onOpen}><AppIcon name="menu" /><span>Menu</span></button>
     </nav>
     <dialog ref={dialog} id="mobile-module-menu" className="mobile-module-menu no-print" aria-labelledby="mobile-menu-title" onCancel={onClose} onClose={() => { if (open) onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }}>
       <div className="mobile-menu-heading"><div><small>STOCKPRO VOGEL</small><h2 id="mobile-menu-title">Seu espaço de trabalho</h2></div><button type="button" className="mobile-icon-control" aria-label="Fechar menu" onClick={onClose} autoFocus><AppIcon name="close" /></button></div>
       <div className="mobile-menu-account"><span className="mobile-avatar" aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "V"}</span><div><strong>{name}</strong><small>{role}</small></div></div>
-      <nav className="mobile-module-grid" aria-label="Todos os módulos">{menus.map((item) => <button key={item} type="button" aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => onNavigate(item)}><AppIcon name={item} /><span>{item === "Dashboard" ? "Início" : item}</span></button>)}</nav>
+      <nav className="mobile-module-grid" aria-label="Todos os módulos">{menus.map((item) => <button key={item} type="button" aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => onNavigate(item)}><AppIcon name={item} /><span>{item === "CRM" ? crmLabel : item === "Dashboard" ? "Início" : item}</span></button>)}</nav>
       <button type="button" className="mobile-logout" onClick={onLogout}>Sair da conta</button>
     </dialog>
   </>;
