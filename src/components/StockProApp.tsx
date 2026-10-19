@@ -2,6 +2,7 @@
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import QuotesModule from "@/components/QuotesModule";
+import GeneralCrm from "@/components/GeneralCrm";
 import RepresentativeManagement from "@/components/RepresentativeManagement";
 import AssemblyWorkFunnel from "@/components/AssemblyWorkFunnel";
 import ServiceOrderFunnel from "@/components/ServiceOrderFunnel";
@@ -456,12 +457,12 @@ const PRODUTOS_PADRAO = [
 ];
 
 const menuByRole: Record<Role, string[]> = {
-  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Relatórios", "Meu Perfil"],
-  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
-  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "Orçamentos", "Pedidos", "Representantes", "Relatórios", "Meu Perfil"],
-  funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "Pedidos", "Meu Perfil"],
-  tecnico: ["Dashboard", "CRM", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
-  representante: ["Dashboard", "Clientes", "CRM", "Orçamentos", "Pedidos", "Minha Gestão", "Relatórios", "Meu Perfil"],
+  administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Relatórios", "Meu Perfil"],
+  gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
+  vendedor: ["Dashboard", "Produtos", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Representantes", "Relatórios", "Meu Perfil"],
+  funcionario: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Pedidos", "Meu Perfil"],
+  tecnico: ["Dashboard", "CRM", "CRM geral", "Montagens", "Equipamentos Montados", "Componentes", "Meu Perfil"],
+  representante: ["Dashboard", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Minha Gestão", "Relatórios", "Meu Perfil"],
 };
 
 export default function StockProApp() {
@@ -669,6 +670,7 @@ export default function StockProApp() {
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}
           {page === "CRM" && <CRM profile={profile} search={search} notifications={crmNotifications} onRefreshNotifications={carregarNotificacoes} navigationTarget={crmNavigationTarget} onCreateQuote={createQuoteFromCrm} />}
+          {page === "CRM geral" && <GeneralCrm profile={profile} search={search} />}
           {page === "Orçamentos" && <QuotesModule profile={profile} search={search} initialContext={quoteNavigationTarget} onContextConsumed={() => setQuoteNavigationTarget(null)} renderClientRegistration={(callbacks) => <Pessoas title="Cadastrar cliente" embeddedTitle="Cadastrar cliente para o orçamento" table="clients" kind="cliente" search="" profile={profile} {...callbacks} />} /> }
           {page === "Fornecedores" && <Pessoas title="Fornecedores" table="suppliers" kind="fornecedor" search={search} profile={profile} />}
           {page === "Montagens" && <Montagens profile={profile} search={search} />}
@@ -4547,3 +4549,4 @@ function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => 
   }
   return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>;
 }
+
