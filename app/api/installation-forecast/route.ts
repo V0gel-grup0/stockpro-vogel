@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canAccessCrm } from "@/lib/crm-access";
 import type { AppRole } from "@/lib/permissions";
 import { getAuthenticatedProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +24,7 @@ export async function GET() {
   try {
     const profile = await getAuthenticatedProfile();
     if (!profile) return fail("Não autenticado.", 401);
+    if (!canAccessCrm(profile.role, "commercial")) return fail("Sem permissão para acessar o CRM comercial.", 403);
 
     await ensureInstallationForecastTable();
 
@@ -61,6 +63,7 @@ export async function PUT(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
     if (!profile) return fail("Não autenticado.", 401);
+    if (!canAccessCrm(profile.role, "commercial")) return fail("Sem permissão para acessar o CRM comercial.", 403);
 
     const body = await request.json();
     const opportunityId = typeof body?.opportunity_id === "string" ? body.opportunity_id.trim() : "";
@@ -151,3 +154,4 @@ export async function PUT(request: Request) {
     return fail("Erro ao salvar previsão de instalação.", 500);
   }
 }
+
