@@ -7,6 +7,7 @@ export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
     Dashboard: "M3 10 12 3l9 7M5 9v11h5v-6h4v6h5V9",
     CRM: "M4 4h16v12H9l-5 4V4M8 8h8M8 12h5",
+    "CRM geral": "M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1",
     Pedidos: "M7 3h10v3H7V3M7 5H4v16h16V5h-3M8 11h8M8 15h6",
     Produtos: "m3 7 9-4 9 4v10l-9 4-9-4V7m0 0 9 4 9-4M12 11v10",
     Montagens: "m14 5 5-2 2 5-4 4-3-3-9 9-3-3 9-9-3-3 3-3",
@@ -67,3 +68,4 @@ export default function MobileNavigation({ menus, page, open, onOpen, onClose, o
     </dialog>
   </>;
 }
+
