@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { buildAccessibleClientWhere } from "@/lib/client-visibility";
@@ -32,6 +33,7 @@ function errorResponse(erro: string, status: number) {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const authenticatedProfile = await getAuthenticatedProfile();
+    if (authenticatedProfile && !canAccessCrm(authenticatedProfile.role, "commercial")) return errorResponse("Sem permissão para acessar o CRM comercial.", 403);
 
     if (!authenticatedProfile) {
       return errorResponse("Não autenticado.", 401);
@@ -60,6 +62,7 @@ export async function GET(_request: Request, context: RouteContext) {
         city: true,
         proposal_status: true,
         orders: {
+          where: authenticatedProfile.role === "representante" ? { created_by: authenticatedProfile.id } : undefined,
           orderBy: {
             created_at: "desc",
           },
@@ -148,3 +151,4 @@ export async function GET(_request: Request, context: RouteContext) {
     return errorResponse("Erro ao carregar resumo do cliente no CRM.", 500);
   }
 }
+
