@@ -1,3 +1,4 @@
+import { canAccessCrm } from "@/lib/crm-access";
 import { NextResponse } from "next/server";
 import { buildAccessibleClientWhere } from "@/lib/client-visibility";
 import { getAuthenticatedProfile } from "@/lib/auth";
@@ -11,7 +12,7 @@ const OTHER_CLIENT_TOKEN = "__crm_other__";
 const OTHER_CLIENT_MARKER = "__CRM_OUTROS__";
 const META_PREFIX = "__CRM_GENERAL_TASK__";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const allowedRoles = new Set(["administrador", "gerente", "vendedor", "representante"]);
+const allowedRoles = new Set(["administrador", "gerente", "vendedor", "funcionario", "tecnico"]);
 
 function errorResponse(erro: string, status: number) {
   return NextResponse.json({ sucesso: false, erro }, { status });
@@ -116,6 +117,7 @@ const taskInclude = {
 export async function GET() {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "internal")) return errorResponse("Sem permissão para acessar demandas internas.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!allowedRoles.has(profile.role)) return errorResponse("Sem permissão para acessar tarefas do CRM.", 403);
 
@@ -147,6 +149,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "internal")) return errorResponse("Sem permissão para acessar demandas internas.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!allowedRoles.has(profile.role)) return errorResponse("Sem permissão para criar tarefas no CRM.", 403);
 
@@ -223,6 +226,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "internal")) return errorResponse("Sem permissão para acessar demandas internas.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!allowedRoles.has(profile.role)) return errorResponse("Sem permissão para alterar tarefas do CRM.", 403);
 
@@ -260,6 +264,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const profile = await getAuthenticatedProfile();
+    if (profile && !canAccessCrm(profile.role, "internal")) return errorResponse("Sem permissão para acessar demandas internas.", 403);
     if (!profile) return errorResponse("Não autenticado.", 401);
     if (!allowedRoles.has(profile.role)) return errorResponse("Sem permissão para excluir tarefas do CRM.", 403);
 
@@ -282,3 +287,4 @@ export async function DELETE(request: Request) {
     return errorResponse("Erro ao excluir tarefa geral do CRM.", 500);
   }
 }
+
