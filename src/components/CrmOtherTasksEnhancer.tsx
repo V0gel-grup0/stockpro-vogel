@@ -34,6 +34,7 @@ const NEXT_ACTION_LABELS: Record<string, string> = {
 };
 
 function findCrmOpportunityForm() {
+  if (!document.querySelector('[data-crm-internal="true"]')) return null;
   return document.getElementById("crm-opportunity-form") as HTMLElement | null;
 }
 
@@ -98,6 +99,7 @@ function findFunnelGrid() {
 }
 
 function ensureFunnelHost() {
+  if (!document.querySelector('[data-crm-internal="true"]')) return null;
   const grid = findFunnelGrid();
   if (!grid) return null;
 
@@ -420,3 +422,4 @@ export default function CrmOtherTasksEnhancer() {
     host
   );
 }
+
