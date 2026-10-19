@@ -6,6 +6,7 @@ const OTHER_CLIENT_TOKEN = "__crm_other__";
 const PROXY_ID = "crm-client-visible-select";
 
 function getForm() {
+  if (!document.querySelector('[data-crm-internal="true"]')) return null;
   return document.getElementById("crm-opportunity-form") as HTMLElement | null;
 }
 
@@ -129,3 +130,4 @@ export default function CrmOtherSaveGuard() {
 
   return null;
 }
+
