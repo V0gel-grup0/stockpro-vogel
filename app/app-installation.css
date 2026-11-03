@@ -1,0 +1,31 @@
+.app-opening { min-height: 100svh; display: grid; place-items: center; overflow: hidden; position: relative; isolation: isolate; padding: max(28px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom)); background: #0b1324; color: #f8fafc; text-align: center; }
+.app-opening-glow { position: absolute; width: min(700px, 130vw); height: min(700px, 130vw); border-radius: 50%; background: radial-gradient(circle, #173966 0, #0b1324 68%); z-index: -1; }
+.app-opening-content { width: min(100%, 420px); animation: stockpro-appear .6s ease-out both; }
+.app-opening-logo { width: clamp(180px, 52vw, 260px); aspect-ratio: 1; margin: 0 auto 30px; border-radius: 30px; background: white; box-shadow: 0 20px 70px #0006; overflow: hidden; }
+.app-opening-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.app-opening-eyebrow { letter-spacing: .24em; font-size: 11px; font-weight: 700; color: #94a3b8; }
+.app-opening h1 { margin: 10px 0 12px; font-size: clamp(30px, 8vw, 44px); letter-spacing: -.04em; color: #f8fafc; }
+.app-opening h1 span { color: #8bc0ff; }
+.app-opening-description { color: #cbd5e1; font-size: 16px; }
+.app-opening-progress { height: 3px; max-width: 180px; margin: 34px auto 14px; background: #ffffff16; overflow: hidden; border-radius: 10px; }
+.app-opening-progress span { display: block; width: 100%; height: 100%; background: #60a5fa; transform-origin: left; animation: stockpro-progress 2.2s ease-out both; }
+.app-opening-status { color: #94a3b8; font-size: 12px; }
+.app-opening-skip { display: inline-flex; align-items: center; gap: 12px; padding: 14px; margin-top: 22px; color: #bfdbfe; text-decoration: none; font-size: 14px; }
+.app-opening-skip:focus-visible, .app-install-trigger:focus-visible, .app-install-close:focus-visible, .app-install-preview:focus-visible { outline: 2px solid #60a5fa; outline-offset: 4px; }
+.app-installation { position: fixed; bottom: 24px; right: 24px; z-index: 45; }
+.app-install-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #60a5fa55; border-radius: 14px; background: #102544; color: #dbeafe; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px #0003; min-height: 44px; }
+.app-install-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100svh - 48px); overflow-y: auto; padding: 24px; border: 1px solid #334155; border-radius: 22px; background: #0f1c31; color: #e2e8f0; }
+.app-install-dialog::backdrop { background: #020617b8; }
+.app-install-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.app-install-heading h2 { font-size: 21px; margin: 0; }
+.app-install-close { flex-shrink: 0; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: #e2e8f0; font-size: 28px; cursor: pointer; }
+.app-install-dialog p, .app-install-dialog li { font-size: 14px; line-height: 1.65; }
+.app-install-dialog ol { padding-left: 22px; }
+.app-install-dialog li { margin: 10px 0; }
+.app-install-note { color: #94a3b8; }
+.app-install-preview { display: inline-block; padding: 12px 0; color: #93c5fd; }
+@keyframes stockpro-appear { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes stockpro-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (max-width: 1023px) { .app-installation { right: 16px; bottom: calc(88px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .app-opening-content, .app-opening-progress span { animation: none; } }
+@media (display-mode: standalone), print { .app-installation { display: none; } }
