@@ -13,6 +13,11 @@ export default function AppOpening() {
   return <main className="app-opening" aria-label="Boas-vindas ao StockPro Vogel">
     <div className="app-opening-glow" aria-hidden="true" />
     <div className="app-opening-content">
+      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
+        <defs><filter id="stockpro-white-logo" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -0.23386 -0.78672 -0.07942 0 1.1" />
+        </filter></defs>
+      </svg>
       <div className="app-opening-logo"><img src="/logo-vogel.png" alt="Grupo Vogel" width={280} height={280} fetchPriority="high" /></div>
       <p className="app-opening-eyebrow">GRUPO VOGEL</p>
       <h1>StockPro <span>Vogel</span></h1>
