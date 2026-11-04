@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { clearOfflineCopy } from "@/lib/offline-session";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [msg, setMsg] = useState("");
 
   async function entrar() {
+    clearOfflineCopy();
     setLoading(true);
     setMsg("");
 
@@ -67,3 +69,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

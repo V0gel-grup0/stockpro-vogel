@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import AppInstallation from "@/components/AppInstallation";
+import OfflineAccess from "@/components/OfflineAccess";
 import CrmAdminFiltersEnhancer from "@/components/CrmAdminFiltersEnhancer";
 import CrmOtherTasksEnhancer from "@/components/CrmOtherTasksEnhancer";
 import CrmOtherClientSelectionGuard from "@/components/CrmOtherClientSelectionGuard";
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </svg>
         {children}
         <AppInstallation />
+        <OfflineAccess />
         <CrmAdminFiltersEnhancer />
         <CrmOtherTasksEnhancer />
         <CrmOtherClientSelectionGuard />

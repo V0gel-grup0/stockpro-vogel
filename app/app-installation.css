@@ -29,3 +29,7 @@
 @media (max-width: 1023px) { .app-installation { right: 16px; bottom: calc(88px + env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .app-opening-content, .app-opening-progress span { animation: none; } }
 @media (display-mode: standalone), print { .app-installation { display: none; } }
+.offline-access { position:fixed; left:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:40; border:1px solid #475569; border-radius:12px; background:#0f172a; color:#bfdbfe; padding:12px 14px; font-size:13px; text-decoration:none; min-height:44px; display:flex; align-items:center; }
+.offline-access:focus-visible { outline:3px solid #93c5fd; outline-offset:3px; }
+@media(max-width:767px) { .offline-access { bottom:calc(88px + env(safe-area-inset-bottom)); } }
+@media print { .offline-access { display:none; } }
