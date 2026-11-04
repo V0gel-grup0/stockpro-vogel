@@ -1,6 +1,7 @@
 "use client";
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
+import { clearOfflineCopy } from "@/lib/offline-session";
 import QuotesModule from "@/components/QuotesModule";
 import GeneralCrm from "@/components/GeneralCrm";
 import { canAccessCrm } from "@/lib/crm-access";
@@ -608,6 +609,7 @@ export default function StockProApp() {
   }
 
   async function logout() {
+    clearOfflineCopy();
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
@@ -4554,4 +4556,5 @@ function MeuPerfil({ profile, onUpdated }: { profile: Profile; onUpdated: () => 
   }
   return <><Title title="Meu Perfil" desc="Detalhes editáveis do seu cadastro." /><section className="card"><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="CPF ou CNPJ" value={form.document} onChange={(v) => set("document", maskCpfCnpj(v))} /><Field label="Telefone" value={form.phone} onChange={(v) => set("phone", maskPhone(v))} /><Field label="CEP" value={form.cep} onChange={(v) => { const c = maskCep(v); set("cep", c); if (onlyNumbers(c).length === 8) buscarCepPerfil(c); }} onBlur={() => buscarCepPerfil(form.cep)} /><Field label="Cidade" value={form.city} onChange={(v) => set("city", v)} /><Field label="Rua" value={form.street} onChange={(v) => set("street", v)} /><Field label="Número" value={form.number} disabled={form.no_number} onChange={(v) => set("number", v)} /><Field label="Bairro" value={form.neighborhood} onChange={(v) => set("neighborhood", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>Salvar perfil</button></div>{msg && <Message text={msg} />}</section></>;
 }
+
 
