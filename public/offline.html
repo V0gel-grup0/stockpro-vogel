@@ -1,7 +1,62 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1324"><title>Modo offline · StockPro Vogel</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0b1324;color:#f8fafc;font:16px Arial,sans-serif}main{max-width:1100px;margin:auto;padding:28px 18px 80px}h1{font-size:28px}p{color:#cbd5e1;line-height:1.5}button,a,label{display:grid;gap:8px;flex:1;min-width:190px}h2{margin-top:32px}form{border:1px solid #334155;border-radius:14px;padding:16px;margin:18px 0}textarea{background:#17263c;color:white;border:1px solid #64748b;border-radius:10px;padding:12px;min-height:80px;font:inherit}#queue{padding-left:24px}#queue li{padding:12px 0;line-height:1.5}input,select{font:inherit}button,a{min-height:44px;border-radius:12px;padding:12px 16px;color:white;background:#2563eb;border:0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}button:disabled{opacity:.5}a{background:#334155}.actions{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0}.notice{border:1px solid #475569;padding:16px;border-radius:16px;background:#111f35}#status{min-height:24px;color:#93c5fd}label{display:grid;gap:8px;flex:1;min-width:190px}h2{margin-top:32px}form{border:1px solid #334155;border-radius:14px;padding:16px;margin:18px 0}textarea{background:#17263c;color:white;border:1px solid #64748b;border-radius:10px;padding:12px;min-height:80px;font:inherit}#queue{padding-left:24px}#queue li{padding:12px 0;line-height:1.5}input,select{background:#17263c;color:white;border:1px solid #64748b;padding:12px;border-radius:10px;max-width:100%}.filters{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.table-wrap{overflow:auto;border:1px solid #334155;border-radius:14px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:14px;text-align:left;border-bottom:1px solid #334155;min-width:120px;max-width:360px;overflow-wrap:anywhere}th{color:#93c5fd}td{white-space:pre-wrap}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}[hidden]{display:none!important}small{color:#94a3b8}@media(max-width:600px){h1{font-size:25px}.actions>*{flex:1;justify-content:center}.filters>*{width:100%}}
+:root{color-scheme:dark;--line:#2a3b53;--muted:#a8b9cf;--panel:#101e32;--accent:#3b82f6}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1324;color:#f1f5f9;font:15px/1.5 Arial,sans-serif}
+main{max-width:1080px;margin:auto;padding:40px 24px 96px}
+h1{font-size:32px;letter-spacing:-.8px;margin:6px 0 24px}
+h2{font-size:21px;letter-spacing:-.3px;margin:32px 0 14px}
+p{color:var(--muted);margin:12px 0}
+small{color:#7fa9db;font-size:11px;font-weight:700;letter-spacing:.16em}
+button,a,input,select,textarea{font:inherit}
+button,a{min-height:46px;border-radius:12px;padding:11px 18px;color:#f8fafc;background:#2563eb;border:1px solid transparent;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;gap:8px}
+button:hover{background:#1d4ed8}
+button:disabled{opacity:.5;cursor:wait}
+a,#prepare,#clear{background:#14243a;border-color:var(--line);color:#c4d5eb}
+a:hover,#prepare:hover,#clear:hover{background:#20324c}
+#clear{color:#a9b8cc}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 18px}
+.notice{border:1px solid #274464;border-radius:18px;padding:22px 24px;background:linear-gradient(120deg,#11243c,#101d31)}
+.notice strong{font-size:17px}
+.notice p{font-size:14px;margin:10px 0 0;max-width:850px}
+#status,#queue-status{color:#93c5fd;min-height:24px;overflow-wrap:anywhere}
+#details{font-size:13px}
+form{border:1px solid var(--line);border-radius:20px;padding:28px;margin:0 0 28px;background:var(--panel);box-shadow:0 12px 30px #00000014;scroll-margin-top:24px}
+.filters{display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr);gap:16px;margin:22px 0}
+form .filters{grid-template-columns:repeat(6,minmax(0,1fr));gap:22px 20px;margin:0 0 24px;align-items:start}
+label{display:flex;flex-direction:column;gap:9px;min-width:0;font-size:13px;font-weight:600;color:#cbd8e9;grid-column:span 2}
+input,select,textarea{display:block;width:100%;min-width:0;max-width:100%;border:1px solid #405570;border-radius:11px;background:#182a42;color:#f8fafc;padding:12px 14px;outline:none;font-size:15px;font-weight:400}
+input,select{height:48px}
+select{text-overflow:ellipsis}
+textarea{min-height:112px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px #3b82f626}
+#client-form label:nth-child(1),#client-form label:nth-child(6){grid-column:span 4}
+#client-form label:last-child{grid-column:1/-1}
+#order-form label:nth-child(1),#order-form label:nth-child(2){grid-column:span 3}
+#order-form label:nth-child(3),#order-form label:last-child{grid-column:1/-1}
+#order-total{display:flex;align-items:center;min-height:64px;margin:0 0 20px;padding:16px 20px;border:1px solid #2c4b70;border-radius:12px;background:#142c47;color:#dbeafe;font-size:19px;font-weight:700}
+form>button{min-width:220px}
+#queue{list-style:none;padding:0;display:grid;gap:10px}
+#queue li{padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-wrap:anywhere}
+#queue button{margin:10px 0 0;font-size:13px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--line);min-width:120px;max-width:360px;overflow-wrap:anywhere}
+th{color:#93c5fd;background:#122239;font-size:12px;letter-spacing:.03em}
+td{white-space:pre-wrap}
+tbody tr:last-child td{border-bottom:0}
+button:focus-visible,a:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}
+[hidden]{display:none!important}
+@media(max-width:640px){
+main{padding:24px 16px 64px}h1{font-size:27px}h2{font-size:20px;margin-top:28px}
+.notice{padding:18px}.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.actions>*{min-width:0;padding:11px 10px;font-size:13px}.actions>#clear{grid-column:1/-1}
+form{padding:20px 16px;border-radius:16px}form .filters{grid-template-columns:minmax(0,1fr);gap:18px}
+form .filters>label{grid-column:1/-1!important}
+form>button{width:100%;min-width:0}#order-total{font-size:18px;padding:14px 16px}
+.filters{grid-template-columns:minmax(0,1fr)}input,select,textarea{font-size:16px}
+}
 </style><script type="module" src="/offline-ui.mjs"></script></head><body><main>
 <small>GRUPO VOGEL · STOCKPRO</small><h1>Modo offline</h1>
 <div class="notice"><strong>Consultar, cadastrar clientes e fazer pedidos</strong><p>Prepare uma cópia com internet neste aparelho. Os dados refletem a última atualização e ficam disponíveis por até 8 horas. Alterações de acesso serão conferidas quando houver conexão. Use apenas em aparelho de confiança.</p><p>Clientes e pedidos ficam pendentes neste aparelho até o envio. Baixas de estoque, anexos e notificações ainda precisam de internet. Os pendentes são preservados quando a consulta expira; entre na mesma conta e prepare os dados para continuar.</p></div>
