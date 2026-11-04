@@ -1,5 +1,5 @@
 // Only the public consultation shell is cached. Authenticated API responses never enter Cache Storage.
-const CACHE = 'stockpro-offline-shell-v3';
+const CACHE = 'stockpro-offline-shell-v4';
 const FILES = ['/offline.html', '/offline-ui.mjs', '/offline-data.mjs', '/offline-queue.mjs', '/offline-autosync.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
@@ -11,7 +11,10 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   if (FILES.includes(url.pathname) && !url.search) {
-    event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname)) || fetch(event.request)));
+    event.respondWith(caches.open(CACHE).then(async cache => {
+      try { const response = await fetch(event.request, { cache: 'no-store' }); if (response.ok) { await cache.put(url.pathname, response.clone()); return response; } } catch {}
+      return (await cache.match(url.pathname)) || new Response('Conecte-se para atualizar o modo offline.', { status: 503 });
+    }));
   } else if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).catch(async () => (await caches.open(CACHE)).match('/offline.html')));
   }

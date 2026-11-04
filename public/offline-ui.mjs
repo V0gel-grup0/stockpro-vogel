@@ -4,6 +4,27 @@ const $ = id => document.getElementById(id);
 let snapshot = null;
 let busy = false;
 let editing = null;
+async function openForm(type) {
+  if (busy) return;
+  busy = true;
+  $('new-client').disabled = true; $('new-order').disabled = true;
+  try {
+    if (!snapshot?.catalog || !snapshot?.owner_id) {
+      if (!navigator.onLine) throw new Error('Conecte-se uma vez e entre na sua conta para liberar os formulários neste aparelho. Depois você poderá usar sem internet.');
+      $('status').textContent = 'Abrindo formulário e preparando clientes e produtos…';
+      await ready;
+      show(await prepare(localStorage, fetch, Date.now(), 'write'));
+    }
+    if (!WRITE_ROLES.includes(snapshot?.role)) throw new Error('Sua conta não tem permissão para cadastrar clientes e pedidos.');
+    const form = $(type === 'client' ? 'client-form' : 'order-form');
+    $('status').textContent = type === 'client' ? 'Cadastro de cliente aberto. Preencha os campos abaixo.' : 'Novo pedido aberto. Selecione um cliente ou cadastre um novo.';
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.querySelector('input, select')?.focus({ preventScroll: true });
+  } catch (error) { $('status').textContent = error.message || 'Não foi possível abrir o formulário.'; $('login-link').hidden = false; }
+  finally { busy = false; $('new-client').disabled = false; $('new-order').disabled = false; }
+}
+$('new-client').addEventListener('click', () => void openForm('client'));
+$('new-order').addEventListener('click', () => void openForm('order'));
 function cell(tag, value) { const el = document.createElement(tag); el.textContent = value; return el; }
 function draw() {
   const section = snapshot?.sections[Number($('module').value) || 0];
@@ -21,6 +42,8 @@ function show(value) {
     $('client-form').reset(); $('order-form').reset(); editing = null; $('queue-status').textContent = '';
   }
   snapshot = value;
+  $('write-help').textContent = value?.catalog ? 'Use Novo cliente ou Novo pedido para ir direto ao formulário. Os registros serão salvos no aparelho antes do envio.' : 'Toque em Novo cliente ou Novo pedido. Com internet, os dados necessários serão preparados ao abrir o formulário.';
+  $('login-link').hidden = !!value;
   $('content').hidden = !value;
   $('details').textContent = value ? `${value.name || 'Sua conta'} · Atualizado em ${new Date(value.savedAt).toLocaleString('pt-BR')} · Disponível até ${new Date(value.expiresAt).toLocaleTimeString('pt-BR')}` : 'Nenhuma cópia válida neste aparelho. Conecte-se, entre na sua conta e prepare os dados.';
   $('module').replaceChildren(...(value?.sections || []).map((section, i) => { const option = document.createElement('option'); option.value = String(i); option.textContent = section.name; return option; }));
