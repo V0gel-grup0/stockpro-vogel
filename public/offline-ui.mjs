@@ -1,7 +1,9 @@
 import { KEY, COLUMNS, clear, prepare, read, validate } from './offline-data.mjs';
+import { WRITE_ROLES, listQueue, enqueue, syncQueue, revise } from './offline-queue.mjs';
 const $ = id => document.getElementById(id);
 let snapshot = null;
 let busy = false;
+let editing = null;
 function cell(tag, value) { const el = document.createElement(tag); el.textContent = value; return el; }
 function draw() {
   const section = snapshot?.sections[Number($('module').value) || 0];
@@ -15,11 +17,15 @@ function draw() {
   $('empty').hidden = rows.length > 0;
 }
 function show(value) {
+  if (snapshot?.owner_id !== value?.owner_id) {
+    $('client-form').reset(); $('order-form').reset(); editing = null; $('queue-status').textContent = '';
+  }
   snapshot = value;
   $('content').hidden = !value;
   $('details').textContent = value ? `${value.name || 'Sua conta'} · Atualizado em ${new Date(value.savedAt).toLocaleString('pt-BR')} · Disponível até ${new Date(value.expiresAt).toLocaleTimeString('pt-BR')}` : 'Nenhuma cópia válida neste aparelho. Conecte-se, entre na sua conta e prepare os dados.';
   $('module').replaceChildren(...(value?.sections || []).map((section, i) => { const option = document.createElement('option'); option.value = String(i); option.textContent = section.name; return option; }));
   draw();
+  drawQueue();
 }
 $('module').addEventListener('change', draw);
 $('search').addEventListener('input', draw);
@@ -27,7 +33,7 @@ $('clear').addEventListener('click', () => { clear(localStorage); show(null); $(
 $('prepare').addEventListener('click', async () => {
   if (busy) return;
   busy = true; $('prepare').disabled = true; show(null); $('status').textContent = 'Preparando dados autorizados para sua conta…';
-  try { await ready; show(await prepare(localStorage)); $('status').textContent = 'Consulta offline pronta. Você pode buscar nos dados mesmo sem internet.'; }
+  try { await ready; show(await prepare(localStorage)); $('status').textContent = 'Modo offline pronto para consulta, clientes e pedidos.'; if (navigator.onLine) void sendPending(); }
   catch (error) { show(read(localStorage)); $('status').textContent = error.message || 'Não foi possível salvar neste aparelho.'; }
   finally { busy = false; $('prepare').disabled = !navigator.onLine; }
 });
@@ -37,8 +43,126 @@ async function refresh() {
   try { show(await validate(localStorage)); $('status').textContent = navigator.onLine ? 'Conectado · consulte ou atualize sua cópia.' : 'Sem internet · mostrando somente dados salvos.'; }
   catch { show(null); $('status').textContent = 'Armazenamento indisponível neste navegador.'; }
   $('prepare').disabled = !navigator.onLine || busy;
+  if (navigator.onLine && snapshot?.owner_id) void sendPending();
 }
 window.addEventListener('online', refresh); window.addEventListener('offline', refresh);
-window.addEventListener('storage', event => { if (event.key === KEY) { show(null); void refresh(); } });
+window.addEventListener('storage', event => { if (event.key === KEY) { show(null); void refresh(); } else if (event.key?.startsWith('stockpro-pending-v1:') && snapshot) drawQueue(); });
 setInterval(() => { if (snapshot && !read(localStorage)) { show(null); $('status').textContent = 'A cópia expirou. Conecte-se para atualizar.'; } }, 30000);
 void refresh();
+function option(value, label) { const el = cell('option', label); el.value = value; return el; }
+function drawQueue() {
+  const allowed = snapshot?.catalog && WRITE_ROLES.includes(snapshot.role);
+  $('write').hidden = !allowed;
+  if (!allowed) return;
+  const rows = listQueue(localStorage, snapshot.owner_id);
+  const chosen = $('order-client').value;
+  $('order-client').replaceChildren(option('', 'Selecione o cliente'),
+    ...snapshot.catalog.clients.map(row => option(row.id, `${row.name}${row.document ? ' · ' + row.document : ''}`)),
+    ...rows.filter(row => row.type === 'client').map(row => option('local:' + row.operation_id, `${row.payload.name} · ${row.state === 'sent' ? 'enviado' : 'cliente offline'}`)));
+  if ([...$('order-client').options].some(item => item.value === chosen)) $('order-client').value = chosen;
+  $('queue').replaceChildren(...rows.map(row => {
+    const li = document.createElement('li');
+    const sent = row.result?.order?.order_number ? `Enviado · Pedido #${row.result.order.order_number}` : 'Enviado';
+    li.textContent = `${row.label} — ${row.state === 'sent' ? sent : 'Pendente de envio'}${row.error ? ' · ' + row.error : ''}`;
+    if (row.state !== 'sent' && row.errorStatus === 400) {
+      const button = cell('button', 'Corrigir dados'); button.type = 'button';
+      button.addEventListener('click', () => {
+        editing = row;
+        const form = $(row.type === 'client' ? 'client-form' : 'order-form');
+        for (const [name, value] of Object.entries(row.payload)) if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value;
+        if (row.type === 'order') {
+          $('order-client').value = row.payload.client_operation_id ? 'local:' + row.payload.client_operation_id : row.payload.client_id;
+          fillItems(false); $('order-item').value = row.payload.item_type === 'equipamento' ? row.payload.equipment_name : row.payload.item_id; updateTotal();
+        }
+        $('queue-status').textContent = 'Corrigindo o registro rejeitado. Ajuste os campos e salve novamente.';
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      li.append(document.createTextNode(' '), button);
+    }
+    return li;
+  }));
+  if (!rows.length) $('queue').append(cell('li', 'Nenhum registro offline salvo nesta conta.'));
+  fillItems(false);
+}
+function fillItems(resetPrice = true) {
+  const type = $('order-type').value;
+  const chosen = $('order-item').value;
+  const items = type === 'equipamento' ? snapshot?.catalog?.equipments.map(name => option(name, name)) : snapshot?.catalog?.products.map(row => option(row.id, row.name));
+  $('order-item').replaceChildren(option('', 'Selecione o item'), ...(items || []));
+  if (!resetPrice && [...$('order-item').options].some(item => item.value === chosen)) $('order-item').value = chosen;
+  if (resetPrice) $('order-form').elements.unit_price.value = '';
+}
+function saveDraft(type, payload, label) {
+  const current = read(localStorage);
+  const row = editing?.type === type ? revise(localStorage, current, editing.operation_id, payload, label) : enqueue(localStorage, current, type, payload, label);
+  if (editing?.type === type) editing = null;
+  return row;
+}
+$('order-type').addEventListener('change', () => fillItems());
+$('order-item').addEventListener('change', () => {
+  if ($('order-type').value === 'produto') {
+    const product = snapshot.catalog.products.find(row => row.id === $('order-item').value);
+    $('order-form').elements.unit_price.value = product?.sale_price ?? '';
+  }
+  updateTotal();
+});
+function amounts(form) {
+  const quantity = Number(form.quantity), price = Number(form.unit_price), freight = Number(form.shipping_value || 0);
+  if (!Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 2147483647 || !Number.isFinite(price) || price < 0 || !Number.isFinite(freight) || freight < 0 || form.unit_price === '') throw new Error('Informe quantidade e valores válidos.');
+  const total = quantity * Math.round((price + Number.EPSILON) * 100) + Math.round((freight + Number.EPSILON) * 100);
+  if (!Number.isSafeInteger(total)) throw new Error('Valor acima do limite.');
+  return { quantity, unit_price: price, shipping_value: freight, total: total / 100 };
+}
+function updateTotal() {
+  try { const value = amounts(Object.fromEntries(new FormData($('order-form')))); $('order-total').textContent = `Total com frete: ${value.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`; }
+  catch { $('order-total').textContent = 'Preencha quantidade e valor unitário para calcular o total.'; }
+}
+$('order-form').addEventListener('input', updateTotal);
+$('client-form').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const data = Object.fromEntries(new FormData(event.target));
+    data.phone = data.phone.replace(/\D/g, ''); data.document = data.document.replace(/\D/g, '');
+    if (!/^.{3,}$/.test(data.name.trim()) || (data.document.length !== 14 && data.name.trim().split(/\s+/).length < 2)) throw new Error('Informe o nome completo ou a razão social.');
+    if (!/^\d{10,11}$/.test(data.phone)) throw new Error('Informe telefone com DDD.');
+    const row = saveDraft('client', data, `Cliente: ${data.name}`);
+    event.target.reset(); drawQueue(); $('order-client').value = 'local:' + row.operation_id;
+    $('queue-status').textContent = 'Cliente salvo no aparelho, pendente de envio. Já pode ser selecionado no pedido.';
+    if (navigator.onLine) void sendPending();
+  } catch (error) { $('queue-status').textContent = error.message; }
+});
+$('order-form').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const data = Object.fromEntries(new FormData(event.target));
+    if (!data.client || !data.item) throw new Error('Selecione cliente e item.');
+    const values = amounts(data);
+    const payload = { ...values, item_type: data.item_type, notes: data.notes,
+      ...(data.client.startsWith('local:') ? { client_operation_id: data.client.slice(6) } : { client_id: data.client }),
+      ...(data.item_type === 'equipamento' ? { equipment_name: data.item } : { item_id: data.item }) };
+    const itemName = $('order-item').selectedOptions[0].textContent;
+    saveDraft('order', payload, `Pedido: ${values.quantity} × ${itemName} · ${values.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
+    event.target.reset(); drawQueue(); updateTotal();
+    $('queue-status').textContent = 'Pedido salvo no aparelho. Pendente de envio; ainda não foi registrado no CRM.';
+    if (navigator.onLine) void sendPending();
+  } catch (error) { $('queue-status').textContent = error.message; }
+});
+let sending = false;
+async function sendPending() {
+  if (sending || !snapshot?.owner_id) return;
+  sending = true; $('sync').disabled = true;
+  const owner = snapshot.owner_id;
+  $('queue-status').textContent = 'Enviando pendentes…';
+  try {
+    await syncQueue(localStorage, owner, fetch, () => { if (snapshot?.owner_id === owner) drawQueue(); });
+    if (snapshot?.owner_id === owner) {
+      drawQueue();
+      const pending = listQueue(localStorage, owner).filter(row => row.state !== 'sent').length;
+      $('queue-status').textContent = pending ? `${pending} registro(s) continuam pendentes. Confira os avisos na lista.` : 'Envio concluído. Clientes e pedidos estão registrados no sistema.';
+    }
+  } catch (error) { if (snapshot?.owner_id === owner) $('queue-status').textContent = error.message; }
+  finally { sending = false; $('sync').disabled = false; }
+}
+$('sync').addEventListener('click', () => void sendPending());
+window.addEventListener('online', () => void sendPending());
+window.addEventListener('stockpro-queue-updated', () => { if (snapshot) drawQueue(); });

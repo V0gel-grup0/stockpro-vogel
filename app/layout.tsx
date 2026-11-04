@@ -51,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <AppInstallation />
         <OfflineAccess />
+        <script type="module" src="/offline-autosync.mjs" />
         <CrmAdminFiltersEnhancer />
         <CrmOtherTasksEnhancer />
         <CrmOtherClientSelectionGuard />
