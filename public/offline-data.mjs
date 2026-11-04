@@ -40,13 +40,14 @@ async function profile(fetcher) {
   if (!value.id || value.status !== 'approved') throw new Error('Acesso indisponível. Entre novamente.');
   return value;
 }
-export async function prepare(storage, fetcher = fetch, now = Date.now()) {
+export async function prepare(storage, fetcher = fetch, now = Date.now(), scope = 'all') {
   clear(storage);
   const epoch = storage.getItem(EPOCH);
   const account = await profile(fetcher);
   const sections = [];
   const catalog = { clients: [], products: [], equipments: [] };
   for (const [name, url, key] of MODULES) {
+    if (scope === 'write' && !['clients', 'products'].includes(key)) continue;
     const response = await fetcher(url, { cache: 'no-store' });
     if (response.status === 403) continue;
     if (!response.ok) throw new Error(`Não foi possível preparar ${name}. Tente novamente com internet.`);
