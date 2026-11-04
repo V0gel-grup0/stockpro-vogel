@@ -94,6 +94,7 @@ function fillItems(resetPrice = true) {
 }
 function saveDraft(type, payload, label) {
   const current = read(localStorage);
+  if (!current || current.owner_id !== snapshot?.owner_id) throw new Error('A conta mudou. Prepare os dados novamente antes de salvar.');
   const row = editing?.type === type ? revise(localStorage, current, editing.operation_id, payload, label) : enqueue(localStorage, current, type, payload, label);
   if (editing?.type === type) editing = null;
   return row;

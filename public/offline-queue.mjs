@@ -19,6 +19,10 @@ export function enqueue(storage, snapshot, type, payload, label, id = crypto.ran
   return row;
 }
 export async function syncQueue(storage, owner, fetcher = fetch, changed = () => {}) {
+  if (globalThis.navigator?.locks) return navigator.locks.request(`stockpro-sync-${owner}`, () => syncUnlocked(storage, owner, fetcher, changed));
+  return syncUnlocked(storage, owner, fetcher, changed);
+}
+async function syncUnlocked(storage, owner, fetcher, changed) {
   const profileResponse = await fetcher('/api/auth/profile', { cache: 'no-store' });
   if (!profileResponse.ok) throw new Error('Entre novamente na mesma conta para enviar os pendentes.');
   const actor = await profileResponse.json();
