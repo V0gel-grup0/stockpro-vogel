@@ -10,5 +10,5 @@ export default function OfflineAccess() {
     navigator.serviceWorker.register("/stockpro-sw.js").then(() => navigator.serviceWorker.ready).then(() => { if (active) setReady(true); }).catch(() => {});
     return () => { active = false; };
   }, []);
-  return ready ? <a className="offline-access no-print" href="/offline.html">Consulta offline</a> : null;
+  return ready ? <a className="offline-access no-print" href="/offline.html">Modo offline</a> : null;
 }
