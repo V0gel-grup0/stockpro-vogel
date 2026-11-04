@@ -23,7 +23,7 @@ test("manifesto instala o StockPro com abertura própria, ícones corretos e esc
   assert.equal(manifest.start_url, "/abrir");
   assert.equal(manifest.scope, "/");
   assert.deepEqual(manifest.icons.filter((icon) => icon.purpose === "any").map((icon) => icon.sizes), ["192x192", "512x512"]);
-  assert.ok(manifest.icons.some((icon) => icon.purpose === "maskable"));
+  assert.ok(manifest.icons.every((icon) => icon.purpose === "any"));
 });
 
 test("ícones PNG usam a logo original, geram todas as dimensões e rejeitam tamanho arbitrário", async () => {

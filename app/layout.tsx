@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   applicationName: "StockPro Vogel",
   appleWebApp: { capable: true, title: "StockPro Vogel", statusBarStyle: "default" },
   icons: {
-    icon: [{ url: "/api/app-icon?v=2&size=48", type: "image/png", sizes: "48x48" }],
-    apple: [{ url: "/api/app-icon?v=2&size=180", type: "image/png", sizes: "180x180" }],
+    icon: [{ url: "/api/app-icon?v=3&size=48", type: "image/png", sizes: "48x48" }],
+    apple: [{ url: "/api/app-icon?v=3&size=180", type: "image/png", sizes: "180x180" }],
   },
 };
 

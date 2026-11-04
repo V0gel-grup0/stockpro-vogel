@@ -7,9 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "pt-BR", start_url: "/abrir", scope: "/", display: "standalone",
     background_color: "#0b1324", theme_color: "#0b1324",
     icons: [
-      { src: "/api/app-icon?v=2&size=192", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/api/app-icon?v=2&size=512", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/api/app-icon?v=2&size=512&maskable=1", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/api/app-icon?v=3&size=192", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/api/app-icon?v=3&size=512", sizes: "512x512", type: "image/png", purpose: "any" },
     ],
   };
 }
