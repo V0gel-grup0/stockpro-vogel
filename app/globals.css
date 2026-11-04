@@ -11,7 +11,8 @@ a { color: inherit; }
 .layout-grid { display: grid; grid-template-columns: 290px minmax(0,1fr); width: 100%; }
 .sidebar { height: calc(100vh - 75px); position: sticky; top: 75px; background: #0f172a; border-right: 1px solid rgba(148,163,184,.2); padding: 22px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
 .brand { display: flex; align-items: center; gap: 14px; padding: 4px 4px 18px; }
-.brand-logo { width: 96px; height: 76px; object-fit: contain; border-radius: 16px; background: #fff; padding: 6px; box-shadow: 0 10px 28px rgba(0,0,0,.26); }
+img[src="/logo-vogel.png"] { filter: url("#stockpro-white-logo"); }
+.brand-logo { width: 96px; height: 76px; object-fit: contain; background: transparent; padding: 6px; }
 .brand-text strong { display:block; font-size:22px; font-weight:900; color:#fff; line-height:1.1; }
 .brand-text small { display:block; color:#94a3b8; font-size:13px; margin-top:4px; }
 .menu-list { display: grid; gap: 10px; }
@@ -392,7 +393,7 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
 .quote-document { max-width:1050px; }
 .quote-document-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:24px; }
 .quote-print-header { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-bottom:24px; border-bottom:2px solid rgba(148,163,184,.22); }
-.quote-print-header img { width:150px; height:90px; object-fit:contain; border-radius:14px; background:white; padding:6px; }
+.quote-print-header img { width:150px; height:90px; object-fit:contain; background:transparent; padding:6px; }
 .quote-print-header div { flex:1; }
 .quote-print-header span { color:#94a3b8; font-weight:800; letter-spacing:.12em; }
 .quote-print-header h1 { margin:5px 0 0; font-size:30px; }
@@ -519,6 +520,7 @@ textarea.input { height:auto; min-height:96px; resize:vertical; }
   }
 
   .quote-print-header img {
+    filter:url("#stockpro-white-logo") brightness(0) !important;
     width:105px !important;
     height:58px !important;
     padding:3px !important;
@@ -905,3 +907,4 @@ textarea:focus {
   .crm-opportunity-list-row button { grid-column: 2; grid-row: 1 / span 3; }
   .crm-record-list-content { padding-left: 28px; }
 }
+

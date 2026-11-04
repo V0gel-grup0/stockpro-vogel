@@ -41,6 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body>
+        <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
+          <defs><filter id="stockpro-white-logo" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -0.23386 -0.78672 -0.07942 0 1.1" />
+            <feComposite in2="SourceAlpha" operator="in" />
+          </filter></defs>
+        </svg>
         {children}
         <AppInstallation />
         <CrmAdminFiltersEnhancer />
