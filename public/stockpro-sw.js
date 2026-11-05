@@ -1,5 +1,5 @@
 // Only the public consultation shell is cached. Authenticated API responses never enter Cache Storage.
-const CACHE = 'stockpro-offline-shell-v6';
+const CACHE = 'stockpro-offline-shell-v7';
 const FILES = ['/offline.html', '/offline-ui.mjs', '/offline-data.mjs', '/offline-queue.mjs', '/offline-autosync.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
@@ -7,11 +7,23 @@ self.addEventListener('install', event => {
 self.addEventListener('push', event => {
   let payload;
   try { payload = event.data?.json(); } catch { payload = null; }
-  event.waitUntil(self.registration.showNotification('StockPro Vogel', {
+  const acknowledge = async state => {
+    if (typeof payload?.testId !== 'string') return;
+    try { await fetch('/api/push/receipt', { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:payload.testId,state}) }); } catch {}
+  };
+  event.waitUntil((async () => {
+    // Display promptly, even if the receipt endpoint is slow or unavailable.
+    const received = acknowledge('received');
+    try { await self.registration.showNotification('StockPro Vogel', {
     body: typeof payload?.body === 'string' ? payload.body.slice(0, 400) : 'Você tem novos avisos. Abra o StockPro para conferir.',
     icon: '/api/app-icon?v=3&size=192', tag: typeof payload?.tag === 'string' ? payload.tag.slice(0, 100) : 'stockpro-reminder',
     data: { url: '/notificacoes' },
-  }));
+    }); await received; await acknowledge('displayed'); }
+    catch { await received; await acknowledge('failed'); }
+  })());
+});
+self.addEventListener('message', event => {
+  if(event.data?.type === 'stockpro-push-ping') event.ports?.[0]?.postMessage({type:'stockpro-push-ready'});
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
