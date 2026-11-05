@@ -3,6 +3,7 @@ import { authorizeApi } from "@/lib/api-auth";
 import { ASSEMBLY_DELETE_ROLES } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
+import { recordOfflineAssembly, OfflineStockError } from "@/lib/offline-stock-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,29 +44,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const authorization = await authorizeApi(["administrador", "gerente", "tecnico"]); if ("response" in authorization) return authorization.response;
-    const body = await request.json(); const equipment = text(body.equipment); const quantity = Number(body.quantity || 0); const createdBy = authorization.profile.id; const technicianId = text(body.technician_id) || null;
-    if (!equipment || !Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ sucesso: false, erro: "Dados da montagem inválidos." }, { status: 400 });
-    const assembly = await prisma.$transaction(async (tx) => {
-      const divisions = await tx.equipment_components.findMany({ where: { equipment_name: equipment }, include: { components: true } });
-      if (!divisions.length) throw new Error(`Nenhuma composição cadastrada para ${equipment}. Cadastre os componentes padrão ou configure a divisão por equipamento.`);
-      const insufficient = divisions.filter((d) => Number(d.components.quantity) < Number(d.qty_per_equipment) * quantity);
-      if (insufficient.length) throw new Error(`Estoque insuficiente para montar ${equipment}: ${insufficient.map((d) => `${d.components.name} precisa ${Number(d.qty_per_equipment) * quantity} e tem ${Number(d.components.quantity)}`).join("; ")}.`);
-      for (const div of divisions) {
-        const need = Number(div.qty_per_equipment) * quantity;
-        await tx.components.update({ where: { id: div.component_id }, data: { quantity: Number(div.components.quantity) - need, updated_at: new Date() } });
-        await tx.movements.create({ data: { type: "saida", item_type: "componente", item_kind: "componente", item_id: div.component_id, component_id: div.component_id, item_name: div.components.name, quantity: need, notes: `Baixa automática de componente: montagem de ${equipment}`, created_by: createdBy || null } });
-      }
-      const created = await tx.assemblies.create({ data: { equipment, quantity: Math.trunc(quantity), technician_id: technicianId, created_by: createdBy || null } });
-      await tx.mounted_equipments.upsert({
-        where: { equipment_name: equipment },
-        update: { quantity: { increment: quantity }, updated_at: new Date() },
-        create: { equipment_name: equipment, quantity, min_stock: 0, notes: "" },
-      });
-      return created;
-    }, { maxWait: 5000, timeout: 20000 });
-    return NextResponse.json({ sucesso: true, assembly: toJsonSafe(assembly) }, { status: 201 });
-  } catch (error) { return assemblyErrorResponse(error); }
+    const authorization=await authorizeApi(["administrador","gerente","tecnico"]);
+    if("response" in authorization)return authorization.response;
+    const body=await request.json();
+    const result=await prisma.$transaction(tx=>recordOfflineAssembly(tx,authorization.profile,body),{maxWait:5000,timeout:30000});
+    return NextResponse.json({sucesso:true,assembly:toJsonSafe(result.assembly)},{status:201});
+  }catch(error){if(error instanceof OfflineStockError)return NextResponse.json({sucesso:false,erro:error.message},{status:error.status});return assemblyErrorResponse(error);}
 }
 
 export async function PUT(request: Request) {
@@ -77,3 +61,4 @@ export async function DELETE(request: Request) {
   try { const authorization = await authorizeApi(ASSEMBLY_DELETE_ROLES); if ("response" in authorization) return authorization.response; const id = new URL(request.url).searchParams.get("id"); if (!id) return NextResponse.json({ sucesso: false, erro: "ID é obrigatório." }, { status: 400 }); await prisma.assemblies.delete({ where: { id } }); return NextResponse.json({ sucesso: true }); }
   catch (error) { return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao excluir montagem." }, { status: 500 }); }
 }
+

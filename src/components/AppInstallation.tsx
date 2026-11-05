@@ -47,7 +47,7 @@ export default function AppInstallation() {
       <p>Tenha o StockPro na tela inicial do seu aparelho.</p>
       {prompt && <button type="button" className="btn btn-blue" disabled={busy} onClick={() => void install()}>{busy ? "Aguarde…" : "Instalar neste aparelho"}</button>}
       {ios ? <ol><li>Abra este site no <strong>Safari</strong>.</li><li>Toque em <strong>Compartilhar</strong> no menu do navegador.</li><li>Escolha <strong>Adicionar à Tela de Início</strong>.</li><li>Se aparecer, mantenha <strong>Abrir como App da Web</strong> ativado e toque em <strong>Adicionar</strong>.</li></ol> : <ol><li>Abra este site no <strong>Chrome</strong> ou <strong>Edge</strong>.</li><li>No menu do navegador, procure <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.</li><li>Confirme a instalação e abra pelo ícone do <strong>Grupo Vogel</strong>.</li></ol>}
-      <p className="app-install-note">Use o mesmo login e senha do site. Abra Modo offline e prepare os dados neste aparelho enquanto estiver conectado. Você poderá consultar, cadastrar clientes e fazer pedidos sem internet; os novos registros ficam pendentes até o envio. Baixas de estoque e notificações ainda precisam de internet.</p>
+      <p className="app-install-note">Use o mesmo login e senha do site. Abra Modo offline e prepare os dados neste aparelho enquanto estiver conectado. Você poderá consultar, cadastrar clientes, fazer pedidos e registrar montagens e saídas conforme seu perfil. Os registros e NFs ficam pendentes no aparelho; o estoque só muda depois da validação e confirmação online.</p>
       {message && <p role="status">{message}</p>}
       <a className="app-install-preview" href="/abrir">Ver apresentação de abertura →</a>
     </dialog>

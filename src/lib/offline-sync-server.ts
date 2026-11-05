@@ -5,12 +5,15 @@ import { calculateOrderValues } from "@/lib/order-pricing";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 import { buildAccessibleClientWhere } from "@/lib/client-visibility";
 import { syncOrderWorkflow } from "@/lib/order-workflow-server";
+import { canQueueOperation } from "../../public/offline-policy.mjs";
+import { recordOfflineAssembly, recordOfflineExit } from "@/lib/offline-stock-server";
+import type { MovementInvoice } from "@/lib/movement-invoice-server";
 
 export class OfflineSyncError extends Error { constructor(message: string, public status = 400) { super(message); } }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 export function assertOfflineEnvelope(body: any, actorId: string) {
-  if (!body || !uuid.test(body.operation_id) || !["client", "order"].includes(body.type) || !body.payload || typeof body.payload !== "object" || Array.isArray(body.payload)) throw new OfflineSyncError("Operação offline inválida.");
+  if (!body || !uuid.test(body.operation_id) || !["client", "order", "assembly", "order_exit", "product_exit"].includes(body.type) || !body.payload || typeof body.payload !== "object" || Array.isArray(body.payload)) throw new OfflineSyncError("Operação offline inválida.");
   if (body.owner_id !== actorId) throw new OfflineSyncError("Entre na conta que criou este registro offline.", 403);
 }
 let structure: Promise<unknown> | undefined;
@@ -22,8 +25,11 @@ export function ensureOfflineReceipts() {
   )`).catch(error => { structure = undefined; throw error; });
   return structure;
 }
-export async function applyOfflineOperation(tx: any, actor: { id: string; role: any }, body: any) {
+export async function applyOfflineOperation(tx: any, actor: { id: string; role: any }, body: any, invoice:MovementInvoice|null=null) {
   assertOfflineEnvelope(body, actor.id);
+  if(!canQueueOperation(actor.role,body.type))throw new OfflineSyncError('Seu perfil não tem permissão para esta operação.',403);
+  if(body.payload.invoice_file&&!invoice)throw new OfflineSyncError('A NF salva no aparelho não foi encontrada. Confira o anexo antes de enviar.');
+  if(invoice){if(!['order_exit','product_exit'].includes(body.type))throw new OfflineSyncError('A NF só pode ser anexada a uma saída.');body={...body,payload:{...body.payload,invoice_sha256:createHash('sha256').update(invoice.bytes).digest('hex'),invoice_name:invoice.fileName}};}
   // Stable serialization means a retry's property order does not change its identity.
   const canonical = (value: any): any => value && typeof value === "object" ? (Array.isArray(value) ? value.map(canonical) : Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])]))) : value;
   const hash = createHash("sha256").update(JSON.stringify(canonical({ type: body.type, payload: body.payload }))).digest("hex");
@@ -40,6 +46,18 @@ export async function applyOfflineOperation(tx: any, actor: { id: string; role: 
     if (!validation.valido) throw new OfflineSyncError("erro" in validation ? validation.erro : "Cadastro inválido.");
     const client = await tx.clients.create({ data: { ...validation.dados, proposal_status: "Lead Frio", created_by: actor.id } });
     result = { type: "client", client: { id: client.id, name: client.name } };
+  } else if(body.type==='assembly'){
+    result=await recordOfflineAssembly(tx,actor,input);
+  } else if(['order_exit','product_exit'].includes(body.type)){
+    const resolved={...input};
+    if(input.order_operation_id){
+      if(!uuid.test(input.order_operation_id))throw new OfflineSyncError('Pedido offline inválido.');
+      const dependency=await tx.$queryRaw`SELECT result FROM offline_operation_receipts WHERE actor_id=${actor.id}::uuid AND operation_id=${input.order_operation_id}::uuid`;
+      if(dependency[0]?.result?.type!=='order')throw new OfflineSyncError('Envie primeiro o pedido desta saída.',409);
+      resolved.order_id=dependency[0].result.order.id;
+      resolved.expected_updated_at=dependency[0].result.order.updated_at;
+    }
+    result=await recordOfflineExit(tx,actor,body.type,resolved,invoice);
   } else {
     let clientId = text(input.client_id);
     if (input.client_operation_id) {
@@ -65,7 +83,7 @@ export async function applyOfflineOperation(tx: any, actor: { id: string; role: 
       notes: text(input.notes).slice(0, 5000), updated_at: new Date(),
     } });
     await syncOrderWorkflow(tx, order);
-    result = { type: "order", order: { id: order.id, order_number: String(order.order_number) } };
+    result = { type: "order", order: { id: order.id, order_number: String(order.order_number), updated_at:order.updated_at?new Date(order.updated_at).toISOString():null } };
   }
   await tx.$executeRaw`INSERT INTO offline_operation_receipts(actor_id, operation_id, payload_hash, result)
     VALUES (${actor.id}::uuid, ${body.operation_id}::uuid, ${hash}, ${JSON.stringify(result)}::jsonb)`;

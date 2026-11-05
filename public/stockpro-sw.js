@@ -1,6 +1,6 @@
 // Only the public consultation shell is cached. Authenticated API responses never enter Cache Storage.
-const CACHE = 'stockpro-offline-shell-v7';
-const FILES = ['/offline.html', '/offline-ui.mjs', '/offline-data.mjs', '/offline-queue.mjs', '/offline-autosync.mjs'];
+const CACHE = 'stockpro-offline-shell-v8';
+const FILES = ['/offline.html', '/offline-ui.mjs', '/offline-data.mjs', '/offline-queue.mjs', '/offline-autosync.mjs', '/offline-policy.mjs', '/offline-files.mjs', '/offline-stock-ui.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
 });

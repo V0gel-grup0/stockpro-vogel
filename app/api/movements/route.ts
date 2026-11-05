@@ -49,14 +49,16 @@ async function manual(body: Record<string, any>, profileId: string, invoice: Mov
       if (!Number.isInteger(quantity)) throw new Error("A quantidade de produto deve ser inteira.");
       const item = await tx.products.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Produto não encontrado."); itemName = item.name;
       const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
-      await tx.products.update({ where: { id: itemId }, data: { quantity: next, updated_at: new Date() } });
+      const changed = await tx.products.updateMany({ where: { id: itemId, ...(type === 'saida' ? {quantity:{gte:quantity}} : {}) }, data: { quantity: type === 'saida' ? {decrement:quantity} : {increment:quantity}, updated_at: new Date() } });
+      if(changed.count!==1)throw new Error('Estoque insuficiente. Atualize os dados antes de tentar novamente.');
       const movement = await tx.movements.create({ data: { type, item_type: "produto", item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de produto: ${itemName}`, created_by: profileId || null } });
       await saveMovementInvoice(tx, invoice, profileId, [movement]);
       return movement;
     }
     const item = await tx.components.findUnique({ where: { id: itemId } }); if (!item) throw new Error("Componente não encontrado."); itemName = item.name;
     const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
-    await tx.components.update({ where: { id: itemId }, data: { quantity: next, updated_at: new Date() } });
+    const changed = await tx.components.updateMany({ where: { id: itemId, ...(type === 'saida' ? {quantity:{gte:quantity}} : {}) }, data: { quantity: type === 'saida' ? {decrement:quantity} : {increment:quantity}, updated_at: new Date() } });
+    if(changed.count!==1)throw new Error('Estoque insuficiente. Atualize os dados antes de tentar novamente.');
     return tx.movements.create({ data: { type, item_type: "componente", item_kind: "componente", item_id: itemId, component_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de componente: ${itemName}`, created_by: profileId || null } });
   });
 }
@@ -80,7 +82,7 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
       itemName = text(nf.produto_nome); if (!itemName) throw new Error("Informe o produto da NF."); if (!Number.isInteger(quantity)) throw new Error("A quantidade de produto deve ser inteira.");
       let product = await tx.products.findFirst({ where: { name: { equals: itemName, mode: "insensitive" } } });
       if (product) {
-        product = await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) + quantity, cost_price: unitCost, supplier_id: supplier.id, category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), updated_at: new Date() } });
+        product = await tx.products.update({ where: { id: product.id }, data: { quantity: { increment: quantity }, cost_price: unitCost, supplier_id: supplier.id, category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), updated_at: new Date() } });
       } else {
         product = await tx.products.create({ data: { name: itemName, sku: "", category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), cost_price: unitCost, sale_price: 0, quantity, min_stock: 0, supplier_id: supplier.id, description: `Produto cadastrado automaticamente pela NF ${text(nf.nf_number) || text(nf.nf_key)}` } });
       }
@@ -91,7 +93,7 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
 
     itemId = text(nf.component_id); if (!itemId) throw new Error("Selecione um componente já cadastrado no estoque geral.");
     let component = await tx.components.findUnique({ where: { id: itemId } }); if (!component) throw new Error("Componente não encontrado."); itemName = component.name;
-    component = await tx.components.update({ where: { id: itemId }, data: { quantity: Number(component.quantity) + quantity, cost_price: unitCost, supplier_id: supplier.id, category: component.category || text(nf.component_category), equipment: "Estoque geral", nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), updated_at: new Date() } });
+    component = await tx.components.update({ where: { id: itemId }, data: { quantity: { increment: quantity }, cost_price: unitCost, supplier_id: supplier.id, category: component.category || text(nf.component_category), equipment: "Estoque geral", nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), updated_at: new Date() } });
     const movement = await tx.movements.create({ data: { type: "entrada", item_type: "componente", item_kind: "componente", nf_item_kind: "componente", item_id: itemId, component_id: itemId, item_name: itemName, quantity, notes: text(nf.notes) || `Entrada automática pela NF ${text(nf.nf_number) || text(nf.nf_key)}`, created_by: profileId || null, supplier_id: supplier.id, nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), nf_key: text(nf.nf_key), unit_cost: unitCost, total_cost: quantity * unitCost } });
     return { movement, supplier, item: component };
   });
@@ -138,7 +140,8 @@ async function orderExit(body: Record<string, any>, profileId: string, invoice: 
           const product = await tx.products.findUnique({ where: { id: item.product_id } });
           if (!product) throw new Error(`Produto do pedido não encontrado no estoque: ${item.item_name}.`);
           if (Number(product.quantity) < quantity) throw new Error(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity}. Pedido: ${quantity}.`);
-          await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) - quantity, updated_at: new Date() } });
+          const changed = await tx.products.updateMany({ where: { id: product.id, quantity:{gte:quantity} }, data: { quantity:{decrement:quantity}, updated_at: new Date() } });
+          if(changed.count!==1)throw new Error(`Estoque insuficiente de ${product.name}. Nenhuma saída foi salva.`);
           movements.push(await tx.movements.create({ data: { type: "saida", item_type: "produto", item_kind: "produto", item_id: product.id, product_id: product.id, item_name: product.name, quantity, notes: text(body.notes) || `Saída automática pelo pedido #${order.order_number} - ${product.name}`, created_by: profileId || null, order_id: order.id } }));
           continue;
         }
@@ -159,7 +162,8 @@ async function orderExit(body: Record<string, any>, profileId: string, invoice: 
       if (!order.item_id) throw new Error("Produto do pedido não informado.");
       const product = await tx.products.findUnique({ where: { id: order.item_id } }); if (!product) throw new Error("Produto do pedido não encontrado no estoque."); itemName = product.name;
       if (Number(product.quantity) < quantity) throw new Error(`Estoque insuficiente. Disponível: ${product.quantity}. Pedido: ${quantity}.`);
-      await tx.products.update({ where: { id: product.id }, data: { quantity: Number(product.quantity) - quantity, updated_at: new Date() } });
+      const changed = await tx.products.updateMany({ where: { id: product.id, quantity:{gte:quantity} }, data: { quantity:{decrement:quantity}, updated_at: new Date() } });
+      if(changed.count!==1)throw new Error(`Estoque insuficiente de ${product.name}. Nenhuma saída foi salva.`);
     } else {
       const movements = await exitMountedEquipment(tx, order.equipment_name || "", quantity, { orderId: order.id, orderNumber: order.order_number, profileId, notes: text(body.notes) });
       await tx.orders.update({ where: { id: order.id }, data: { status: "enviado", updated_at: new Date() } });
@@ -206,3 +210,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao salvar movimentação." }, { status: 500 });
   }
 }
+

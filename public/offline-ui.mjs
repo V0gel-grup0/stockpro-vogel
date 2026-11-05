@@ -1,5 +1,7 @@
 import { KEY, COLUMNS, clear, prepare, read, validate } from './offline-data.mjs';
 import { WRITE_ROLES, listQueue, enqueue, syncQueue, revise } from './offline-queue.mjs';
+import { canQueueOperation } from './offline-policy.mjs';
+import { setupStockUI, renderStockForms, editStockDraft } from './offline-stock-ui.mjs';
 const $ = id => document.getElementById(id);
 let snapshot = null;
 let busy = false;
@@ -9,15 +11,16 @@ async function openForm(type) {
   busy = true;
   $('new-client').disabled = true; $('new-order').disabled = true;
   try {
-    if (!snapshot?.catalog || !snapshot?.owner_id) {
+    const inventory=['assembly','order_exit'].includes(type);
+    if (!snapshot?.catalog || !snapshot?.owner_id || (inventory&&!snapshot.catalog.inventory)) {
       if (!navigator.onLine) throw new Error('Conecte-se uma vez e entre na sua conta para liberar os formulários neste aparelho. Depois você poderá usar sem internet.');
       $('status').textContent = 'Abrindo formulário e preparando clientes e produtos…';
       await ready;
-      show(await prepare(localStorage, fetch, Date.now(), 'write'));
+      show(await prepare(localStorage, fetch, Date.now(), inventory?'inventory':'write'));
     }
-    if (!WRITE_ROLES.includes(snapshot?.role)) throw new Error('Sua conta não tem permissão para cadastrar clientes e pedidos.');
-    const form = $(type === 'client' ? 'client-form' : 'order-form');
-    $('status').textContent = type === 'client' ? 'Cadastro de cliente aberto. Preencha os campos abaixo.' : 'Novo pedido aberto. Selecione um cliente ou cadastre um novo.';
+    if (!canQueueOperation(snapshot?.role,type)) throw new Error('Sua conta não tem permissão para esta operação.');
+    const form = $(({client:'client-form',order:'order-form',assembly:'assembly-form',order_exit:'exit-form'})[type]);
+    $('status').textContent = 'Formulário aberto. Preencha os campos abaixo para salvar no aparelho.';
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     form.querySelector('input, select')?.focus({ preventScroll: true });
   } catch (error) { $('status').textContent = error.message || 'Não foi possível abrir o formulário.'; $('login-link').hidden = false; }
@@ -25,6 +28,8 @@ async function openForm(type) {
 }
 $('new-client').addEventListener('click', () => void openForm('client'));
 $('new-order').addEventListener('click', () => void openForm('order'));
+$('new-assembly').addEventListener('click',()=>void openForm('assembly'));
+$('new-exit').addEventListener('click',()=>void openForm('order_exit'));
 function cell(tag, value) { const el = document.createElement(tag); el.textContent = value; return el; }
 function draw() {
   const section = snapshot?.sections[Number($('module').value) || 0];
@@ -42,7 +47,7 @@ function show(value) {
     $('client-form').reset(); $('order-form').reset(); editing = null; $('queue-status').textContent = '';
   }
   snapshot = value;
-  $('write-help').textContent = value?.catalog ? 'Use Novo cliente ou Novo pedido para ir direto ao formulário. Os registros serão salvos no aparelho antes do envio.' : 'Toque em Novo cliente ou Novo pedido. Com internet, os dados necessários serão preparados ao abrir o formulário.';
+  $('write-help').textContent = 'Use os botões acima para abrir as operações disponíveis para seu perfil. Os registros ficam pendentes no aparelho até a confirmação do envio.';
   $('login-link').hidden = !!value;
   $('content').hidden = !value;
   $('details').textContent = value ? `${value.name || 'Sua conta'} · Atualizado em ${new Date(value.savedAt).toLocaleString('pt-BR')} · Disponível até ${new Date(value.expiresAt).toLocaleTimeString('pt-BR')}` : 'Nenhuma cópia válida neste aparelho. Conecte-se, entre na sua conta e prepare os dados.';
@@ -56,11 +61,21 @@ $('clear').addEventListener('click', () => { clear(localStorage); show(null); $(
 $('prepare').addEventListener('click', async () => {
   if (busy) return;
   busy = true; $('prepare').disabled = true; show(null); $('status').textContent = 'Preparando dados autorizados para sua conta…';
-  try { await ready; show(await prepare(localStorage)); $('status').textContent = 'Modo offline pronto para consulta, clientes e pedidos.'; if (navigator.onLine) void sendPending(); }
+  try { await ready; show(await prepare(localStorage)); $('status').textContent = 'Modo offline preparado com as operações permitidas para sua conta.'; if (navigator.onLine) void sendPending(); }
   catch (error) { show(read(localStorage)); $('status').textContent = error.message || 'Não foi possível salvar neste aparelho.'; }
   finally { busy = false; $('prepare').disabled = !navigator.onLine; }
 });
-const ready = 'serviceWorker' in navigator ? navigator.serviceWorker.register('/stockpro-sw.js').then(() => navigator.serviceWorker.ready) : Promise.reject(new Error('Este navegador não oferece consulta offline.'));
+const ready = 'serviceWorker' in navigator ? navigator.serviceWorker.register('/stockpro-sw.js',{updateViaCache:'none'}).then(async registration => {
+  if(navigator.onLine&&registration?.update)await registration.update();
+  const worker=registration?.installing||registration?.waiting;
+  if(worker&&worker.state!=='activated')await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>finish(new Error('A preparação do app demorou. Reabra com internet e tente novamente.')),20000);
+    const finish=error=>{clearTimeout(timer);worker.removeEventListener('statechange',changed);error?reject(error):resolve();};
+    const changed=()=>{if(worker.state==='activated')finish();else if(worker.state==='redundant')finish(new Error('O app está atualizando. Reabra esta tela para continuar.'));};
+    worker.addEventListener('statechange',changed);changed();
+  });
+  return navigator.serviceWorker.ready;
+}) : Promise.reject(new Error('Este navegador não oferece consulta offline.'));
 ready.catch(error => { $('status').textContent = error.message; $('prepare').disabled = true; });
 async function refresh() {
   try { show(await validate(localStorage)); $('status').textContent = navigator.onLine ? 'Conectado · consulte ou atualize sua cópia.' : 'Sem internet · mostrando somente dados salvos.'; }
@@ -74,6 +89,7 @@ setInterval(() => { if (snapshot && !read(localStorage)) { show(null); $('status
 void refresh();
 function option(value, label) { const el = cell('option', label); el.value = value; return el; }
 function drawQueue() {
+  renderStockForms(snapshot);
   const allowed = snapshot?.catalog && WRITE_ROLES.includes(snapshot.role);
   $('write').hidden = !allowed;
   if (!allowed) return;
@@ -87,9 +103,10 @@ function drawQueue() {
     const li = document.createElement('li');
     const sent = row.result?.order?.order_number ? `Enviado · Pedido #${row.result.order.order_number}` : 'Enviado';
     li.textContent = `${row.label} — ${row.state === 'sent' ? sent : 'Pendente de envio'}${row.error ? ' · ' + row.error : ''}`;
-    if (row.state !== 'sent' && row.errorStatus === 400) {
+    if (row.state !== 'sent' && [400,409].includes(row.errorStatus)) {
       const button = cell('button', 'Corrigir dados'); button.type = 'button';
       button.addEventListener('click', () => {
+        if(editStockDraft(row))return;
         editing = row;
         const form = $(row.type === 'client' ? 'client-form' : 'order-form');
         for (const [name, value] of Object.entries(row.payload)) if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value;
@@ -190,3 +207,4 @@ async function sendPending() {
 $('sync').addEventListener('click', () => void sendPending());
 window.addEventListener('online', () => void sendPending());
 window.addEventListener('stockpro-queue-updated', () => { if (snapshot) drawQueue(); });
+setupStockUI({getSnapshot:()=>snapshot,drawQueue,sendPending});
