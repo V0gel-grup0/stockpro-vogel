@@ -59,11 +59,12 @@ form>button{width:100%;min-width:0}#order-total{font-size:18px;padding:14px 16px
 }
 </style><script type="module" src="/offline-ui.mjs"></script></head><body><main>
 <small>GRUPO VOGEL · STOCKPRO</small><h1>Modo offline</h1>
-<div class="notice"><strong>Consultar, cadastrar clientes e fazer pedidos</strong><p>Prepare uma cópia com internet neste aparelho. Os dados refletem a última atualização e ficam disponíveis por até 8 horas. Alterações de acesso serão conferidas quando houver conexão. Use apenas em aparelho de confiança.</p><p>Clientes e pedidos ficam pendentes neste aparelho até o envio. Baixas de estoque, anexos e notificações ainda precisam de internet. Os pendentes são preservados quando a consulta expira; entre na mesma conta e prepare os dados para continuar.</p></div>
-<div class="actions"><button id="new-client" type="button">Novo cliente</button><button id="new-order" type="button">Novo pedido</button><button id="prepare">Preparar / atualizar dados</button><a href="/">Voltar ao sistema</a><button id="clear">Apagar cópia offline</button></div>
+<div class="notice"><strong>Operação offline, com confirmação no envio</strong><p>Prepare uma cópia com internet neste aparelho. Os dados refletem a última atualização e ficam disponíveis por até 8 horas. Alterações de acesso serão conferidas quando houver conexão. Use apenas em aparelho de confiança.</p><p>Clientes e pedidos ficam pendentes neste aparelho até o envio. Montagens, saídas e suas NFs também podem ser salvas no aparelho; a baixa só acontece após validação online. Notificações precisam de internet. Os pendentes são preservados quando a consulta expira; entre na mesma conta e prepare os dados para continuar.</p></div>
+<div class="actions"><button id="new-client" type="button">Novo cliente</button><button id="new-order" type="button">Novo pedido</button><button id="new-assembly" type="button">Registrar montagem</button><button id="new-exit" type="button">Registrar saída</button><button id="prepare">Preparar / atualizar dados</button><a href="/">Voltar ao sistema</a><button id="clear">Apagar cópia offline</button></div>
 <p id="write-help">Para cadastrar ou fazer um pedido, toque em um dos botões acima. Se for o primeiro acesso neste aparelho, conecte-se à internet e entre na sua conta.</p><a id="login-link" href="/login" hidden>Entrar na minha conta</a>
 <p id="status" role="status" aria-live="polite">Carregando…</p><p id="details"></p>
 <section id="write" hidden>
+<div id="commercial-forms">
 <h2>Novo cliente offline</h2><form id="client-form"><div class="filters">
 <label>Nome completo / razão social<input name="name" required minlength="3" autocomplete="name"></label>
 <label>Telefone com DDD<input name="phone" type="tel" required autocomplete="tel"></label>
@@ -80,6 +81,22 @@ form>button{width:100%;min-width:0}#order-total{font-size:18px;padding:14px 16px
 <label>Frete (R$)<input name="shipping_value" type="number" min="0" step="0.01" value="0"></label>
 <label>Observações<textarea name="notes" maxlength="5000"></textarea></label>
 </div><p id="order-total">Total: R$ 0,00</p><button>Salvar pedido no aparelho</button></form>
-<h2>Envios desta conta</h2><p>Confira abaixo o que está pendente e o que já foi enviado. Os pedidos só recebem número oficial após o envio.</p><button id="sync" type="button">Enviar pendentes agora</button><p id="queue-status" role="status" aria-live="polite"></p><ul id="queue"></ul>
+</div>
+<div id="assembly-area" hidden><h2>Registrar montagem offline</h2><form id="assembly-form"><div class="filters">
+<label style="grid-column:1/-1">Tarefa do CRM (opcional)<select name="work_id" id="assembly-work"></select></label>
+<label style="grid-column:1/-1">Equipamento e voltagem<select name="equipment" id="assembly-equipment" required></select></label>
+<label>Quantidade<input name="quantity" type="number" min="1" step="1" value="1" required></label>
+<label style="grid-column:span 4">Montador<select name="technician_id" id="assembly-technician"></select></label>
+</div><p>O saldo dos componentes será conferido no envio. Uma tarefa vinculada será concluída somente com a quantidade total prevista.</p><button>Salvar montagem no aparelho</button></form></div>
+<div id="exit-area" hidden><h2>Registrar saída offline</h2><form id="exit-form"><div class="filters">
+<label style="grid-column:1/-1">Tipo de saída<select name="mode" id="exit-mode"><option value="order_exit">Saída por pedido (produtos e equipamentos)</option><option value="product_exit">Saída avulsa de produto</option></select></label>
+<label id="exit-order-field" style="grid-column:1/-1">Pedido<select name="order" id="exit-order"></select></label>
+<label id="exit-product-field" style="grid-column:span 4" hidden>Produto<select name="product_id" id="exit-product"></select></label>
+<label id="exit-quantity-field" hidden>Quantidade<input name="quantity" type="number" min="1" step="1" value="1"></label>
+<label style="grid-column:1/-1">Anexar NF (opcional)<input name="invoice" type="file" accept=".pdf,.xml,.jpg,.jpeg,.png"></label>
+<label style="grid-column:1/-1">Observações<textarea name="notes" maxlength="5000"></textarea></label>
+</div><p>A NF fica guardada neste aparelho até o envio. Máximo de 3 MB em PDF, XML, JPG ou PNG. O estoque só será alterado após a confirmação online.</p><button>Salvar saída no aparelho</button></form></div>
+<p id="stock-reference" class="notice" hidden></p>
+<h2>Envios desta conta</h2><p>Confira abaixo o que está pendente e o que já foi enviado. Montagens e saídas só alteram o estoque depois de confirmadas. Os pedidos recebem número oficial após o envio.</p><button id="sync" type="button">Enviar pendentes agora</button><p id="queue-status" role="status" aria-live="polite"></p><ul id="queue"></ul>
 </section><section id="content" hidden><div class="filters"><select id="module" aria-label="Área de consulta"></select><input id="search" type="search" placeholder="Pesquisar nos dados salvos" aria-label="Pesquisar nos dados salvos"></div><p id="count"></p><div class="table-wrap" tabindex="0" aria-label="Lista de dados salvos"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div><p id="empty" hidden>Nenhum registro encontrado.</p></section>
 </main></body></html>

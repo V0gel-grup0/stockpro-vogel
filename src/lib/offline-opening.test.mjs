@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { prepare } from '../../public/offline-data.mjs';
+import {canQueueOperation} from '../../public/offline-policy.mjs';
 test('abrir cadastro prepara somente clientes, produtos e equipamentos, sem depender de CRM', async () => {
   const map = new Map(); const storage = { getItem: key => map.get(key) ?? null, setItem: (key,value) => map.set(key,value), removeItem: key => map.delete(key) };
   const requests = [];
@@ -31,6 +32,7 @@ test('botões de novo cliente e pedido preparam e abrem os formulários mesmo co
   const source = readFileSync(new URL('../../public/offline-ui.mjs', import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   vm.runInNewContext(source, {
     KEY:'key', COLUMNS:{}, WRITE_ROLES:['vendedor'], listQueue:()=>[], enqueue(){}, syncQueue:async()=>{}, revise(){}, clear(){}, read:()=>null,
+    canQueueOperation,setupStockUI(){},renderStockForms(){},editStockDraft(){return false;},
     validate:async()=>({name:'old snapshot',savedAt:Date.now(),expiresAt:Date.now()+1000,sections:[]}),
     prepare:async (...args)=>{ scopes.push(args[3]); return snapshot; },
     fetch(){},localStorage:{},navigator:{onLine:true,serviceWorker:{register:async()=>{},ready:Promise.resolve()}},

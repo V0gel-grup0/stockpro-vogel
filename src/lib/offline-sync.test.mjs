@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import ts from 'typescript';
 import { enqueue, listQueue, syncQueue, revise } from '../../public/offline-queue.mjs';
+import * as offlinePolicy from '../../public/offline-policy.mjs';
 const require = createRequire(import.meta.url);
 const owner = '11111111-1111-4111-8111-111111111111';
 const clientId = '22222222-2222-4222-8222-222222222222';
@@ -13,6 +14,15 @@ const actor = { id: owner, role: 'representante', status: 'approved' };
 const snapshot = { owner_id: owner, role: actor.role, expiresAt: Date.now() + 60000 };
 function storage() { const map = new Map(); return { get length() { return map.size; }, key: i => [...map.keys()][i], getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) }; }
 function compile(path, overrides = {}) {
+  overrides={
+    '@/lib/offline-stock-server':{recordOfflineAssembly(){throw Error('Unexpected assembly');},recordOfflineExit(){throw Error('Unexpected exit');},OfflineStockError:class extends Error{}},
+    '@/lib/offline-policy':offlinePolicy,
+    '@/lib/assembly-work-server':{ensureAssemblyWorkTable:async()=>{}},
+    '@/lib/movement-invoice-server':{ensureMovementInvoices:async()=>{}},
+    '@/lib/movement-invoice-policy':{},
+    '@/lib/prisma-json':{toJsonSafe:value=>value},
+    ...overrides,
+  };
   const source = readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
   const module = { exports: {} };
   const js = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
@@ -107,7 +117,7 @@ test('cliente rejeitado mantém erro e impede envio do pedido dependente', async
 test('endpoint exige função comercial antes do banco e mantém pedido/CRM/recibo na mesma transação', async () => {
   const s = service(true); let authorized = false; let ddl = 0;
   const { POST } = compile('app/api/offline-sync/route.ts', {
-    '@/lib/api-auth': { authorizeApi: async roles => { assert.ok(roles.includes('representante')); assert.ok(!roles.includes('tecnico')); return authorized ? { profile: actor } : { response: new Response('{}', { status: 403 }) }; } },
+    '@/lib/api-auth': { authorizeApi: async roles => { assert.ok(roles.includes('representante')); assert.ok(roles.includes('tecnico')); return authorized ? { profile: actor } : { response: new Response('{}', { status: 403 }) }; } },
     '@/lib/permissions': { ORDER_ROLES: ['administrador', 'gerente', 'vendedor', 'funcionario', 'representante'] },
     '@/lib/equipment-catalog': { EQUIPMENT_CATALOG: [] },
     '@/lib/prisma': { prisma: { $transaction: async callback => {

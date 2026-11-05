@@ -7,6 +7,7 @@ import { enqueue, listQueue, syncQueue } from '../../public/offline-queue.mjs';
 import { validarCadastroPessoa } from './validacao-cadastro.ts';
 import { calculateOrderValues } from './order-pricing.ts';
 import { EQUIPMENT_CATALOG } from './equipment-catalog.ts';
+import { canQueueOperation } from '../../public/offline-policy.mjs';
 const owner = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const clientOp = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const orderOp = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -54,7 +55,7 @@ function serverFixture({ failWorkflow = false } = {}) {
     orders: { create: async ({data}) => { const row = { ...data, id: 'order', order_number: 100n }; orders.push(row); return row; } },
   };
   const module = { exports: {} };
-  new Function('module','exports','createHash','prisma','validarCadastroPessoa','calculateOrderValues','EQUIPMENT_CATALOG','buildAccessibleClientWhere','syncOrderWorkflow', output)(module,module.exports,createHash,{},validarCadastroPessoa,calculateOrderValues,EQUIPMENT_CATALOG,(actor,id)=>({id}),async (transaction,order)=>{ assert.equal(transaction,tx); workflows.push(order); if(failWorkflow)throw Error('workflow'); });
+  new Function('module','exports','createHash','prisma','validarCadastroPessoa','calculateOrderValues','EQUIPMENT_CATALOG','buildAccessibleClientWhere','syncOrderWorkflow','canQueueOperation', output)(module,module.exports,createHash,{},validarCadastroPessoa,calculateOrderValues,EQUIPMENT_CATALOG,(actor,id)=>({id}),async (transaction,order)=>{ assert.equal(transaction,tx); workflows.push(order); if(failWorkflow)throw Error('workflow'); },canQueueOperation);
   return { ...module.exports, tx, receipts, clients, orders, workflows };
 }
 const clientBody = { owner_id: owner, operation_id: clientOp, type: 'client', payload: { name: 'Maria Silva', phone: '45999123456', document: '', city: '', cep: '', street: '', number: '', neighborhood: '' } };
