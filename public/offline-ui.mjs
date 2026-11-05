@@ -161,6 +161,7 @@ function updateTotal() {
 $('order-form').addEventListener('input', updateTotal);
 $('client-form').addEventListener('submit', event => {
   event.preventDefault();
+  $('client-status').textContent = '';
   try {
     const data = Object.fromEntries(new FormData(event.target));
     data.phone = data.phone.replace(/\D/g, ''); data.document = data.document.replace(/\D/g, '');
@@ -169,8 +170,9 @@ $('client-form').addEventListener('submit', event => {
     const row = saveDraft('client', data, `Cliente: ${data.name}`);
     event.target.reset(); drawQueue(); $('order-client').value = 'local:' + row.operation_id;
     $('queue-status').textContent = 'Cliente salvo no aparelho, pendente de envio. Já pode ser selecionado no pedido.';
+    $('client-status').textContent = $('queue-status').textContent;
     if (navigator.onLine) void sendPending();
-  } catch (error) { $('queue-status').textContent = error.message; }
+  } catch (error) { $('client-status').textContent = error.message; $('queue-status').textContent = error.message; }
 });
 $('order-form').addEventListener('submit', event => {
   event.preventDefault();

@@ -44,7 +44,7 @@ export async function applyOfflineOperation(tx: any, actor: { id: string; role: 
   if (body.type === "client") {
     const validation = validarCadastroPessoa(input);
     if (!validation.valido) throw new OfflineSyncError("erro" in validation ? validation.erro : "Cadastro inválido.");
-    const client = await tx.clients.create({ data: { ...validation.dados, proposal_status: "Lead Frio", created_by: actor.id } });
+    const client = await tx.clients.create({ data: { ...validation.dados, proposal_status: text(input.proposal_status) || "Lead Frio", created_by: actor.id } });
     result = { type: "client", client: { id: client.id, name: client.name } };
   } else if(body.type==='assembly'){
     result=await recordOfflineAssembly(tx,actor,input);
