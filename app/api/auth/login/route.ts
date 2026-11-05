@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { canProfileUseSystem, createSession } from "@/lib/auth";
 import { REPRESENTATIVE_LINK_REQUIRED_MESSAGE } from "@/lib/representative-access";
 import bcrypt from "bcryptjs";
+import { detachPushDevice } from "@/lib/push-server";
 
 export const runtime = "nodejs";
 
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    await detachPushDevice();
     await createSession(user.id);
 
     return NextResponse.json({
@@ -110,3 +112,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

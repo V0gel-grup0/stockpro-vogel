@@ -668,6 +668,7 @@ export default function StockProApp() {
               <small className="account-role">{formatRole(profile.role)}</small>
               {profile.access_code && <small className="account-code">Código: {profile.access_code}</small>}
             </div>
+            <a href="/notificacoes" className="push-nav-link"><AppIcon name="bell" />Notificações no aparelho</a>
             <button className="btn btn-gray account-logout" onClick={logout}>Sair</button>
           </div>
         </aside>}
