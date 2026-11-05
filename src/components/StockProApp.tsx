@@ -2,6 +2,7 @@
 
 import { validarCadastroPessoa } from "@/lib/validacao-cadastro";
 import { clearOfflineCopy } from "@/lib/offline-session";
+import { saveClientOnDevice } from "@/lib/offline-client";
 import QuotesModule from "@/components/QuotesModule";
 import GeneralCrm from "@/components/GeneralCrm";
 import { canAccessCrm } from "@/lib/crm-access";
@@ -2144,7 +2145,11 @@ function Pessoas({ title, table, kind, search, profile, onCreated, onCancel, onB
       );
     }
   }
-  async function buscarCepPorValor(v: string) { const end = await buscarCep(v); if (!end) return setMsg("CEP não encontrado."); setForm((a) => ({ ...a, ...end })); }
+  async function buscarCepPorValor(v: string) {
+    if (!navigator.onLine || onlyNumbers(v).length !== 8) return;
+    try { const end = await buscarCep(v); if (!end) return setMsg("CEP não encontrado. Você pode preencher o endereço manualmente."); setForm((a) => ({ ...a, ...end })); }
+    catch { setMsg("Não foi possível consultar o CEP. Você pode preencher o endereço manualmente."); }
+  }
   function editar(item: AnyRow) { setEditing(item.id); setForm({ name: item.name || "", document: maskCpfCnpj(item.document || ""), phone: maskPhone(item.phone || ""), email: item.email || "", cep: maskCep(item.cep || ""), city: item.city || "", street: item.street || "", number: item.number || "", no_number: Boolean(item.no_number), neighborhood: item.neighborhood || "", products: item.products || [], invoice_number: item.invoice_number || "", federal_invoice_number: item.federal_invoice_number || "", proposal_status: item.proposal_status || "Lead Frio" }); }
   async function excluir(id: string) {
     if (!confirm(`Excluir este ${kind}?`)) return;
@@ -2261,6 +2266,14 @@ function Pessoas({ title, table, kind, search, profile, onCreated, onCancel, onB
           proposal_status:
             form.proposal_status || "Lead Frio",
         };
+
+        if (!navigator.onLine) {
+          if (editing) throw new Error("Para alterar um cliente existente, reconecte-se. Os campos preenchidos foram mantidos.");
+          saveClientOnDevice(localStorage, profile, clientPayload);
+          setForm(empty);
+          setMsg("Cliente salvo no aparelho com sucesso. Pendente de envio. Abra o Modo offline para conferir ou fazer um pedido com este cliente.");
+          return;
+        }
 
         const response = await fetch("/api/clients", {
           method: editing ? "PUT" : "POST",

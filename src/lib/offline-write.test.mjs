@@ -79,3 +79,8 @@ test('servidor rejeita autor adulterado, cliente não enviado e equipamento inex
   await assert.rejects(f.applyOfflineOperation(f.tx, actor, { ...orderBody, payload: { ...orderBody.payload, equipment_name: 'invalid' } }), /Equipamento inválido/);
   assert.equal(f.orders.length, 0);
 });
+test('cliente offline preserva a proposta selecionada e o cadastrador continua sendo o autor',async()=>{
+  const f=serverFixture();
+  await f.applyOfflineOperation(f.tx,{id:owner,role:'vendedor'},{...clientBody,payload:{...clientBody.payload,proposal_status:'Lead Morno',created_by:'another'}});
+  assert.equal(f.clients[0].proposal_status,'Lead Morno');assert.equal(f.clients[0].created_by,owner);
+});
