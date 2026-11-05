@@ -65,8 +65,10 @@ export default function MobileNavigation({ menus, page, open, onOpen, onClose, o
       <div className="mobile-menu-heading"><div><small>STOCKPRO VOGEL</small><h2 id="mobile-menu-title">Seu espaço de trabalho</h2></div><button type="button" className="mobile-icon-control" aria-label="Fechar menu" onClick={onClose} autoFocus><AppIcon name="close" /></button></div>
       <div className="mobile-menu-account"><span className="mobile-avatar" aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "V"}</span><div><strong>{name}</strong><small>{role}</small></div></div>
       <nav className="mobile-module-grid" aria-label="Todos os módulos">{menus.map((item) => <button key={item} type="button" aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => onNavigate(item)}><AppIcon name={item} /><span>{item === "CRM" ? crmLabel : item === "Dashboard" ? "Início" : item}</span></button>)}</nav>
+      <a href="/notificacoes" className="push-nav-link"><AppIcon name="bell" />Notificações no aparelho</a>
       <button type="button" className="mobile-logout" onClick={onLogout}>Sair da conta</button>
     </dialog>
   </>;
 }
+
 

@@ -18,6 +18,7 @@ import "./mobile.css";
 import "./mobile-menu.css";
 import "./app-mobile.css";
 import "./app-installation.css";
+import "./notificacoes/push.css";
 
 export const viewport: Viewport = {
   width: "device-width",

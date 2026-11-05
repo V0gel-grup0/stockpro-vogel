@@ -1,8 +1,26 @@
 // Only the public consultation shell is cached. Authenticated API responses never enter Cache Storage.
-const CACHE = 'stockpro-offline-shell-v5';
+const CACHE = 'stockpro-offline-shell-v6';
 const FILES = ['/offline.html', '/offline-ui.mjs', '/offline-data.mjs', '/offline-queue.mjs', '/offline-autosync.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
+});
+self.addEventListener('push', event => {
+  let payload;
+  try { payload = event.data?.json(); } catch { payload = null; }
+  event.waitUntil(self.registration.showNotification('StockPro Vogel', {
+    body: typeof payload?.body === 'string' ? payload.body.slice(0, 400) : 'Você tem novos avisos. Abra o StockPro para conferir.',
+    icon: '/api/app-icon?v=3&size=192', tag: typeof payload?.tag === 'string' ? payload.tag.slice(0, 100) : 'stockpro-reminder',
+    data: { url: '/notificacoes' },
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find(client => new URL(client.url).origin === self.location.origin);
+    if (existing) { await existing.navigate('/notificacoes'); return existing.focus(); }
+    return self.clients.openWindow('/notificacoes');
+  })());
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('stockpro-offline-shell-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
