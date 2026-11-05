@@ -29,7 +29,7 @@ function compile(path,dependencies){
   const module={exports:{}};new Function('module','exports',...Object.keys(dependencies),output)(module,module.exports,...Object.values(dependencies));return module.exports;
 }
 function fixture(role='representante'){
-  const state={active:true,lastDay:null,leased:false,tested:false,sends:[],commercial:[],legacy:[],raw:[],deletedCookie:false,profile:{id:'11111111-1111-4111-8111-111111111111',role,status:'approved',responsible_seller_id:null}};
+  const state={active:true,lastDay:null,leased:false,tested:false,sends:[],commercial:[],legacy:[],raw:[],mutations:[],deletedCookie:false,profile:{id:'11111111-1111-4111-8111-111111111111',role,status:'approved',responsible_seller_id:null}};
   const device={endpoint_hash:'device-hash',actor_id:state.profile.id,device_id:'22222222-2222-4222-8222-222222222222',endpoint:subscription.endpoint,...subscription.keys};
   const prisma={
     $executeRawUnsafe:async()=>1,
@@ -43,6 +43,7 @@ function fixture(role='representante'){
     },
     $executeRaw:async(parts,...values)=>{
       const sql=parts.join('?');
+      state.mutations.push({sql,values});
       if(sql.includes("lease_until=now()+interval")){if(!state.active||state.leased||state.lastDay===values[2])return 0;state.leased=true;return 1;}
       if(sql.includes('last_sent_day=')){state.lastDay=values[0];state.leased=false;return 1;}
       if(sql.includes('last_test_at=now()')){if(state.tested)return 0;state.tested=true;return 1;}
@@ -84,10 +85,29 @@ test('resumo diário usa permissão atual e não repete envio na mesma data',asy
   assert.equal((await blocked.api.dispatchDailyPush(now)).sent,0);assert.equal(blocked.state.sends.length,0);
 });
 test('teste limitado por aparelho e logout remove a inscrição',async()=>{
-  const f=fixture();assert.equal((await f.api.sendPushTest(f.device.actor_id)).status,200);
+  const f=fixture();const sent=await f.api.sendPushTest(f.device.actor_id);assert.equal(sent.status,200);
+  assert.match(sent.testId,/^[0-9a-f-]{36}$/);assert.equal(f.state.sends[0].payload.testId,sent.testId);
   assert.equal((await f.api.sendPushTest(f.device.actor_id)).status,429);
   await f.api.detachPushDevice();assert.equal(f.state.active,false);assert.equal(f.state.deletedCookie,true);
   assert.equal((await f.api.sendPushTest(f.device.actor_id)).status,404);
+});
+test('recibo aceita somente token válido e estado conhecido, limitado ao teste recente',async()=>{
+  const f=fixture();await f.api.acknowledgePushTest('invalid','displayed');await f.api.acknowledgePushTest(randomUUID(),'arbitrary');
+  assert.equal(f.state.mutations.length,0);
+  const id=randomUUID();await f.api.acknowledgePushTest(id,'displayed');
+  assert.equal(f.state.mutations.length,1);assert.deepEqual(f.state.mutations[0].values,['displayed',id]);
+  assert.match(f.state.mutations[0].sql,/5 minutes/);
+});
+test('worker confirma recebimento e exibição, e reporta bloqueio sem tratar como sucesso',async()=>{
+  for(const blocked of [false,true]){
+    const handlers={},states=[];let wait;
+    vm.runInNewContext(readFileSync(new URL('../../public/stockpro-sw.js',import.meta.url),'utf8'),{
+      self:{addEventListener:(name,callback)=>handlers[name]=callback,registration:{showNotification:async()=>{if(blocked)throw Error('blocked');}}},
+      fetch:async(url,options)=>{assert.equal(url,'/api/push/receipt');states.push(JSON.parse(options.body).state);return new Response(null,{status:204});},
+    });
+    handlers.push({data:{json:()=>({body:'Test',testId:randomUUID()})},waitUntil:promise=>wait=promise});await wait;
+    assert.deepEqual(states,['received',blocked?'failed':'displayed']);
+  }
 });
 test('endpoint de cron rejeita solicitações sem autorização antes de acessar envio',async()=>{
   let calls=0;const old=process.env.CRON_SECRET;process.env.CRON_SECRET='test-only';
