@@ -19,7 +19,7 @@ const { syncOrderWorkflow } = compiled.exports;
 
 function fixture(options = {}) {
   const order = { id: "order-a", order_number: 5n, client_id: "client-a", created_by: "rep-a", item_type: "equipamento", item_id: null, equipment_name: "CeltPlus - 220V", quantity: 2, total_value: 100, shipping_value: 10, notes: "Entrega combinada", ...options.order };
-  const state = { link: options.link, opportunity: options.opportunity, work: options.work || [], creates: 0, updates: [], inserts: [], deleted: [] };
+  const state = { link: options.link, opportunity: options.opportunity, work: options.work || [], creates: 0, updates: [], discounts: [], inserts: [], deleted: [] };
   const tx = {
     products: { findUnique: async () => ({ name: "Lâmpada" }) },
     crm_opportunities: {
@@ -36,6 +36,7 @@ function fixture(options = {}) {
     },
     $executeRaw: async (strings, ...values) => {
       const sql = strings.join("?");
+      if (sql.includes("INSERT INTO order_discounts")) state.discounts.push(values);
       if (sql.includes("INSERT INTO order_crm_links")) state.link = { opportunity_id: values[1], owns_opportunity: values[2] };
       if (sql.includes("INSERT INTO crm_assembly_work")) {
         state.inserts.push({ sql, values });
@@ -113,4 +114,13 @@ test("montagem pendente acompanha equipamento/quantidade; converter em produto r
 test("oportunidade de orçamento de outro cliente é rejeitada", async () => {
   const f = fixture({ opportunity: { id: "quote-op", client_id: "client-other", stage: "lead" } });
   await assert.rejects(syncOrderWorkflow(f.tx, f.order, { opportunityId: "quote-op" }), /cliente.*não corresponde/);
+});
+
+test("desconto é salvo na transação e CRM recebe valor líquido com frete", async () => {
+  const f = fixture({ order: { total_value: 75, shipping_value: 10, discount_value: 25 } });
+  await syncOrderWorkflow(f.tx, f.order);
+  assert.deepEqual(f.state.discounts, [[f.order.id, 25]]);
+  assert.equal(f.state.opportunity.estimated_value, 85);
+  await syncOrderWorkflow(f.tx, { ...f.order, discount_value: 0 });
+  assert.deepEqual(f.state.discounts[1], [f.order.id, 0]);
 });

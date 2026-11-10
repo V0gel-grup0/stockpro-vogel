@@ -11,6 +11,11 @@ let structure: Promise<void> | undefined;
 export function ensureOrderWorkflowTables() {
   if (!structure) structure = (async () => {
     await ensureAssemblyWorkTable();
+    // Keep orders.total_value net, as expected by CRM, forecasts and existing reports.
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS order_discounts (
+      order_id UUID PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
+      discount_value NUMERIC NOT NULL DEFAULT 0 CHECK (discount_value >= 0)
+    )`);
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS order_crm_links (
       order_id UUID PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
       opportunity_id UUID REFERENCES crm_opportunities(id) ON DELETE SET NULL,
@@ -23,7 +28,7 @@ export function ensureOrderWorkflowTables() {
 type OrderSnapshot = {
   id: string; order_number: bigint; client_id: string | null; created_by: string | null;
   item_type: string; item_id: string | null; equipment_name: string; quantity: number;
-  total_value: unknown; shipping_value: unknown; notes: string;
+  total_value: unknown; shipping_value: unknown; discount_value?: number; notes: string;
 };
 type WorkflowItem = { key: string; item_type: string; item_name: string; quantity: number };
 
@@ -31,6 +36,11 @@ type WorkflowItem = { key: string; item_type: string; item_name: string; quantit
 export async function syncOrderWorkflow(tx: Prisma.TransactionClient, order: OrderSnapshot, options: { opportunityId?: string | null; items?: WorkflowItem[] } = {}) {
   if (!order.client_id) throw new OrderWorkflowError("Selecione um cliente para encaminhar o pedido ao CRM.");
   await tx.$queryRaw`SELECT id FROM orders WHERE id = ${order.id}::uuid FOR UPDATE`;
+  if (order.discount_value !== undefined) {
+    await tx.$executeRaw`INSERT INTO order_discounts (order_id, discount_value)
+      VALUES (${order.id}::uuid, ${order.discount_value})
+      ON CONFLICT (order_id) DO UPDATE SET discount_value = EXCLUDED.discount_value`;
+  }
   const links = await tx.$queryRaw<Array<{ opportunity_id: string | null; owns_opportunity: boolean }>>`SELECT opportunity_id, owns_opportunity FROM order_crm_links WHERE order_id = ${order.id}::uuid`;
   const existingLink = links[0];
   let opportunityId = existingLink?.opportunity_id || options.opportunityId;

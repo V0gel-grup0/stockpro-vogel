@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ sucesso: true, ...result }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const known = error instanceof OfflineSyncError || error instanceof OrderWorkflowError || error instanceof OfflineStockError;
-    const invalid = error instanceof SyntaxError || error instanceof Error && /Informe (uma quantidade|valores)|Valor do pedido/.test(error.message);
+    const invalid = error instanceof SyntaxError || error instanceof Error && /Informe (uma quantidade|valores)|Valor do pedido|Desconto não pode/.test(error.message);
     if (!known && !invalid) console.error("Falha na sincronização offline:", error);
     return NextResponse.json({ sucesso: false, erro: known || invalid ? error.message : "Não foi possível enviar agora. O registro continua pendente; tente novamente." }, { status: known ? error.status : invalid ? 400 : 500 });
   }

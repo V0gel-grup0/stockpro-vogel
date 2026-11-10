@@ -84,3 +84,14 @@ test('cliente offline preserva a proposta selecionada e o cadastrador continua s
   await f.applyOfflineOperation(f.tx,{id:owner,role:'vendedor'},{...clientBody,payload:{...clientBody.payload,proposal_status:'Lead Morno',created_by:'another'}});
   assert.equal(f.clients[0].proposal_status,'Lead Morno');assert.equal(f.clients[0].created_by,owner);
 });
+
+test('pedido offline aplica desconto e mantém o valor líquido no CRM', async () => {
+  const f = serverFixture(), actor = { id: owner, role: 'representante' };
+  await f.applyOfflineOperation(f.tx, actor, clientBody);
+  const request = { ...orderBody, payload: { ...orderBody.payload, discount_value: 20 } };
+  await f.applyOfflineOperation(f.tx, actor, request);
+  await f.applyOfflineOperation(f.tx, actor, request);
+  assert.equal(f.orders.length, 1);
+  assert.equal(f.orders[0].total_value, 180.2);
+  assert.equal(f.workflows[0].discount_value, 20);
+});

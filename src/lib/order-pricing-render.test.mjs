@@ -12,14 +12,14 @@ const ast = ts.createSourceFile("StockProApp.tsx", source, ts.ScriptTarget.Lates
 const names = new Set(["Pedidos", "Field", "SelectField", "TextArea", "Title", "Message", "textMatch", "money", "StatCard", "getSaleCode"]);
 const declarations = ast.statements.filter((node) => ts.isFunctionDeclaration(node) && names.has(node.name?.text)).map((node) => node.getText(ast)).join("\n");
 const output = ts.transpileModule('const { useEffect, useMemo, useRef, useState } = require("react");\n' + declarations + "\nmodule.exports.Form = Pedidos;", { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-function render(selected) {
+function render(selected, discount = "") {
   let index = 0;
   const module = { exports: {} };
   const nativeRequire = createRequire(import.meta.url);
   const mockReact = { ...React, useState(initial) {
     const current = index++;
     if (current === 0) return [true, () => {}];
-    if (current === 1) return [{ ...initial, quantity: "3", unit_price: "100", shipping_value: "10", item_type: selected.length ? "equipamento" : "produto" }, () => {}];
+    if (current === 1) return [{ ...initial, quantity: "3", unit_price: "100", shipping_value: "10", discount_value: discount, item_type: selected.length ? "equipamento" : "produto" }, () => {}];
     if (current === 2) return [selected, () => {}];
     return [initial, () => {}];
   } };
@@ -28,7 +28,7 @@ function render(selected) {
 }
 test("formulário real mostra unitário, subtotal automático e total com frete", () => {
   const html = render([]);
-  for (const text of ["Valor unitário (R$)", "Subtotal do item (R$)", "Frete por pedido (R$)", "Total do pedido com frete", "+ Cadastrar cliente"]) assert.ok(html.includes(text), text);
+  for (const text of ["Valor unitário (R$)", "Subtotal do item (R$)", "Frete por pedido (R$)", "Desconto por pedido (R$)", "Total do pedido com frete", "+ Cadastrar cliente"]) assert.ok(html.includes(text), text);
   assert.match(html, /id="order-subtotal"[^>]*readOnly/);
   assert.match(html, /310,00/);
 });
@@ -36,5 +36,10 @@ test("selecionar vários modelos soma o total de todos os pedidos", () => {
   const html = render(["CeltPlus - 220V", "CeltPlus - 380V"]);
   assert.ok(html.includes("Total dos pedidos com frete"));
   assert.match(html, /620,00/);
-  assert.ok(html.includes("quantidade, o valor unitário e o frete informados em cada um"));
+  assert.ok(html.includes("quantidade, o valor unitário, o desconto e o frete informados em cada um"));
+});
+
+test("formulário mostra subtotal bruto e total líquido com desconto por pedido", () => {
+  assert.match(render([], "25"), /285,00/);
+  assert.match(render(["CeltPlus - 220V", "CeltPlus - 380V"], "25"), /570,00/);
 });

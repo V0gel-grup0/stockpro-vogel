@@ -14,7 +14,7 @@ export const COLUMNS = {
   equipment: 'Equipamento', product_name: 'Produto', client_name: 'Cliente', quantity: 'Quantidade',
   stock: 'Estoque', voltage: 'Voltagem', status: 'Situação', stage: 'Etapa', priority: 'Prioridade',
   responsible_name: 'Responsável', due_at: 'Prazo', created_at: 'Data', total_value: 'Valor total',
-  unit_price: 'Valor unitário', notes: 'Observações', description: 'Descrição', order_number: 'Pedido',
+  discount_value: 'Desconto', unit_price: 'Valor unitário', notes: 'Observações', description: 'Descrição', order_number: 'Pedido',
   equipment_name: 'Equipamento', technician_name: 'Montador', due_date: 'Prazo', sku: 'Código', category: 'Categoria', sale_price: 'Preço de venda', min_stock: 'Estoque mínimo',
 };
 export function identity(profile) {

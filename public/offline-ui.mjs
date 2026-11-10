@@ -148,15 +148,18 @@ $('order-item').addEventListener('change', () => {
   updateTotal();
 });
 function amounts(form) {
-  const quantity = Number(form.quantity), price = Number(form.unit_price), freight = Number(form.shipping_value || 0);
-  if (!Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 2147483647 || !Number.isFinite(price) || price < 0 || !Number.isFinite(freight) || freight < 0 || form.unit_price === '') throw new Error('Informe quantidade e valores válidos.');
-  const total = quantity * Math.round((price + Number.EPSILON) * 100) + Math.round((freight + Number.EPSILON) * 100);
+  const quantity = Number(form.quantity), price = Number(form.unit_price), freight = Number(form.shipping_value || 0), discount = Number(form.discount_value || 0);
+  if (!Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 2147483647 || !Number.isFinite(price) || price < 0 || !Number.isFinite(freight) || freight < 0 || !Number.isFinite(discount) || discount < 0 || form.unit_price === '') throw new Error('Informe quantidade e valores válidos.');
+  const subtotal = quantity * Math.round((price + Number.EPSILON) * 100);
+  const discountCents = Math.round((discount + Number.EPSILON) * 100);
+  if (discountCents > subtotal) throw new Error('Desconto não pode superar o subtotal dos itens.');
+  const total = subtotal - discountCents + Math.round((freight + Number.EPSILON) * 100);
   if (!Number.isSafeInteger(total)) throw new Error('Valor acima do limite.');
-  return { quantity, unit_price: price, shipping_value: freight, total: total / 100 };
+  return { quantity, unit_price: price, discount_value: discountCents / 100, shipping_value: freight, total: total / 100 };
 }
 function updateTotal() {
   try { const value = amounts(Object.fromEntries(new FormData($('order-form')))); $('order-total').textContent = `Total com frete: ${value.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`; }
-  catch { $('order-total').textContent = 'Preencha quantidade e valor unitário para calcular o total.'; }
+  catch (error) { $('order-total').textContent = error.message; }
 }
 $('order-form').addEventListener('input', updateTotal);
 $('client-form').addEventListener('submit', event => {

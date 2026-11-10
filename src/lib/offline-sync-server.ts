@@ -69,7 +69,7 @@ export async function applyOfflineOperation(tx: any, actor: { id: string; role: 
     if (!uuid.test(clientId)) throw new OfflineSyncError("Selecione um cliente válido.");
     const client = await tx.clients.findFirst({ where: buildAccessibleClientWhere(actor, clientId) });
     if (!client) throw new OfflineSyncError("Cliente indisponível ou sem permissão para esta conta.", 403);
-    const values = calculateOrderValues(input.quantity, input.unit_price, input.shipping_value);
+    const values = calculateOrderValues(input.quantity, input.unit_price, input.shipping_value, input.discount_value);
     if (!["produto", "equipamento"].includes(input.item_type)) throw new OfflineSyncError("Tipo de item inválido.");
     if (input.item_type === "equipamento" && !(EQUIPMENT_CATALOG as readonly string[]).includes(input.equipment_name)) throw new OfflineSyncError("Equipamento inválido. Prepare os dados novamente.");
     if (input.item_type === "produto") {
@@ -82,7 +82,7 @@ export async function applyOfflineOperation(tx: any, actor: { id: string; role: 
       quantity: values.quantity, total_value: values.total_value, shipping_value: values.shipping_value,
       notes: text(input.notes).slice(0, 5000), updated_at: new Date(),
     } });
-    await syncOrderWorkflow(tx, order);
+    await syncOrderWorkflow(tx, { ...order, discount_value: values.discount_value });
     result = { type: "order", order: { id: order.id, order_number: String(order.order_number), updated_at:order.updated_at?new Date(order.updated_at).toISOString():null } };
   }
   await tx.$executeRaw`INSERT INTO offline_operation_receipts(actor_id, operation_id, payload_hash, result)
