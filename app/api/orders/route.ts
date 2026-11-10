@@ -107,14 +107,15 @@ function dataFrom(
   if (!text(body.client_id)) throw new Error("Selecione o cliente do pedido.");
   if (itemType === "produto" && !text(body.item_id)) throw new Error("Selecione o produto.");
   if (itemType === "equipamento" && !(EQUIPMENT_CATALOG as readonly string[]).includes(text(body.equipment_name))) throw new Error("Equipamento inválido.");
-  const values = calculateOrderValues(body.quantity ?? 1, body.unit_price ?? (Number(body.total_value || 0) / Number(body.quantity || 1)), body.shipping_value);
+  const values = calculateOrderValues(body.quantity ?? 1, body.unit_price ?? (Number(body.total_value || 0) / Number(body.quantity || 1)), body.shipping_value, body.discount_value);
   const data: Record<string, any> = {
     client_id: text(body.client_id) || null,
     item_type: itemType,
     item_id: itemType === "produto" ? text(body.item_id) || null : null,
     equipment_name: itemType === "equipamento" ? text(body.equipment_name) : "",
     quantity: values.quantity,
-    total_value: body.unit_price == null ? Math.round(Number(body.total_value || 0) * 100) / 100 : values.total_value,
+    total_value: body.unit_price == null ? Math.round(Number(body.total_value || 0) * 100) / 100 - values.discount_value : values.total_value,
+    discount_value: values.discount_value,
     shipping_value: values.shipping_value,
     notes: text(body.notes),
     updated_at: new Date(),
@@ -131,6 +132,7 @@ export async function GET() {
     const authorization = await authorizeApi(ORDER_ROLES);
     if ("response" in authorization) return authorization.response;
 
+    await ensureOrderWorkflowTables();
     const orders = await prisma.orders.findMany({
       where: orderScope({
         id: authorization.profile.id,
@@ -146,6 +148,10 @@ export async function GET() {
         },
       },
     });
+    const discounts = orders.length ? await prisma.$queryRaw<Array<{ order_id: string; discount_value: unknown }>>(Prisma.sql`
+      SELECT order_id, discount_value FROM order_discounts WHERE order_id IN (${Prisma.join(orders.map((order) => order.id))})
+    `) : [];
+    const discountByOrder = new Map(discounts.map((row) => [row.order_id, Number(row.discount_value)]));
     const orderItems = await loadOrderItems(orders.map((order) => order.id));
     const itemsByOrder = new Map<string, Array<Record<string, unknown>>>();
     for (const item of orderItems) {
@@ -155,7 +161,8 @@ export async function GET() {
     }
     const enrichedOrders = orders.map((order) => ({
       ...order,
-      unit_price: Number(order.total_value) / order.quantity,
+      discount_value: discountByOrder.get(order.id) || 0,
+      unit_price: Math.round(((Number(order.total_value) + (discountByOrder.get(order.id) || 0)) / order.quantity + Number.EPSILON) * 100) / 100,
       grand_total: Number(order.total_value) + Number(order.shipping_value),
       order_items: itemsByOrder.get(order.id) || [],
     }));
@@ -229,9 +236,10 @@ export async function POST(request: Request) {
           created_at: { gte: new Date(Date.now() - 15_000) },
         }, select: { id: true, order_number: true } });
         if (duplicate) throw new OrderWorkflowError(`Este pedido já foi cadastrado há poucos segundos (Pedido #${duplicate.order_number}).`);
-        const order = await tx.orders.create({ data });
-        await syncOrderWorkflow(tx, order);
-        result.push(order);
+        const { discount_value, ...orderData } = data;
+        const order = await tx.orders.create({ data: orderData });
+        await syncOrderWorkflow(tx, { ...order, discount_value });
+        result.push({ ...order, discount_value });
       }
       return result;
     }, { timeout: 30_000 });
@@ -283,9 +291,10 @@ export async function PUT(request: Request) {
     if (orderItems.length) return NextResponse.json({ sucesso: false, erro: "Este pedido foi gerado por orçamento. Seus itens e valores são preservados; altere somente o status do pedido." }, { status: 409 });
     await ensureOrderWorkflowTables();
     const order = await prisma.$transaction(async (tx) => {
-      const updated = await tx.orders.update({ where: { id }, data });
-      await syncOrderWorkflow(tx, updated);
-      return updated;
+      const { discount_value, ...orderData } = data;
+      const updated = await tx.orders.update({ where: { id }, data: orderData });
+      await syncOrderWorkflow(tx, { ...updated, discount_value });
+      return { ...updated, discount_value };
     }, { timeout: 30_000 });
     return NextResponse.json({ sucesso: true, order: toJsonSafe(order) });
   } catch (error) {

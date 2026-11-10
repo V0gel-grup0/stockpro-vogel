@@ -78,6 +78,7 @@ form>button{width:100%;min-width:0}#order-total{font-size:18px;padding:14px 16px
 <label>Item<select name="item" id="order-item" required></select></label>
 <label>Quantidade<input name="quantity" type="number" min="1" step="1" value="1" required></label>
 <label>Valor unitário (R$)<input name="unit_price" type="number" min="0" step="0.01" required></label>
+<label>Desconto (R$)<input name="discount_value" type="number" min="0" step="0.01" value="0"></label>
 <label>Frete (R$)<input name="shipping_value" type="number" min="0" step="0.01" value="0"></label>
 <label>Observações<textarea name="notes" maxlength="5000"></textarea></label>
 </div><p id="order-total">Total: R$ 0,00</p><button>Salvar pedido no aparelho</button></form>

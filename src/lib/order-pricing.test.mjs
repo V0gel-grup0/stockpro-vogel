@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { calculateOrderValues, isCeltEquipment } from "./order-pricing.ts";
 
 test("pedido soma quantidade × valor unitário mais frete em centavos", () => {
-  assert.deepEqual(calculateOrderValues(3, 199.90, 25), { quantity: 3, unit_price: 199.9, total_value: 599.7, shipping_value: 25, grand_total: 624.7 });
+  assert.deepEqual(calculateOrderValues(3, 199.90, 25), { discount_value: 0, subtotal: 599.7, quantity: 3, unit_price: 199.9, total_value: 599.7, shipping_value: 25, grand_total: 624.7 });
   assert.equal(calculateOrderValues(3, 0.1, 0.2).grand_total, 0.5);
   assert.equal(calculateOrderValues(2, 1.005).total_value, 2.02);
 });
@@ -18,4 +18,15 @@ test("somente equipamentos CELT são encaminhados à montagem", () => {
     assert.equal(isCeltEquipment("produto", name), false);
   }
   assert.equal(isCeltEquipment("equipamento", "Dimmer Vogel"), false);
+});
+
+test("desconto é abatido dos itens antes do frete, sem perder centavos", () => {
+  const values = calculateOrderValues(3, 199.9, 25, 49.75);
+  assert.equal(values.subtotal, 599.7);
+  assert.equal(values.discount_value, 49.75);
+  assert.equal(values.total_value, 549.95);
+  assert.equal(values.grand_total, 574.95);
+  assert.equal(calculateOrderValues(1, 100, 25, 100).grand_total, 25);
+  assert.equal(calculateOrderValues(2, 0.1, 0, 0.1).grand_total, 0.1);
+  for (const discount of [-1, NaN, Infinity, 100.01]) assert.throws(() => calculateOrderValues(1, 100, 25, discount));
 });

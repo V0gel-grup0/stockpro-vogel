@@ -76,7 +76,7 @@ test("API preserva autorização e escopo de clientes sem criar registros", asyn
   }
 });
 test("API bloqueia valores negativos, quantidades fracionadas e falta de cliente", async () => {
-  for (const change of [{ unit_price: -1 }, { quantity: 1.2 }, { client_id: "" }, { shipping_value: -5 }, { equipment_name: "Não existe" }]) {
+  for (const change of [{ unit_price: -1 }, { quantity: 1.2 }, { client_id: "" }, { shipping_value: -5 }, { discount_value: -1 }, { discount_value: 301 }, { equipment_name: "Não existe" }]) {
     const f = fixture();
     assert.equal((await f.post(request({ ...body, ...change }))).status, 400);
     assert.equal(f.state.transactions, 0);
@@ -92,4 +92,12 @@ test("chamadas legadas sem unitário preservam o total histórico informado", as
   const f = fixture();
   assert.equal((await f.post(request({ ...body, unit_price: undefined, total_value: 100 }))).status, 201);
   assert.equal(f.state.committed[0].total_value, 100);
+});
+
+test("API salva valor líquido e encaminha desconto junto ao pedido na transação", async () => {
+  const f = fixture();
+  assert.equal((await f.post(request({ ...body, discount_value: 25.1 }))).status, 201);
+  assert.equal(f.state.committed[0].total_value, 275.2);
+  assert.equal(f.state.workflows[0].discount_value, 25.1);
+  assert.equal(f.state.workflows[0].shipping_value, 10);
 });

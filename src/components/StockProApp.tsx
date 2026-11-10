@@ -2774,7 +2774,7 @@ const pendentes = (data as Profile[]).filter(
 }
 
 function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
-  const empty = { item_type: "produto", item_id: "", equipment_name: EQUIPAMENTOS[0], quantity: "1", unit_price: "", shipping_value: "", client_id: "", notes: "" };
+  const empty = { item_type: "produto", item_id: "", equipment_name: EQUIPAMENTOS[0], quantity: "1", unit_price: "", discount_value: "", shipping_value: "", client_id: "", notes: "" };
   const statuses = ["pendente", "confirmado", "processando", "enviado", "recebido", "instalado", "finalizado"];
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(empty);
@@ -2789,8 +2789,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
   const [showClientForm, setShowClientForm] = useState(false);
   const [creatingClient, setCreatingClient] = useState(false);
   const savingOrderRef = useRef(false);
-  let pricePreview = { total_value: 0, shipping_value: 0, grand_total: 0 };
-  try { pricePreview = calculateOrderValues(form.quantity, form.unit_price, form.shipping_value); } catch { /* The save action explains invalid input. */ }
+  let pricePreview = { subtotal: 0, total_value: 0, shipping_value: 0, grand_total: 0 };
+  try { pricePreview = calculateOrderValues(form.quantity, form.unit_price, form.shipping_value, form.discount_value); } catch { /* The save action explains invalid input. */ }
   const orderCount = form.item_type === "equipamento" && !editing ? selectedEquipments.length : 1;
 
   function clientCreated(client: AnyRow) {
@@ -2844,7 +2844,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       item_id: o.item_id || "",
       equipment_name: o.equipment_name || EQUIPAMENTOS[0],
       quantity: String(o.quantity || 1),
-      unit_price: String(Number(o.unit_price ?? (Number(o.total_value) / Number(o.quantity || 1))).toFixed(2)),
+      unit_price: String(Number(o.unit_price ?? ((Number(o.total_value) + Number(o.discount_value || 0)) / Number(o.quantity || 1))).toFixed(2)),
+      discount_value: String(o.discount_value || ""),
       shipping_value: String(o.shipping_value || ""),
       client_id: o.client_id || "",
       notes: o.notes || "",
@@ -2860,7 +2861,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
     if (!Number.isSafeInteger(qtd) || qtd <= 0) return setMsg("Informe uma quantidade inteira válida.");
     if (form.unit_price.trim() === "") return setMsg("Informe o valor unitário do item.");
     let values: ReturnType<typeof calculateOrderValues>;
-    try { values = calculateOrderValues(qtd, form.unit_price, form.shipping_value); }
+    try { values = calculateOrderValues(qtd, form.unit_price, form.shipping_value, form.discount_value); }
     catch (error) { return setMsg(error instanceof Error ? error.message : "Valores inválidos."); }
     if (form.item_type === "produto" && !form.item_id) return setMsg("Selecione o produto.");
     if (form.item_type === "equipamento" && selectedEquipments.length === 0) return setMsg("Selecione ao menos um equipamento.");
@@ -2872,6 +2873,7 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
       quantity: qtd,
       unit_price: values.unit_price,
       total_value: values.total_value,
+      discount_value: values.discount_value,
       shipping_value: values.shipping_value,
       notes: form.notes,
     } as AnyRow;
@@ -2945,12 +2947,13 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
           {form.item_type === "produto" ? <SelectField label="Produto" value={form.item_id} onChange={(v) => set("item_id", v)}><option value="">Selecione</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</SelectField> : <div className="field full-field"><label>Equipamentos selecionáveis</label><div className="mini-grid">{EQUIPAMENTOS.map((e) => <label key={e} className="check-row"><input type="checkbox" checked={selectedEquipments.includes(e)} onChange={() => toggleEquipment(e)} />{e}</label>)}</div></div>}
           <div className="field"><label htmlFor="order-quantity">Quantidade por item</label><input id="order-quantity" className="input" type="number" min="1" step="1" value={form.quantity} onChange={(event) => set("quantity", event.target.value)} /></div>
           <div className="field"><label htmlFor="order-unit-price">Valor unitário (R$)</label><input id="order-unit-price" className="input" type="number" min="0" step="0.01" value={form.unit_price} onChange={(event) => set("unit_price", event.target.value)} /></div>
-          <div className="field"><label htmlFor="order-subtotal">Subtotal do item (R$)</label><input id="order-subtotal" className="input" readOnly value={money(pricePreview.total_value)} /></div>
+          <div className="field"><label htmlFor="order-subtotal">Subtotal do item (R$)</label><input id="order-subtotal" className="input" readOnly value={money(pricePreview.subtotal)} /></div>
+          <div className="field"><label htmlFor="order-discount">Desconto por pedido (R$)</label><input id="order-discount" className="input" type="number" min="0" step="0.01" value={form.discount_value} onChange={(event) => set("discount_value", event.target.value)} /></div>
           <div className="field"><label htmlFor="order-shipping">Frete por pedido (R$)</label><input id="order-shipping" className="input" type="number" min="0" step="0.01" value={form.shipping_value} onChange={(event) => set("shipping_value", event.target.value)} /></div>
-          <div className="field full-field"><label>Total {orderCount > 1 ? "dos pedidos" : "do pedido"} com frete</label><output className="input" aria-live="polite" style={{ display: "block", fontWeight: 800 }}>{money(pricePreview.grand_total * orderCount)}</output><small style={{ color: "#94a3b8" }}>Quantidade × valor unitário + frete{orderCount > 1 ? `, somados nos ${orderCount} pedidos selecionados` : ""}.</small></div>
+          <div className="field full-field"><label>Total {orderCount > 1 ? "dos pedidos" : "do pedido"} com frete</label><output className="input" aria-live="polite" style={{ display: "block", fontWeight: 800 }}>{money(pricePreview.grand_total * orderCount)}</output><small style={{ color: "#94a3b8" }}>Quantidade × valor unitário − desconto + frete{orderCount > 1 ? `, somados nos ${orderCount} pedidos selecionados` : ""}.</small></div>
           <TextArea label="Observações" value={form.notes} onChange={(v) => set("notes", v)} />
         </div>
-        {form.item_type === "equipamento" && selectedEquipments.length > 0 && <p style={{ color: "#94a3b8", marginTop: 16 }}>{selectedEquipments.length} modelo(s) selecionado(s). {editing ? "O pedido será atualizado." : "Será criado um pedido por modelo, com a quantidade, o valor unitário e o frete informados em cada um."} Equipamentos CELT entram em Montagens a fazer.</p>}
+        {form.item_type === "equipamento" && selectedEquipments.length > 0 && <p style={{ color: "#94a3b8", marginTop: 16 }}>{selectedEquipments.length} modelo(s) selecionado(s). {editing ? "O pedido será atualizado." : "Será criado um pedido por modelo, com a quantidade, o valor unitário, o desconto e o frete informados em cada um."} Equipamentos CELT entram em Montagens a fazer.</p>}
         <div className="form-actions"><button className="btn btn-green" onClick={salvar} disabled={savingOrder || showClientForm || creatingClient}>{savingOrder ? "Salvando..." : editing ? "Salvar alterações" : "Salvar pedido"}</button><button className="btn btn-gray" disabled={savingOrder || creatingClient} onClick={() => { setForm(empty); setSelectedEquipments([]); setEditing(null); setShowClientForm(false); setShowForm(false); }}>Cancelar</button></div>
       </>}
       {msg && <Message text={msg} />}
@@ -2972,8 +2975,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
             <small>Vendedor: {o.profiles?.name || "-"}</small>
             <small>Item: {o.equipment_name || produto?.name || o.item_type}</small>
             <small>Qtd: {o.quantity}</small>
-            {o.order_items?.length ? <div>{o.order_items.map((item: AnyRow) => <small key={item.id} style={{ display: "block" }}>{item.item_name}: {item.quantity} × {money(item.unit_price)} = {money(item.total_value)}{Number(item.discount_value) > 0 ? ` (desconto: ${money(item.discount_value)})` : ""}</small>)}</div> : <small>Valor unitário: {money(o.unit_price ?? (Number(o.total_value) / Number(o.quantity || 1)))}</small>}
-            <small>Subtotal: {money(o.total_value)} | Frete: {money(o.shipping_value)}</small>
+            {o.order_items?.length ? <div>{o.order_items.map((item: AnyRow) => <small key={item.id} style={{ display: "block" }}>{item.item_name}: {item.quantity} × {money(item.unit_price)} = {money(item.total_value)}{Number(item.discount_value) > 0 ? ` (desconto: ${money(item.discount_value)})` : ""}</small>)}</div> : <small>Valor unitário: {money(o.unit_price ?? ((Number(o.total_value) + Number(o.discount_value || 0)) / Number(o.quantity || 1)))}</small>}
+            <small>Subtotal: {money(Number(o.total_value) + Number(o.discount_value || 0))} | Desconto: {money(o.discount_value || 0)} | Frete: {money(o.shipping_value)}</small>
             <small><b>Total com frete: {money(Number(o.total_value) + Number(o.shipping_value))}</b></small>
             <small>Status: <b>{String(o.status || "pendente").toUpperCase()}</b></small>
             {canManage && <select className="input" value={o.status} onChange={(e) => mudarStatus(o.id, e.target.value)}>{statuses.map((st) => <option key={st} value={st}>{st}</option>)}</select>}
