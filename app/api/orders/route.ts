@@ -16,6 +16,7 @@ import { toJsonSafe } from "@/lib/prisma-json";
 import { calculateOrderValues } from "@/lib/order-pricing";
 import { ensureOrderWorkflowTables, syncOrderWorkflow, OrderWorkflowError } from "@/lib/order-workflow-server";
 import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
+import { notifySalesManagersOfOrders } from "@/lib/order-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -243,6 +244,11 @@ export async function POST(request: Request) {
       }
       return result;
     }, { timeout: 30_000 });
+    try {
+      await notifySalesManagersOfOrders(created);
+    } catch (error) {
+      console.error("Pedido criado, mas falhou o aviso por e-mail ao gerente:", error);
+    }
     return NextResponse.json({ sucesso: true, orders: toJsonSafe(created) }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao criar pedido." }, { status: error instanceof OrderWorkflowError ? error.status : 500 });
