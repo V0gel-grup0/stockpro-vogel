@@ -1902,6 +1902,8 @@ function CRM({
                       <button className="btn btn-gray" type="button" onClick={() => onCreateQuote(opportunity)}>Criar orçamento</button>
                     </div>}
 
+                    {canManage && <OpportunityDocuments opportunityId={opportunity.id} />}
+
                     {canManage && <div className="field" style={{ width: "100%", marginTop: 8 }}>
                       <label>Mudar etapa</label>
                       <select className="input" value={opportunity.stage} disabled={updatingStageId !== null} onChange={(event) => updateOpportunityStage(opportunity, event.target.value)}>
@@ -1968,6 +1970,54 @@ function CRM({
     {canAccessCrm(profile.role, "assembly") && <AssemblyWorkFunnel profile={profile} />}
     {canAccessCrm(profile.role, "service") && <ServiceOrderFunnel profile={profile} />}
   </>;
+}
+
+function OpportunityDocuments({ opportunityId }: { opportunityId: string }) {
+  const [documents, setDocuments] = useState<Array<{ id: string; document_type: string; filename: string; created_at: string }>>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState("orcamento");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const endpoint = `/api/crm/documents?opportunity_id=${encodeURIComponent(opportunityId)}`;
+
+  async function loadDocuments() {
+    try {
+      const response = await fetch(endpoint, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao buscar documentos.");
+      setDocuments(data.documents || []);
+    } catch (e) { setError(e instanceof Error ? e.message : "Erro ao carregar documentos."); }
+  }
+  async function upload() {
+    if (!file) return setError("Selecione um arquivo PDF ou DOCX.");
+    setBusy(true); setError("");
+    try {
+      const payload = new FormData();
+      payload.set("opportunity_id", opportunityId);
+      payload.set("document_type", documentType);
+      payload.set("document", file);
+      const response = await fetch("/api/crm/documents", { method: "POST", body: payload });
+      const data = await response.json();
+      if (!response.ok || !data.sucesso) throw new Error(data.erro || "Erro ao anexar documento.");
+      setFile(null);
+      await loadDocuments();
+    } catch (e) { setError(e instanceof Error ? e.message : "Erro ao anexar documento."); }
+    finally { setBusy(false); }
+  }
+  return <section style={{ marginTop: 12, padding: 12, border: "1px solid rgba(148,163,184,.25)", borderRadius: 12 }}>
+    <button type="button" className="btn btn-gray" onClick={() => { setExpanded((value) => !value); if (!expanded) void loadDocuments(); }}>
+      {expanded ? "Ocultar documentos" : "Documentos — orçamento / contrato"}
+    </button>
+    {expanded && <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+      <div className="field"><label>Tipo de documento</label><select className="input" value={documentType} onChange={(event) => setDocumentType(event.target.value)}><option value="orcamento">Orçamento</option><option value="contrato">Contrato</option></select></div>
+      <div className="field"><label>Anexar documento (PDF ou DOCX, até 5 MB)</label><input className="input" type="file" accept=".pdf,.docx" onChange={(event) => setFile(event.target.files?.[0] || null)} /></div>
+      <button type="button" className="btn btn-green" disabled={busy || !file} onClick={upload}>{busy ? "Enviando..." : "Salvar documento"}</button>
+      {error && <small style={{ color: "#fca5a5" }}>{error}</small>}
+      {documents.map((document) => <div key={document.id} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}><small>{document.document_type === "contrato" ? "Contrato" : "Orçamento"} — {document.filename}</small><a className="btn btn-blue" href={`${endpoint}&id=${encodeURIComponent(document.id)}`}>Baixar</a></div>)}
+      {!documents.length && <small className="muted">Nenhum documento anexado nesta oportunidade.</small>}
+    </div>}
+  </section>;
 }
 
 function Produtos({ search, profile, lowStockOnly, onLowStockChange }: SearchProps & { profile: Profile; lowStockOnly: boolean; onLowStockChange: (value: boolean) => void }) {
