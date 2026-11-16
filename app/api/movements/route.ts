@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { validateMovementInvoice } from "@/lib/movement-invoice-policy";
 import { ensureMovementInvoices, saveMovementInvoice, type MovementInvoice } from "@/lib/movement-invoice-server";
 import { toJsonSafe } from "@/lib/prisma-json";
@@ -11,6 +12,30 @@ export const dynamic = "force-dynamic";
 
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const num = (value: unknown) => { const n = Number(value ?? 0); return Number.isFinite(n) ? n : NaN; };
+
+const MOVEMENT_PURPOSES = ["estoque", "assistencia", "descarte", "venda"] as const;
+const ENTRY_SOURCES = ["novo", "assistencia", "retorno"] as const;
+
+async function ensureWarehouseTracking() {
+  await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS warehouse_movement_details (
+    movement_id uuid PRIMARY KEY REFERENCES movements(id) ON DELETE CASCADE,
+    purpose text NOT NULL,
+    entry_source text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT warehouse_movement_purpose_check CHECK (purpose IN ('estoque','assistencia','descarte','venda')),
+    CONSTRAINT warehouse_movement_source_check CHECK (entry_source IS NULL OR entry_source IN ('novo','assistencia','retorno'))
+  )`);
+}
+
+function validateWarehouseReason(body: Record<string, any>, type: string) {
+  const purpose = text(body.purpose) || (type === "entrada" ? "estoque" : "venda");
+  const source = type === "entrada" ? (text(body.entry_source) || "novo") : null;
+  if (!(MOVEMENT_PURPOSES as readonly string[]).includes(purpose)) throw new Error("Destino da movimentação inválido.");
+  if (source && !(ENTRY_SOURCES as readonly string[]).includes(source)) throw new Error("Origem da entrada inválida.");
+  if (type === "entrada" && !["estoque", "assistencia"].includes(purpose)) throw new Error("Entradas só podem ser de estoque ou assistência.");
+  if (type === "saida" && purpose === "estoque") throw new Error("Selecione assistência, descarte ou venda para a saída.");
+  return { purpose, entry_source: source };
+}
 
 function isMissingOrderItemsTable(error: unknown) {
   const candidate = error as { code?: string; meta?: { code?: string }; message?: string };
@@ -30,10 +55,13 @@ export async function GET() {
     if ("response" in authorization) return authorization.response;
 
     await ensureMovementInvoices();
+    await ensureWarehouseTracking();
     const movements = await prisma.movements.findMany({ orderBy: { created_at: "desc" } });
     const files = await prisma.$queryRaw<{ movement_id: string; file_name: string }[]>`SELECT l.movement_id, f.file_name FROM movement_invoice_links l JOIN movement_invoice_files f ON f.id = l.invoice_id`;
     const names = new Map(files.map((file) => [file.movement_id, file.file_name]));
-    return NextResponse.json({ sucesso: true, movements: toJsonSafe(movements.map((movement) => ({ ...movement, invoice_file_name: names.get(movement.id) || null }))) }, { headers: { "Cache-Control": "private, no-store" } });
+    const details = await prisma.$queryRaw<Array<{ movement_id: string; purpose: string; entry_source: string | null }>>(Prisma.sql`SELECT movement_id, purpose, entry_source FROM warehouse_movement_details`);
+    const detailMap = new Map(details.map((detail) => [detail.movement_id, detail]));
+    return NextResponse.json({ sucesso: true, movements: toJsonSafe(movements.map((movement) => ({ ...movement, purpose: detailMap.get(movement.id)?.purpose || (movement.type === "entrada" ? "estoque" : "venda"), entry_source: detailMap.get(movement.id)?.entry_source || null, invoice_file_name: names.get(movement.id) || null }))) }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return NextResponse.json({ sucesso: false, erro: error instanceof Error ? error.message : "Erro ao carregar movimentações." }, { status: 500 });
   }
@@ -43,6 +71,8 @@ async function manual(body: Record<string, any>, profileId: string, invoice: Mov
   const type = text(body.type); const itemType = text(body.item_type); const itemId = text(body.item_id); const quantity = num(body.quantity);
   if (!itemId || !["entrada", "saida"].includes(type) || !["produto", "componente"].includes(itemType) || !Number.isFinite(quantity) || quantity <= 0) throw new Error("Dados da movimentação manual são inválidos.");
 
+  const warehouse = validateWarehouseReason(body, type);
+  await ensureWarehouseTracking();
   return prisma.$transaction(async (tx) => {
     let itemName = "";
     if (itemType === "produto") {
@@ -52,6 +82,7 @@ async function manual(body: Record<string, any>, profileId: string, invoice: Mov
       const changed = await tx.products.updateMany({ where: { id: itemId, ...(type === 'saida' ? {quantity:{gte:quantity}} : {}) }, data: { quantity: type === 'saida' ? {decrement:quantity} : {increment:quantity}, updated_at: new Date() } });
       if(changed.count!==1)throw new Error('Estoque insuficiente. Atualize os dados antes de tentar novamente.');
       const movement = await tx.movements.create({ data: { type, item_type: "produto", item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de produto: ${itemName}`, created_by: profileId || null } });
+      await tx.$executeRaw`INSERT INTO warehouse_movement_details (movement_id, purpose, entry_source) VALUES (${movement.id}::uuid, ${warehouse.purpose}, ${warehouse.entry_source})`;
       await saveMovementInvoice(tx, invoice, profileId, [movement]);
       return movement;
     }
@@ -59,7 +90,9 @@ async function manual(body: Record<string, any>, profileId: string, invoice: Mov
     const current = Number(item.quantity); const next = type === "entrada" ? current + quantity : current - quantity; if (next < 0) throw new Error(`Estoque insuficiente. Disponível: ${current}.`);
     const changed = await tx.components.updateMany({ where: { id: itemId, ...(type === 'saida' ? {quantity:{gte:quantity}} : {}) }, data: { quantity: type === 'saida' ? {decrement:quantity} : {increment:quantity}, updated_at: new Date() } });
     if(changed.count!==1)throw new Error('Estoque insuficiente. Atualize os dados antes de tentar novamente.');
-    return tx.movements.create({ data: { type, item_type: "componente", item_kind: "componente", item_id: itemId, component_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de componente: ${itemName}`, created_by: profileId || null } });
+    const movement = await tx.movements.create({ data: { type, item_type: "componente", item_kind: "componente", item_id: itemId, component_id: itemId, item_name: itemName, quantity, notes: text(body.notes) || `Movimentação manual de componente: ${itemName}`, created_by: profileId || null } });
+    await tx.$executeRaw`INSERT INTO warehouse_movement_details (movement_id, purpose, entry_source) VALUES (${movement.id}::uuid, ${warehouse.purpose}, ${warehouse.entry_source})`;
+    return movement;
   });
 }
 
