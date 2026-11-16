@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeApi } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,7 +86,7 @@ export async function PUT(request: NextRequest) {
     if ("response" in authorization) return authorization.response;
 
     const body = await request.json();
-    const { id, status, permissions, role } = body;
+    const { id, status, permissions, role, new_password } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
@@ -146,6 +147,15 @@ export async function PUT(request: NextRequest) {
         );
       }
       data.role = String(role);
+    }
+    if (new_password !== undefined) {
+      if (!isAdministrator || isSelf) {
+        return NextResponse.json({ error: "Apenas o administrador pode redefinir a senha de outro colaborador." }, { status: 403 });
+      }
+      if (typeof new_password !== "string" || new_password.length < 8 || new_password.length > 72) {
+        return NextResponse.json({ error: "A nova senha deve ter entre 8 e 72 caracteres." }, { status: 400 });
+      }
+      data.password_hash = await bcrypt.hash(new_password, 12);
     }
     for (const field of allowed) {
       if (field in body) data[field] = field === "no_number" ? Boolean(body[field]) : String(body[field] ?? "").trim();
