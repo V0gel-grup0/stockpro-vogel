@@ -22,8 +22,8 @@ function safeHtml(value: unknown): string {
  * Best-effort notification. Never roll back a confirmed order because the
  * mail provider is unavailable or not configured.
  * Configure RESEND_API_KEY and ORDER_EMAIL_FROM (verified sender) on Vercel.
- * Optionally set SALES_MANAGER_EMAIL to target a specific inbox;
- * otherwise mail all approved users with the manager role.
+ * Approved sales users (vendedor), managers and administrators are notified.
+ * Optionally set SALES_MANAGER_EMAIL for an additional distribution inbox.
  */
 export async function notifySalesManagersOfOrders(orders: NewOrder[]) {
   if (!orders.length) return;
@@ -34,17 +34,21 @@ export async function notifySalesManagersOfOrders(orders: NewOrder[]) {
     return;
   }
 
-  const configuredAddress = (process.env.SALES_MANAGER_EMAIL || "").trim();
-  const recipients = configuredAddress
-    ? configuredAddress.split(",").map((mail) => mail.trim()).filter((mail) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail))
-    : (await prisma.profiles.findMany({
-      where: { role: "gerente", status: "approved" },
-      select: { email: true },
-    })).map((manager) => manager.email).filter((mail) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail));
-
-  const to = [...new Set(recipients)];
+  // Find the recipients at send time: new team members can be added without
+  // editing environment variables, and disabled accounts stop receiving mail.
+  const team = await prisma.profiles.findMany({
+    where: {
+      role: { in: ["vendedor", "gerente", "administrador"] },
+      status: "approved",
+    },
+    select: { email: true },
+  });
+  const extra = (process.env.SALES_MANAGER_EMAIL || "").split(",");
+  const validEmail = (mail: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+  const to = [...new Set([...team.map((person) => person.email), ...extra]
+    .map((email) => email.trim().toLowerCase()).filter(validEmail))];
   if (!to.length) {
-    console.info("Nenhum e-mail de gerente de vendas configurado.");
+    console.info("Nenhuma conta ativa de vendas, gerência ou administração com e-mail válido para avisar.");
     return;
   }
 
@@ -80,6 +84,6 @@ export async function notifySalesManagersOfOrders(orders: NewOrder[]) {
     signal: AbortSignal.timeout(9000),
   });
   if (!response.ok) {
-    console.error("Falha ao notificar gerente de vendas por e-mail:", response.status);
+    console.error("Falha ao notificar equipe comercial por e-mail:", response.status);
   }
 }
