@@ -129,11 +129,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const product = await prisma.products.create({
-      data: {
-        ...normalized.data,
-        name: normalized.data.name as string,
-      },
+    // Commercial SKU: lamps begin at 1901; other families use their own ranges.
+    // A transaction-level advisory lock prevents duplicate codes on simultaneous registrations.
+    const product = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(1901)`;
+      const category = String(normalized.data?.category || "").toLowerCase();
+      const name = String(normalized.data?.name || "").toLowerCase();
+      const prefix = /lâmp|lamp|led/.test(category + " " + name) ? 19
+        : /inversor/.test(category + " " + name) ? 21
+        : /motor/.test(category + " " + name) ? 22 : 29;
+      const sku = String(normalized.data?.sku || "").trim();
+      const existing = await tx.products.findMany({ select: { sku: true } });
+      const used = new Set(existing.map((item) => item.sku).filter(Boolean));
+      let next = prefix * 100 + 1;
+      while (used.has(String(next))) next++;
+      const finalSku = sku || String(next);
+      if (used.has(finalSku)) throw new Error("Este código de produto já está cadastrado.");
+      return tx.products.create({
+        data: { ...normalized.data, sku: finalSku, name: normalized.data!.name as string },
+      });
     });
 
     return NextResponse.json(
@@ -279,6 +293,26 @@ export async function PATCH(req: Request) {
     if ("response" in authorization) return authorization.response;
 
     const body = await req.json();
+    if (body?.action === "assign_missing_codes") {
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(1901)`;
+        const all = await tx.products.findMany({ orderBy: { created_at: "asc" }, select: { id: true, sku: true, category: true, name: true } });
+        const used = new Set(all.map((item) => item.sku).filter(Boolean));
+        let count = 0;
+        for (const product of all) {
+          if (product.sku?.trim()) continue;
+          const label = (product.category + " " + product.name).toLowerCase();
+          const prefix = /lâmp|lamp|led/.test(label) ? 19 : /inversor/.test(label) ? 21 : /motor/.test(label) ? 22 : 29;
+          let next = prefix * 100 + 1;
+          while (used.has(String(next))) next++;
+          await tx.products.update({ where: { id: product.id }, data: { sku: String(next) } });
+          used.add(String(next));
+          count++;
+        }
+        return count;
+      }, { timeout: 30_000 });
+      return NextResponse.json({ sucesso: true, updated });
+    }
     const produtos = Array.isArray(body?.produtos) ? body.produtos : [];
 
     if (!produtos.length) {
