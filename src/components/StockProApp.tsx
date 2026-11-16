@@ -461,6 +461,44 @@ const PRODUTOS_PADRAO = [
   { name: "Soquete E-27 porcelana", sku: "REV-SOQ-E27-POR", category: "Soquetes E-27", subcategory: "Porcelana" },
 ];
 
+/** Atalhos em formato de cards, com as mesmas permissões do menu lateral. */
+const relatedModules: Record<string, string[]> = {
+  Produtos: ["Movimentações", "Componentes", "Pedidos", "Fornecedores"],
+  Movimentações: ["Produtos", "Componentes", "Equipamentos Montados", "Relatórios"],
+  Clientes: ["CRM", "Orçamentos", "Pedidos", "Relatórios"],
+  CRM: ["Clientes", "CRM geral", "Orçamentos", "Pedidos"],
+  "CRM geral": ["CRM", "Clientes", "Pedidos", "Relatórios"],
+  Orçamentos: ["CRM", "Clientes", "Pedidos", "Relatórios"],
+  Pedidos: ["Orçamentos", "Clientes", "CRM", "Relatórios"],
+  Fornecedores: ["Produtos", "Componentes", "Movimentações", "Relatórios"],
+  Montagens: ["Equipamentos Montados", "Componentes", "Movimentações", "Pedidos"],
+  "Equipamentos Montados": ["Montagens", "Componentes", "Produtos", "Pedidos"],
+  Colaboradores: ["Representantes", "Análise de Cadastros", "Relatórios", "Meu Perfil"],
+  Representantes: ["Colaboradores", "Clientes", "Pedidos", "Relatórios"],
+  "Minha Gestão": ["Pedidos", "Clientes", "Orçamentos", "Relatórios"],
+  "Análise de Cadastros": ["Colaboradores", "Representantes", "Meu Perfil", "Relatórios"],
+  Componentes: ["Montagens", "Movimentações", "Produtos", "Equipamentos Montados"],
+  Relatórios: ["Pedidos", "Movimentações", "Produtos", "Clientes"],
+  "Meu Perfil": ["Dashboard", "Pedidos", "Clientes", "Relatórios"],
+};
+
+function ModuleShortcutCards({ page, role, onNavigate }: { page: string; role: Role; onNavigate: (nextPage: string) => void }) {
+  if (page === "Dashboard") return null;
+  const permitted = menuByRole[role] || [];
+  const destinations = (relatedModules[page] || ["Dashboard", "Pedidos", "Produtos", "Meu Perfil"])
+    .filter((item) => permitted.includes(item) && item !== page)
+    .slice(0, 4);
+  if (!destinations.length) return null;
+  return <nav className="module-shortcuts" aria-label="Atalhos relacionados">
+    <div className="module-shortcuts-heading"><strong>Acesso rápido</strong><small>Toque em um quadro para abrir a área</small></div>
+    <div className="module-shortcuts-grid">{destinations.map((destination) =>
+      <button type="button" key={destination} className="module-shortcut" onClick={() => onNavigate(destination)}>
+        <strong>{destination}</strong><span>Abrir →</span>
+      </button>
+    )}</div>
+  </nav>;
+}
+
 const menuByRole: Record<Role, string[]> = {
   administrador: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Análise de Cadastros", "Componentes", "Relatórios", "Meu Perfil"],
   gerente: ["Dashboard", "Produtos", "Movimentações", "Clientes", "CRM", "CRM geral", "Orçamentos", "Pedidos", "Fornecedores", "Montagens", "Equipamentos Montados", "Colaboradores", "Representantes", "Relatórios", "Meu Perfil"],
@@ -677,6 +715,7 @@ export default function StockProApp() {
         </aside>}
         <main ref={mainRef} className="main-content" tabIndex={-1} aria-label={page}>
           {page === "Dashboard" && <Dashboard profile={profile} onNavigate={navigateToPage} />}
+          <ModuleShortcutCards page={page} role={profile.role} onNavigate={navigateToPage} />
           {page === "Produtos" && <Produtos search={search} profile={profile} lowStockOnly={productsLowStockOnly} onLowStockChange={setProductsLowStockOnly} />}
           {page === "Movimentações" && <Movimentações profile={profile} />}
           {page === "Clientes" && <Pessoas title="Clientes" table="clients" kind="cliente" search={search} profile={profile} />}

@@ -7,6 +7,7 @@ import { QuoteRequestError, UUID_PATTERN, quoteIdWhere } from "@/lib/quote-serve
 import { prisma } from "@/lib/prisma";
 import { toJsonSafe } from "@/lib/prisma-json";
 import { ensureOrderWorkflowTables, syncOrderWorkflow, OrderWorkflowError } from "@/lib/order-workflow-server";
+import { notifySalesManagersOfOrders } from "@/lib/order-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -165,6 +166,11 @@ export async function POST(_request: Request, context: Context) {
       return created;
     }, { timeout: 30_000 });
 
+    try {
+      await notifySalesManagersOfOrders([order]);
+    } catch (error) {
+      console.error("Pedido criado pelo orçamento, mas falhou o aviso por e-mail ao gerente:", error);
+    }
     return NextResponse.json({ sucesso: true, order: toJsonSafe(order) }, { status: 201 });
   } catch (error) {
     if (error instanceof QuoteRequestError) return errorResponse(error.message, error.status);
