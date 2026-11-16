@@ -4508,7 +4508,7 @@ function RelatoriosEstoque({ profile }: { profile: Profile }) {
   const [orders, setOrders] = useState<AnyRow[]>([]);
   const [dateStart, setDateStart] = useState("");
   const warehousePriorities = ["Quadro", "Inversor", "Contator", "Disjuntor", "Tampa"];
-  const warehouseRows = [...components.map((item) => ({ ...item, tipo: "Componente" })), ...products.map((item) => ({ ...item, tipo: "Produto" }))].filter((item) => warehousePriorities.some((keyword) => String(item.name).toLowerCase().includes(keyword.toLowerCase()))).sort((a, b) => {
+  const warehouseRows: Array<AnyRow & { tipo: string }> = [...components.map((item): AnyRow & { tipo: string } => ({ ...item, tipo: "Componente" })), ...products.map((item): AnyRow & { tipo: string } => ({ ...item, tipo: "Produto" }))].filter((item) => warehousePriorities.some((keyword) => String(item.name).toLowerCase().includes(keyword.toLowerCase()))).sort((a, b) => {
     const rank = (name: string) => { const i = warehousePriorities.findIndex((keyword) => String(name).toLowerCase().includes(keyword.toLowerCase())); return i < 0 ? 99 : i; };
     return rank(a.name) - rank(b.name) || String(a.name).localeCompare(String(b.name), "pt-BR");
   });
