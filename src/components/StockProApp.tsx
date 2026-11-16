@@ -2370,6 +2370,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [managedRepresentativeId, setManagedRepresentativeId] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", phone: "", city: "", role: "funcionario" as Role, status: "approved" });
   const roleList = roles || (role ? [role] : []);
   const isRepresentante = roleList.length === 1 && roleList[0] === "representante";
@@ -2494,6 +2496,8 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
 
   function abrirEdicao(item: Profile) {
     setEditingProfile(item);
+    setNewPassword("");
+    setShowNewPassword(false);
     setEditForm({
       name: item.name || "",
       phone: item.phone || "",
@@ -2507,6 +2511,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
   async function salvarEdicao() {
     if (!editingProfile) return;
     if (!editForm.name.trim()) return setMsg("Informe o nome do colaborador.");
+    if (newPassword && (newPassword.length < 8 || newPassword.length > 72)) return setMsg("A nova senha precisa ter entre 8 e 72 caracteres.");
 
     try {
       setLoadingId(editingProfile.id);
@@ -2522,6 +2527,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           city: editForm.city,
           role: editForm.role,
           status: editForm.status,
+          ...(newPassword ? { new_password: newPassword } : {}),
         }),
       });
       const data = await response.json();
@@ -2529,6 +2535,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
 
       setMsg("Colaborador atualizado com sucesso.");
       setEditingProfile(null);
+      setNewPassword("");
       await carregar();
     } catch (error) {
       setMsg(error instanceof Error ? error.message : "Erro ao editar colaborador.");
@@ -2620,6 +2627,7 @@ function Colaboradores({ role, roles, title, currentUser, search }: { role?: Rol
           <option value="inactive">Inativo</option>
           <option value="rejected">Rejeitado</option>
         </SelectField>
+        {editingProfile.id !== currentUser.id && <div className="field full-field"><label htmlFor="collaborator-new-password">Redefinir senha do colaborador (opcional)</label><div style={{ display: "flex", gap: 8 }}><input id="collaborator-new-password" className="input" type={showNewPassword ? "text" : "password"} minLength={8} maxLength={72} autoComplete="new-password" placeholder="Digite uma nova senha (mínimo 8 caracteres)" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /><button className="btn btn-gray" type="button" onClick={() => setShowNewPassword((current) => !current)} aria-label={showNewPassword ? "Ocultar nova senha" : "Mostrar nova senha"}>{showNewPassword ? "Ocultar" : "Mostrar"}</button></div><small style={{ color: "#94a3b8" }}>A senha atual não pode ser visualizada. Deixe em branco para mantê-la.</small></div>}
       </div>
       <div className="form-actions">
         <button className="btn btn-green" disabled={loadingId === editingProfile.id} onClick={salvarEdicao}>
