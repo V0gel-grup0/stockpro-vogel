@@ -129,11 +129,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const product = await prisma.products.create({
-      data: {
-        ...normalized.data,
-        name: normalized.data.name as string,
-      },
+    // Commercial SKU: lamps begin at 1901; other families use their own ranges.
+    // A transaction-level advisory lock prevents duplicate codes on simultaneous registrations.
+    const product = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(1901)`;
+      const category = String(normalized.data?.category || "").toLowerCase();
+      const name = String(normalized.data?.name || "").toLowerCase();
+      const prefix = /lâmp|lamp|led/.test(category + " " + name) ? 19
+        : /inversor/.test(category + " " + name) ? 21
+        : /motor/.test(category + " " + name) ? 22 : 29;
+      const sku = String(normalized.data?.sku || "").trim();
+      const existing = await tx.products.findMany({ select: { sku: true } });
+      const used = new Set(existing.map((item) => item.sku).filter(Boolean));
+      let next = prefix * 100 + 1;
+      while (used.has(String(next))) next++;
+      const finalSku = sku || String(next);
+      if (used.has(finalSku)) throw new Error("Este código de produto já está cadastrado.");
+      return tx.products.create({
+        data: { ...normalized.data, sku: finalSku, name: normalized.data!.name as string },
+      });
     });
 
     return NextResponse.json(
