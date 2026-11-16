@@ -64,7 +64,7 @@ export async function notifySalesManagersOfOrders(orders: NewOrder[]) {
   });
   const authorById = new Map(authors.map((profile) => [profile.id, profile]));
   const clientById = new Map(clients.map((client) => [client.id, client.name]));
-  const validEmail = (mail: string) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(mail);
+  const validEmail = (mail: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
   const formatBRL = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   // Group by address so even a batched submission sends each seller only
