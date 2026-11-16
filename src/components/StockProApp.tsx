@@ -444,6 +444,8 @@ const CATEGORIAS_REVENDA = [
     category: "Soquetes E-27",
     subcategories: ["EMBORRACHADO"],
   },
+  { category: "Inversores", subcategories: ["Inversor de frequência", "Inversor 2 CV", "Inversor 5 CV", "Outros inversores"] },
+  { category: "Motores", subcategories: ["Motor elétrico", "Motor 2 CV", "Motor 5 CV", "Outros motores"] },
   {
     category: "Eletrônicos gerais",
     subcategories: ["Eletrônicos diversos", "Fontes e carregadores", "Cabos e adaptadores", "Acessórios eletrônicos"],
@@ -2087,7 +2089,7 @@ function Produtos({ search, profile, lowStockOnly, onLowStockChange }: SearchPro
   const subcats = CATEGORIAS_REVENDA.find((c) => c.category === form.category)?.subcategories || [];
   const filtered = items.filter((i) => textMatch(i, search) && (!lowStockOnly || isLowStockProduct(i)));
  
- return <><Title title="Produtos" desc="Produtos para revenda: iluminação, dimmer, soquetes e eletrônicos gerais." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="SKU" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">{lowStockOnly ? "Produtos com estoque baixo" : "Produtos cadastrados"}</h2><SelectField label="Ver estoque" value={lowStockOnly ? "baixo" : "todos"} onChange={(value) => onLowStockChange(value === "baixo")}><option value="todos">Todos os produtos</option><option value="baixo">No mínimo ou abaixo do mínimo</option></SelectField>{filtered.length === 0 && <p className="muted">Nenhum produto encontrado neste filtro.</p>}<div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>SKU: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
+ return <><Title title="Produtos" desc="Produtos para revenda: iluminação, dimmer, soquetes e eletrônicos gerais." />{canWrite && <section className="card"><h2 className="card-title">{editing ? "Editar produto" : "Novo produto"}</h2><div className="form-actions" style={{ marginTop: 0, marginBottom: 20 }}>{["administrador", "gerente"].includes(profile.role) && <button className="btn btn-blue" onClick={carregarPadrao}>Criar produtos padrão</button>}</div><div className="form-grid"><Field label="Nome" value={form.name} onChange={(v) => set("name", v)} /><Field label="Código interno (automático se vazio)" value={form.sku} onChange={(v) => set("sku", v)} /><SelectField label="Categoria" value={form.category} onChange={(v) => { set("category", v); set("subcategory", CATEGORIAS_REVENDA.find((c) => c.category === v)?.subcategories[0] || ""); }}>{CATEGORIAS_REVENDA.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}</SelectField><SelectField label="Subcategoria" value={form.subcategory} onChange={(v) => set("subcategory", v)}>{subcats.map((s) => <option key={s} value={s}>{s}</option>)}</SelectField><Field label="Preço de custo" type="number" value={form.cost_price} onChange={(v) => set("cost_price", v)} /><Field label="Preço de venda" type="number" value={form.sale_price} onChange={(v) => set("sale_price", v)} /><Field label="Quantidade" type="number" value={form.quantity} onChange={(v) => set("quantity", v)} /><Field label="Estoque mínimo" type="number" value={form.min_stock} onChange={(v) => set("min_stock", v)} /><SelectField label="Fornecedor" value={form.supplier_id} onChange={(v) => set("supplier_id", v)}><option value="">Selecione</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><TextArea label="Descrição" value={form.description} onChange={(v) => set("description", v)} /></div><div className="form-actions"><button className="btn btn-green" onClick={salvar}>{editing ? "Salvar alterações" : "Salvar produto"}</button><button className="btn btn-gray" onClick={() => { setForm(empty); setEditing(null); }}>Cancelar</button></div>{msg && <Message text={msg} />}</section>}<section className="card" style={{ marginTop: 24 }}><h2 className="card-title">{lowStockOnly ? "Produtos com estoque baixo" : "Produtos cadastrados"}</h2><SelectField label="Ver estoque" value={lowStockOnly ? "baixo" : "todos"} onChange={(value) => onLowStockChange(value === "baixo")}><option value="todos">Todos os produtos</option><option value="baixo">No mínimo ou abaixo do mínimo</option></SelectField>{filtered.length === 0 && <p className="muted">Nenhum produto encontrado neste filtro.</p>}<div className="product-list-grid">{filtered.map((item) => <div key={item.id} className="stat-card user-card"><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small><small>ID do produto: {item.sku || "-"}</small><small>Qtd: {item.quantity || 0}</small><small>Venda: {money(item.sale_price)}</small>{canWrite && <div className="form-actions"><button className="btn btn-blue" onClick={() => editar(item)}>Editar</button>{canDelete && <button className="btn btn-red" onClick={() => excluir(item.id)}>Excluir</button>}</div>}</div>)}</div></section></>;
 }
 
 function Pessoas({ title, table, kind, search, profile, onCreated, onCancel, onBusyChange, embeddedTitle }: { title: string; table: "clients" | "suppliers"; kind: "cliente" | "fornecedor"; profile: Profile; onCreated?: (client: AnyRow) => void; onCancel?: () => void; onBusyChange?: (busy: boolean) => void; embeddedTitle?: string } & SearchProps) {
@@ -2999,6 +3001,8 @@ function Pedidos({ profile, search }: { profile: Profile } & SearchProps) {
 function Movimentações({ profile }: { profile: Profile }) {
   const emptyManual = {
     type: "entrada",
+    purpose: "estoque",
+    entry_source: "novo",
     item_type: "produto",
     item_id: "",
     quantity: "",
@@ -3573,12 +3577,18 @@ function Movimentações({ profile }: { profile: Profile }) {
           <SelectField
             label="Tipo de movimentação"
             value={manual.type}
-            onChange={(v) => setManualField("type", v)}
+            onChange={(v) => setManual((current) => ({ ...current, type: v, purpose: v === "entrada" ? "estoque" : "venda", entry_source: "novo" }))}
           >
             <option value="entrada">Entrada</option>
             <option value="saida">Saída</option>
           </SelectField>
 
+          {manual.type === "entrada" && <SelectField label="Origem da entrada" value={manual.entry_source} onChange={(v) => { setManualField("entry_source", v); setManualField("purpose", v === "assistencia" ? "assistencia" : "estoque"); }}>
+            <option value="novo">Produto novo</option><option value="assistencia">Assistência</option><option value="retorno">Retorno ao estoque</option>
+          </SelectField>}
+          <SelectField label={manual.type === "entrada" ? "Destino" : "Finalidade da saída"} value={manual.purpose} onChange={(v) => setManualField("purpose", v)}>
+            {manual.type === "entrada" ? <><option value="estoque">Estoque</option><option value="assistencia">Assistência</option></> : <><option value="venda">Venda</option><option value="assistencia">Assistência</option><option value="descarte">Descarte</option></>}
+          </SelectField>
           <SelectField
             label="Tipo de item"
             value={manual.item_type}
@@ -3631,6 +3641,7 @@ function Movimentações({ profile }: { profile: Profile }) {
           {movements.map((m) => (
             <div key={m.id} className="stat-card">
               <strong>{m.type}</strong>
+              <small>Destino: {m.purpose || (m.type === "entrada" ? "estoque" : "venda")}{m.entry_source ? ` | Origem: ${m.entry_source}` : ""}</small>
               <small>Tipo: {m.nf_item_kind || m.item_type}</small>
               <small>Qtd: {m.quantity}</small>
               {m.nf_number && <small>NF: {m.nf_number}</small>}
@@ -4437,6 +4448,11 @@ function RelatoriosEstoque({ profile }: { profile: Profile }) {
   const [components, setComponents] = useState<AnyRow[]>([]);
   const [orders, setOrders] = useState<AnyRow[]>([]);
   const [dateStart, setDateStart] = useState("");
+  const warehousePriorities = ["Quadro", "Inversor", "Contator", "Disjuntor", "Tampa"];
+  const warehouseRows = [...components.map((item) => ({ ...item, tipo: "Componente" })), ...products.map((item) => ({ ...item, tipo: "Produto" }))].filter((item) => warehousePriorities.some((keyword) => String(item.name).toLowerCase().includes(keyword.toLowerCase()))).sort((a, b) => {
+    const rank = (name: string) => { const i = warehousePriorities.findIndex((keyword) => String(name).toLowerCase().includes(keyword.toLowerCase())); return i < 0 ? 99 : i; };
+    return rank(a.name) - rank(b.name) || String(a.name).localeCompare(String(b.name), "pt-BR");
+  });
   const [dateEnd, setDateEnd] = useState("");
 
   useEffect(() => { carregar(); }, []);
@@ -4558,6 +4574,16 @@ function RelatoriosEstoque({ profile }: { profile: Profile }) {
       <StatCard label="Movimentações" value={String(filteredMovements.length)} />
     </div>
 
+    <section className="card" style={{ marginTop: 24 }}>
+      <h2 className="card-title">Relatório de almoxarifado — itens principais</h2>
+      <p className="muted">Ordem: Quadro, Inversor, Contator, Disjuntor e Tampa. Quantidades atuais em estoque.</p>
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead><tr><th style={{ textAlign: "left", padding: 10 }}>Item</th><th style={{ textAlign: "left", padding: 10 }}>Tipo</th><th style={{ textAlign: "right", padding: 10 }}>Quantidade</th><th style={{ textAlign: "right", padding: 10 }}>Custo total</th></tr></thead>
+        <tbody>{warehouseRows.map((item) => <tr key={item.tipo + item.id}><td style={{ padding: 10, borderTop: "1px solid #334155" }}>{item.name}</td><td style={{ padding: 10, borderTop: "1px solid #334155" }}>{item.tipo}</td><td style={{ textAlign: "right", padding: 10, borderTop: "1px solid #334155" }}>{item.quantity}</td><td style={{ textAlign: "right", padding: 10, borderTop: "1px solid #334155" }}>{money(Number(item.quantity || 0) * Number(item.cost_price || 0))}</td></tr>)}</tbody>
+      </table></div>{!warehouseRows.length && <p className="muted">Nenhum dos itens principais cadastrado.</p>}
+      <h3 style={{ marginTop: 20 }}>Movimentações por finalidade no período</h3>
+      <div className="reports-grid">{["estoque", "assistencia", "descarte", "venda"].map((purpose) => <StatCard key={purpose} label={purpose.toUpperCase()} value={String(filteredMovements.filter((movement) => (movement.purpose || (movement.type === "entrada" ? "estoque" : "venda")) === purpose).reduce((sum, movement) => sum + Number(movement.quantity || 0), 0))} />)}</div>
+    </section>
     <section className="card" style={{ marginTop: 24 }}>
       <h2 className="card-title">Gerar relatório</h2>
       <p style={{ color: "#94a3b8", marginBottom: 20 }}>Gere um relatório em PDF com o resumo do período selecionado.</p>
