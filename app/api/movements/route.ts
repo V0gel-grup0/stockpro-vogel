@@ -117,7 +117,14 @@ async function nfEntry(body: Record<string, any>, profileId: string) {
       if (product) {
         product = await tx.products.update({ where: { id: product.id }, data: { quantity: { increment: quantity }, cost_price: unitCost, supplier_id: supplier.id, category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), updated_at: new Date() } });
       } else {
-        product = await tx.products.create({ data: { name: itemName, sku: "", category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), cost_price: unitCost, sale_price: 0, quantity, min_stock: 0, supplier_id: supplier.id, description: `Produto cadastrado automaticamente pela NF ${text(nf.nf_number) || text(nf.nf_key)}` } });
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(1901)`;
+        const existingCodes = await tx.products.findMany({ select: { sku: true } });
+        const usedCodes = new Set(existingCodes.map((item) => item.sku).filter(Boolean));
+        const label = (text(nf.produto_categoria) + " " + itemName).toLowerCase();
+        const prefix = /lâmp|lamp|led/.test(label) ? 19 : /inversor/.test(label) ? 21 : /motor/.test(label) ? 22 : 29;
+        let code = prefix * 100 + 1;
+        while (usedCodes.has(String(code))) code++;
+        product = await tx.products.create({ data: { name: itemName, sku: String(code), category: text(nf.produto_categoria), subcategory: text(nf.produto_subcategoria), cost_price: unitCost, sale_price: 0, quantity, min_stock: 0, supplier_id: supplier.id, description: `Produto cadastrado automaticamente pela NF ${text(nf.nf_number) || text(nf.nf_key)}` } });
       }
       itemId = product.id;
       const movement = await tx.movements.create({ data: { type: "entrada", item_type: "produto", item_kind: "produto", nf_item_kind: "produto", item_id: itemId, product_id: itemId, item_name: itemName, quantity, notes: text(nf.notes) || `Entrada automática pela NF ${text(nf.nf_number) || text(nf.nf_key)}`, created_by: profileId || null, supplier_id: supplier.id, nf_number: text(nf.nf_number), receita_federal_nf: text(nf.receita_federal_nf), nf_key: text(nf.nf_key), unit_cost: unitCost, total_cost: quantity * unitCost } });
